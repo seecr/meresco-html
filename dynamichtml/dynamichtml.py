@@ -39,11 +39,12 @@ class DynamicHtmlException(Exception):
 
 class DynamicHtml(Observable):
 
-    def __init__(self, directory, reactor=None, prefix = '', allowedModules=[], verbose=False):
+    def __init__(self, directory, reactor=None, prefix = '', allowedModules=[], indexPage='', verbose=False):
         Observable.__init__(self)
         self._verbose = verbose
         self._directory = directory
         self._prefix = prefix
+        self._indexPage = indexPage
         self._allowedModules = allowedModules
         self._modules = {}
         for f in listdir(self._directory):
@@ -141,6 +142,8 @@ class DynamicHtml(Observable):
 
     def handleHttpRequest(self, scheme, netloc, path, query, fragments, arguments, headers={}):
         path = path[len(self._prefix):]
+        if path == '/' and self._indexPage:
+            path = self._indexPage
         try:
             generators = self._process(path[1:], headers, arguments)
             yield 'HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n'

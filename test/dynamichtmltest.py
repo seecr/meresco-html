@@ -328,4 +328,24 @@ def main(pipe=None, *args, **kwargs):
         result = d.handleHttpRequest('http', 'host.nl', '/page', '', '', {})
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('startend', message)
+
+    def testIndexPage(self):
+        open(self.tempdir + '/page','w').write("""
+def main(*args, **kwargs):
+    yield "index"
+    
+""")
+        reactor = Reactor()
+        d = DynamicHtml(self.tempdir, reactor=reactor)
+        result = d.handleHttpRequest('http', 'host.nl', '/', '', '', {})
+        headers, message = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('File  does not exist.', message)
+        
+        reactor = Reactor()
+        d = DynamicHtml(self.tempdir, reactor=reactor, indexPage='/page')
+        result = d.handleHttpRequest('http', 'host.nl', '/', '', '', {})
+        headers, message = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('index', message)
+
+        
         
