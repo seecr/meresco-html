@@ -241,7 +241,8 @@ def main(headers={}, *args, **kwargs):
 
         d = DynamicHtml(self.tempdir, reactor=reactor, allowedModules=['Ft'])
         result = d.handleHttpRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
-        self.assertEquals("HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<module 'Ft' from '/usr/lib/python2.5/site-packages/Ft/__init__.pyc'>", ''.join(result))
+        resultText = ''.join(result)
+        self.assertTrue(resultText.endswith("/Ft/__init__.pyc'>"), resultText)
 
         open(self.tempdir + '/file1','w').write("""
 import Ft
@@ -312,3 +313,19 @@ def main(pipe=None, *args, **kwargs):
         result = d.handleHttpRequest('http', 'host.nl', '/pipe1/pipe2', '', '', {})
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('onetwoAn Error occured: "integer division or modulo by zero" at line 4 in /pipe1', message)
+
+    def testYieldingEmptyPipe(self):
+        open(self.tempdir + '/page','w').write("""
+def main(pipe=None, *args, **kwargs):
+    yield "start"
+    for data in pipe:
+        yield data
+    yield 'end'
+    
+""")
+        reactor = Reactor()
+        d = DynamicHtml(self.tempdir, reactor=reactor)
+        result = d.handleHttpRequest('http', 'host.nl', '/page', '', '', {})
+        headers, message = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('startend', message)
+        

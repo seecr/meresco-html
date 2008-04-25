@@ -9,6 +9,9 @@ from os.path import isdir
 from pyinotify import WatchManager, Notifier, EventsCodes, ProcessEvent
 
 from cgi import escape as escapeHtml
+from amara.binderytools import bind_stream
+from time import time
+from urllib import urlencode
 
 from meresco.framework import Observable
 
@@ -67,6 +70,7 @@ class DynamicHtml(Observable):
                     # standard Python stuff
                     'str': str,
                     'int': int,
+                    'len': len,
                     'False': False,
                     'True': True,
 
@@ -77,9 +81,10 @@ class DynamicHtml(Observable):
 
                     # commonly used/needed methods
                     'escapeHtml': escapeHtml,
+                    'bind_stream': bind_stream,
+                    'time': time,
+                    'urlencode': urlencode,
 
-                    
-                    
                 }
             }, basket)
             self._modules[name] = basket
@@ -113,7 +118,7 @@ class DynamicHtml(Observable):
         i = path.find('/')
         if i < 1:
             name = path
-            nextGenerator =  xrange(0)
+            nextGenerator =  (i for i in [])
         else:
             name = path[:i]
             nextGenerator = self._process(path[i+1:], headers, arguments)
