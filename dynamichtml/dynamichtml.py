@@ -82,6 +82,8 @@ class DynamicHtml(Observable):
                     'ceil': ceil,
                     'unicode': unicode,
                     'range': range,
+                    'enumerate': enumerate,
+                    'map': map,
 
                     # observable stuff
                     'any': self.any,
