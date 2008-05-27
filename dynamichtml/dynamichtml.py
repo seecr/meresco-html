@@ -12,8 +12,10 @@ from cgi import escape as escapeHtml
 from amara.binderytools import bind_stream
 from time import time
 from urllib import urlencode
+from math import ceil
 
-from meresco.framework import Observable
+from meresco.framework import Observable, decorate
+from cq2utils.wrappers import wrapp
 
 class EmptyModule:
     pass
@@ -56,13 +58,13 @@ class DynamicHtml(Observable):
             EventsCodes.IN_CREATE | EventsCodes.IN_MODIFY | EventsCodes.IN_MOVED_TO,
             self._notifyHandler)
         reactor.addReader(directoryWatcher, directoryWatcher)
-        
+
     def _notifyHandler(self, event):
         self.loadModule(event.name)
 
     def loadModule(self, name):
         if self._verbose: print ">> loadModule <<", name
-        
+
         basket = {}
         try:
             execfile(join(self._directory, name), {
@@ -71,9 +73,15 @@ class DynamicHtml(Observable):
                     # standard Python stuff
                     'str': str,
                     'int': int,
+                    'float': float,
                     'len': len,
                     'False': False,
                     'True': True,
+                    'min': min,
+                    'max': max,
+                    'ceil': ceil,
+                    'unicode': unicode,
+                    'range': range,
 
                     # observable stuff
                     'any': self.any,
@@ -82,9 +90,10 @@ class DynamicHtml(Observable):
 
                     # commonly used/needed methods
                     'escapeHtml': escapeHtml,
-                    'bind_stream': bind_stream,
+                    'bind_stream': lambda x:wrapp(bind_stream(x)),
                     'time': time,
                     'urlencode': urlencode,
+                    'decorate': decorate,
 
                 }
             }, basket)
@@ -99,7 +108,7 @@ class DynamicHtml(Observable):
                         moduleMain.func_globals[name] = fakemodule
         except Exception, e:
             print_exc()
-        
+
 
     def __import__(self, name, globals=None, locals=None, fromlist=None):
         if name in self._allowedModules:
@@ -112,7 +121,7 @@ class DynamicHtml(Observable):
                     self.loadModule(name)
             moduleObject = EmptyModule()
             moduleObject.__dict__ = self._modules[name]
-        
+
         globals[name] = moduleObject
 
     def _process(self, path, headers, arguments):
@@ -123,10 +132,10 @@ class DynamicHtml(Observable):
         else:
             name = path[:i]
             nextGenerator = self._process(path[i+1:], headers, arguments)
-        
+
         if not name in self._modules:
             raise DynamicHtmlException('File %s does not exist.' % path)
-        
+
         module = self._modules[name]
         myLocals = {'headers': headers, 'arguments': arguments, 'pipe': nextGenerator}
         myGlobals = {'main': module['main']}
@@ -137,7 +146,7 @@ class DynamicHtml(Observable):
         scheme, netloc, path, query, fragments = urlsplit(RequestURI)
         arguments = parse_qs(query)
         headers = kwargs.get('Headers', {})
-        
+
         return self.handleHttpRequest(scheme, netloc, path, query, fragments, arguments, headers=headers)
 
     def handleHttpRequest(self, scheme, netloc, path, query, fragments, arguments, headers={}):
