@@ -157,14 +157,17 @@ class DynamicHtml(Observable):
             path = self._indexPage
         try:
             generators = self._process(path[1:], headers, arguments)
-            yield 'HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n'
+            contentType = 'text/html'
+            if path.endswith('.xml'):
+                contentType = 'text/xml'
+
+            yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
+
             for line in generators:
                 yield line
         except DynamicHtmlException, e:
             yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
         except Exception:
-            excType, excValue, excTraceback = exc_info()
-            frame = excTraceback.tb_next
-            lineNo = frame.tb_lineno
-            filename = frame.tb_frame.f_code.co_filename
-            yield 'An Error occured: "%s" at line %s in %s' % (excValue, lineNo, filename[len(self._directory):])
+            from traceback import format_exc
+            yield format_exc()
+
