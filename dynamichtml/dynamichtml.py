@@ -9,6 +9,7 @@ from os.path import isdir
 from pyinotify import WatchManager, Notifier, EventsCodes, ProcessEvent
 
 from cgi import escape as escapeHtml
+from xml.sax.saxutils import escape as escapeXml
 from amara.binderytools import bind_stream
 from time import time
 from urllib import urlencode
@@ -84,6 +85,8 @@ class DynamicHtml(Observable):
                     'range': range,
                     'enumerate': enumerate,
                     'map': map,
+                    'sorted': sorted,
+                    'cmp': cmp,
 
                     # observable stuff
                     'any': self.any,
@@ -92,6 +95,7 @@ class DynamicHtml(Observable):
 
                     # commonly used/needed methods
                     'escapeHtml': escapeHtml,
+                    'escapeXml': escapeXml,
                     'bind_stream': lambda x:wrapp(bind_stream(x)),
                     'time': time,
                     'urlencode': urlencode,
