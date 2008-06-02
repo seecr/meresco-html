@@ -91,7 +91,7 @@ def main(*args, **kwargs):
         )
         s = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
         result = ''.join(s.handleHttpRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
-        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nAn Error occured: "integer division or modulo by zero" at line 3 in /testSimple', result)
+        self.assertTrue("integer division or modulo by zero" in result)
 
 
     def testObservability(self):
@@ -312,7 +312,7 @@ def main(pipe=None, *args, **kwargs):
         d = DynamicHtml(self.tempdir, reactor=reactor)
         result = d.handleHttpRequest('http', 'host.nl', '/pipe1/pipe2', '', '', {})
         headers, message = ''.join(result).split('\r\n\r\n')
-        self.assertEquals('onetwoAn Error occured: "integer division or modulo by zero" at line 4 in /pipe1', message)
+        self.assertTrue('integer division or modulo by zero' in message)
 
     def testYieldingEmptyPipe(self):
         open(self.tempdir + '/page','w').write("""

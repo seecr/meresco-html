@@ -165,7 +165,7 @@ class DynamicHtml(Observable):
             if path.endswith('.xml'):
                 contentType = 'text/xml'
 
-            yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
+            yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
 
             for line in generators:
                 yield line
