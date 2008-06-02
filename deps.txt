@@ -1,1 +1,2 @@
 python-pyinotify (>=0.7.1)
+python-pyinotify (<<0.8)
