@@ -157,6 +157,7 @@ class DynamicHtml(Observable):
                 'map': map,
                 'sorted': sorted,
                 'cmp': cmp,
+                'dict': dict,
 
                 # observable stuff
                 'any': self.any,
