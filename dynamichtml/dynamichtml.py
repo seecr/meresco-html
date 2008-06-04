@@ -1,10 +1,10 @@
-from os.path import join, isfile
-from os import listdir, walk as dirwalk
+from glob import glob
+from os.path import join, isfile, isdir, dirname, basename, abspath
+from os import walk as dirwalk
 from sys import exc_info
 from traceback import print_exc, format_exc
 from cgi import parse_qs
 from urlparse import urlsplit
-from os.path import isdir, dirname, basename
 
 from pyinotify import WatchManager, Notifier, EventsCodes, ProcessEvent
 
@@ -51,13 +51,12 @@ class DynamicHtml(Observable):
         self._indexPage = indexPage
         self._allowedModules = allowedModules
         self._modules = {}
-        self._loadModules()
+        self._loadModuleFromPaths()
         self._initMonitoringForFileChanges(reactor)
 
-    def _loadModules(self):
-        for f in listdir(self._directory):
-            if f not in self._modules and not isdir(f):
-                self.loadModule(f)
+    def _loadModuleFromPaths(self):
+        for path in glob(self._directory + '/*.sf'):
+            self.loadModuleFromPath(path)
 
     def _initMonitoringForFileChanges(self, reactor):
         directoryWatcher = DirectoryWatcher(
@@ -67,22 +66,21 @@ class DynamicHtml(Observable):
         reactor.addReader(directoryWatcher, directoryWatcher)
 
     def _notifyHandler(self, event):
-        self.loadModule(event.name)
+        self.loadModuleFromPath(join(self._directory, event.name))
 
-    def loadModule(self, name):
-        if self._verbose: print ">> loadModule <<", name
-
+    def loadModuleFromPath(self, path):
+        moduleName = basename(path)[:-len('.sf')]
         basket = {}
         try:
-            execfile(join(self._directory, name), self.getGlobals(), basket)
+            execfile(path, self.getGlobals(), basket)
         except Exception, e:
             s = escapeHtml(format_exc())
             basket['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
-        self._modules[name] = basket
+        self._modules[moduleName] = basket
         self._addModuleGlobalsToMain(basket)
         newModule = EmptyModule()
-        newModule.__dict__ = self._modules[name]
-        self._replaceModuleReferencesInOtherModules(name, newModule)
+        newModule.__dict__ = self._modules[moduleName]
+        self._replaceModuleReferencesInOtherModules(moduleName, newModule)
 
     def _addModuleGlobalsToMain(self, globals):
         main = globals['main']
@@ -97,19 +95,17 @@ class DynamicHtml(Observable):
                 if symbolName in moduleMain.func_globals:
                     moduleMain.func_globals[symbolName] = newModule
 
-    def __import__(self, name, globals=None, locals=None, fromlist=None):
-        if name in self._allowedModules:
-             moduleObject = __import__(name)
+    def __import__(self, moduleName, globals=None, locals=None, fromlist=None):
+        if moduleName in self._allowedModules:
+             moduleObject = __import__(moduleName)
         else:
-            if not name in self._modules:
-                if not name in listdir(self._directory):
-                    raise KeyError('Error importing ' + name)
-                else:
-                    self.loadModule(name)
+            if not moduleName in self._modules:
+                filename = moduleName.replace('.', '/') + '.sf'
+                self.loadModuleFromPath(join(self._directory, filename))
             moduleObject = EmptyModule()
-            moduleObject.__dict__ = self._modules[name]
+            moduleObject.__dict__ = self._modules[moduleName]
 
-        globals[name] = moduleObject
+        globals[moduleName] = moduleObject
 
     def _createMainGenerator(self, path, headers, arguments):
         i = path.find('/')
@@ -119,10 +115,8 @@ class DynamicHtml(Observable):
         else:
             name = path[:i]
             nextGenerator = self._createMainGenerator(path[i+1:], headers, arguments)
-
         if not name in self._modules:
             raise DynamicHtmlException('File %s does not exist.' % path)
-
         module = self._modules[name]
         myLocals = {'headers': headers, 'arguments': arguments, 'pipe': nextGenerator}
         myGlobals = {'main': module['main']}
