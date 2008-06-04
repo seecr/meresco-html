@@ -73,17 +73,38 @@ def main(*args, **kwargs):
         result = ''.join(s.handleHttpRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
         self.assertTrue('local is available' in result, result)
 
-    #def testUseModuleLocalsRecursive(self):
-        #open(self.tempdir+'/testSimple', 'w').write(
-#"""
-#moduleLocal = "local is available"
-#def main(*args, **kwargs):
-    #yield moduleLocal
-#"""
-            #)
-        #s = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
-        #result = ''.join(s.handleHttpRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
-        #self.assertTrue('local is available' in result, result)
+    def testUseModuleLocalsRecursive(self):
+        open(self.tempdir+'/testSimple', 'w').write(
+"""
+def recursiveModuleLocal(recurse):
+    if recurse:
+        return recursiveModuleLocal(recurse=False)
+    return "recursiveModuleLocal result"
+
+def main(*args, **kwargs):
+    yield recursiveModuleLocal(recurse=True)
+"""
+            )
+        s = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
+        result = ''.join(s.handleHttpRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        self.assertTrue('recursiveModuleLocal result' in result, result)
+
+    def testUseModuleLocalsCrissCross(self):
+        open(self.tempdir+'/testSimple', 'w').write(
+"""
+def f():
+    return "f()"
+
+def g():
+    return "g(%s)" % f()
+
+def main(*args, **kwargs):
+    yield g()
+"""
+            )
+        s = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
+        result = ''.join(s.handleHttpRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        self.assertTrue('g(f())' in result, result)
 
     def testErrorWhileImporting(self):
         sys.stderr = StringIO()
