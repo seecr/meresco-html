@@ -217,29 +217,28 @@ def main(*args, **kwargs):
         reactor = Reactor()
 
         open(self.tempdir + '/file1','w').write("""
-def main(value, headers={}, *args, **kwargs):
-    return value
+def main(value, *args, **kwargs):
+    return "original template %s" % value
 """)
         open(self.tempdir + '/file2','w').write("""
 import file1
 
-def main(headers={}, *args, **kwargs):
-   yield file1.main(value='word!', headers=headers, *args, **kwargs)
+def main(*args, **kwargs):
+   yield file1.main(value='word!', *args, **kwargs)
 """)
 
         d = DynamicHtml(self.tempdir, reactor=reactor)
-        result = d.handleHttpRequest('http', 'host.nl', '/file2', '?query=something', '#fragments', {'query': 'something'})
-        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nword!', ''.join(result))
+        result = ''.join(d.handleHttpRequest('http', 'host.nl', '/file2'))
+        self.assertTrue('original template word!' in result, result)
 
         open(self.tempdir + '/file1','w').write("""
-def main(value, headers={}, *args, **kwargs):
-    return "the value is: "+ value
+def main(value, *args, **kwargs):
+    return "changed template %s" % value
 """)
 
         reactor.step()
-        result = d.handleHttpRequest('http', 'host.nl', '/file2', '?query=something', '#fragments', {'query': 'something'})
-        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nthe value is: word!', ''.join(result))
-
+        result = ''.join(d.handleHttpRequest('http', 'host.nl', '/file2'))
+        self.assertTrue('changed template word!' in result)
 
     def testBuiltins(self):
         from weightless import Reactor
