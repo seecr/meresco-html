@@ -110,6 +110,10 @@ class DynamicHtml(Observable):
             s = escapeHtml(format_exc())
             basket['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
         self._modules[name] = basket
+        main = basket['main']
+        for key, value in basket.items():
+            if key not in main.func_globals:
+                main.func_globals[key] = value
         newModule = EmptyModule()
         newModule.__dict__ = self._modules[name]
         self._replaceModuleReferencesInOtherModules(name, newModule)

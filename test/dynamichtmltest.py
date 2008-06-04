@@ -60,6 +60,31 @@ def main(*args, **kwargs):
         result = ''.join(compose(s.handleHttpRequest('http', 'host.nl', '/other', '?query=something', '#fragments', {'query': 'something'})))
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nmeissnake', result)
 
+
+    def testUseModuleLocals(self):
+        open(self.tempdir+'/testSimple', 'w').write(
+"""
+moduleLocal = "local is available"
+def main(*args, **kwargs):
+    yield moduleLocal
+"""
+            )
+        s = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
+        result = ''.join(s.handleHttpRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        self.assertTrue('local is available' in result, result)
+
+    #def testUseModuleLocalsRecursive(self):
+        #open(self.tempdir+'/testSimple', 'w').write(
+#"""
+#moduleLocal = "local is available"
+#def main(*args, **kwargs):
+    #yield moduleLocal
+#"""
+            #)
+        #s = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
+        #result = ''.join(s.handleHttpRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        #self.assertTrue('local is available' in result, result)
+
     def testErrorWhileImporting(self):
         sys.stderr = StringIO()
         try:
