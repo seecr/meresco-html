@@ -1,10 +1,10 @@
 from os.path import join, isfile
-from os import listdir
+from os import listdir, walk as dirwalk
 from sys import exc_info
-from traceback import print_exc
+from traceback import print_exc, format_exc
 from cgi import parse_qs
 from urlparse import urlsplit
-from os.path import isdir
+from os.path import isdir, dirname, basename
 
 from pyinotify import WatchManager, Notifier, EventsCodes, ProcessEvent
 
@@ -15,7 +15,7 @@ from time import time
 from urllib import urlencode
 from math import ceil
 
-from meresco.framework import Observable, decorate
+from meresco.framework import Observable, decorate, compose
 from cq2utils.wrappers import wrapp
 
 class EmptyModule:
@@ -98,23 +98,28 @@ class DynamicHtml(Observable):
                     'escapeXml': escapeXml,
                     'bind_stream': lambda x:wrapp(bind_stream(x)),
                     'time': time,
-                    'urlencode': urlencode,
+                    'urlencode': lambda x: urlencode(x, doseq=True),
                     'decorate': decorate,
+                    'dirwalk': dirwalk,
+                    'dirname': dirname,
+                    'basename': basename
 
                 }
             }, basket)
-            self._modules[name] = basket
-
-            fakemodule = EmptyModule()
-            fakemodule.__dict__ = self._modules[name]
-            for module in self._modules.values():
-                if 'main' in module:
-                    moduleMain = module['main']
-                    if name in moduleMain.func_globals:
-                        moduleMain.func_globals[name] = fakemodule
         except Exception, e:
-            print_exc()
+            s = escapeHtml(format_exc())
+            basket['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
+        self._modules[name] = basket
+        newModule = EmptyModule()
+        newModule.__dict__ = self._modules[name]
+        self._replaceModuleReferencesInOtherModules(name, newModule)
 
+    def _replaceModuleReferencesInOtherModules(self, symbolName, newModule):
+        for module in self._modules.values():
+            if 'main' in module:
+                moduleMain = module['main']
+                if symbolName in moduleMain.func_globals:
+                    moduleMain.func_globals[symbolName] = newModule
 
     def __import__(self, name, globals=None, locals=None, fromlist=None):
         if name in self._allowedModules:
@@ -167,11 +172,13 @@ class DynamicHtml(Observable):
 
             yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
 
-            for line in generators:
+            for line in compose(generators):
                 yield line
         except DynamicHtmlException, e:
             yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
         except Exception:
-            from traceback import format_exc
-            yield format_exc()
+            s = format_exc() #cannot be inlined
+            yield "<pre>"
+            yield escapeHtml(s)
+            yield "</pre>"
 

@@ -15,7 +15,7 @@ class DynamicHtmlTest(CQ2TestCase):
         d = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
         result = d.handleHttpRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile path does not exist.', ''.join(result))
-        
+
     def testASimpleFlatFile(self):
         open(self.tempdir+'/afile','w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
@@ -72,8 +72,7 @@ def main(*args, **kwargs):
             )
             s = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
             result = ''.join(s.handleHttpRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
-            self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile testSimple does not exist.', result)
-            self.assertTrue('x = 1/0\nZeroDivisionError: integer division or modulo by zero' in sys.stderr.getvalue())
+            self.assertTrue('x = 1/0\nZeroDivisionError: integer division or modulo by zero' in result)
         finally:
             sys.stderr = sys.__stderr__
 
@@ -98,7 +97,7 @@ def main(*args, **kwargs):
         class Something(object):
             def something(*args, **kwargs):
                 return "something"
-        
+
         open(self.tempdir+'/afile','w').write("""#
 def main(*args, **kwargs):
   yield any.something()
@@ -115,49 +114,49 @@ def main(*args, **kwargs):
     def testHeaders(self):
         from weightless import Reactor
         reactor = Reactor()
-        
+
         d = DynamicHtml(self.tempdir, reactor=reactor)
         open(self.tempdir+'/file','w').write('def main(headers={}, *args, **kwargs): \n  yield str(headers)')
         reactor.step()
-        
+
         result = d.handleHttpRequest('http', 'host.nl', '/file', '?query=something', '#fragments', {'query': 'something'}, headers={'key': 'value'})
         self.assertEquals("""HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n{'key': 'value'}""", ''.join(result))
-        
+
 
     def testCreateFileCausesReload(self):
         from weightless import Reactor
         reactor = Reactor()
-        
+
         d = DynamicHtml(self.tempdir, reactor=reactor)
         open(self.tempdir+'/file1','w').write('def main(*args, **kwargs): \n  yield "one"')
         reactor.step()
-        
+
         result = d.handleHttpRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
     def testModifyFileCausesReload(self):
         from weightless import Reactor
         reactor = Reactor()
-        
+
         open(self.tempdir+'/file1','w').write('def main(*args, **kwargs): \n  yield "one"')
         d = DynamicHtml(self.tempdir, reactor=reactor)
-        
+
         result = d.handleHttpRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
         open(self.tempdir+'/file1','w').write('def main(*args, **kwargs): \n  yield "two"')
         reactor.step()
-        
+
         result = d.handleHttpRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\ntwo', ''.join(result))
 
     def testFileMovedIntoDirectoryCausesReload(self):
         from weightless import Reactor
         reactor = Reactor()
-        
+
         open('/tmp/file1','w').write('def main(*args, **kwargs): \n  yield "one"')
         d = DynamicHtml(self.tempdir, reactor=reactor)
-        
+
         result = d.handleHttpRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile file1 does not exist.', ''.join(result))
 
@@ -170,7 +169,7 @@ def main(*args, **kwargs):
     def testReloadImportedModules(self):
         from weightless import Reactor
         reactor = Reactor()
-        
+
         open(self.tempdir + '/file1','w').write("""
 def main(value, headers={}, *args, **kwargs):
     return value
@@ -195,11 +194,11 @@ def main(value, headers={}, *args, **kwargs):
         result = d.handleHttpRequest('http', 'host.nl', '/file2', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nthe value is: word!', ''.join(result))
 
-        
+
     def testBuiltins(self):
         from weightless import Reactor
         reactor = Reactor()
-        
+
         open(self.tempdir + '/file1','w').write("""
 def main(headers={}, *args, **kwargs):
     yield str(True)
@@ -227,11 +226,11 @@ def main(headers={}, *args, **kwargs):
         d = DynamicHtml(self.tempdir, reactor=reactor)
         result = d.handleHttpRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;', ''.join(result))
-        
+
 
     def testImportForgeinModules(self):
         reactor = Reactor()
-        
+
         open(self.tempdir + '/file1','w').write("""
 import Ft
 
@@ -285,7 +284,7 @@ def main(pipe=None, *args, **kwargs):
     for data in pipe:
         yield data
 """ % i)
-        
+
         reactor = Reactor()
         d = DynamicHtml(self.tempdir, reactor=reactor)
         result = d.handleHttpRequest('http', 'host.nl', '/' + '/'.join(filenames), '', '', {})
@@ -306,7 +305,7 @@ def main(pipe=None, *args, **kwargs):
     yield 'two'
     1/0
     yield 'three'
-    
+
 """)
         reactor = Reactor()
         d = DynamicHtml(self.tempdir, reactor=reactor)
@@ -321,7 +320,7 @@ def main(pipe=None, *args, **kwargs):
     for data in pipe:
         yield data
     yield 'end'
-    
+
 """)
         reactor = Reactor()
         d = DynamicHtml(self.tempdir, reactor=reactor)
@@ -333,19 +332,18 @@ def main(pipe=None, *args, **kwargs):
         open(self.tempdir + '/page','w').write("""
 def main(*args, **kwargs):
     yield "index"
-    
+
 """)
         reactor = Reactor()
         d = DynamicHtml(self.tempdir, reactor=reactor)
         result = d.handleHttpRequest('http', 'host.nl', '/', '', '', {})
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('File  does not exist.', message)
-        
+
         reactor = Reactor()
         d = DynamicHtml(self.tempdir, reactor=reactor, indexPage='/page')
         result = d.handleHttpRequest('http', 'host.nl', '/', '', '', {})
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('index', message)
 
-        
-        
+
