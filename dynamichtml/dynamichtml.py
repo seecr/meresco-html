@@ -18,8 +18,9 @@ from math import ceil
 from meresco.framework import Observable, decorate, compose
 from cq2utils.wrappers import wrapp
 
-class EmptyModule:
-    pass
+class Module:
+    def __init__(self, moduleGlobals):
+        self.__dict__ = moduleGlobals
 
 class DirectoryWatcher(object):
     def __init__(self, path, mask, method):
@@ -70,30 +71,22 @@ class DynamicHtml(Observable):
 
     def loadModuleFromPath(self, path):
         moduleName = basename(path)[:-len('.sf')]
-        basket = {}
+        moduleGlobals = self.createGlobals()
+        createdLocals = {}
         try:
-            execfile(path, self.getGlobals(), basket)
+            execfile(path, moduleGlobals, createdLocals)
         except Exception, e:
             s = escapeHtml(format_exc())
-            basket['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
-        self._modules[moduleName] = basket
-        self._addModuleGlobalsToMain(basket)
-        newModule = EmptyModule()
-        newModule.__dict__ = self._modules[moduleName]
+            createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
+        moduleGlobals.update(createdLocals)
+        newModule = Module(moduleGlobals)
         self._replaceModuleReferencesInOtherModules(moduleName, newModule)
+        self._modules[moduleName] = newModule
 
-    def _addModuleGlobalsToMain(self, globals):
-        main = globals['main']
-        for globalName, globalValue in globals.items():
-            if globalName not in main.func_globals:
-                main.func_globals[globalName] = globalValue
-
-    def _replaceModuleReferencesInOtherModules(self, symbolName, newModule):
+    def _replaceModuleReferencesInOtherModules(self, moduleName, newModule):
         for module in self._modules.values():
-            if 'main' in module:
-                moduleMain = module['main']
-                if symbolName in moduleMain.func_globals:
-                    moduleMain.func_globals[symbolName] = newModule
+            if moduleName in module.__dict__:
+                module.__dict__[moduleName] = newModule
 
     def __import__(self, moduleName, globals=None, locals=None, fromlist=None):
         if moduleName in self._allowedModules:
@@ -102,10 +95,8 @@ class DynamicHtml(Observable):
             if not moduleName in self._modules:
                 filename = moduleName.replace('.', '/') + '.sf'
                 self.loadModuleFromPath(join(self._directory, filename))
-            moduleObject = EmptyModule()
-            moduleObject.__dict__ = self._modules[moduleName]
-
-        globals[moduleName] = moduleObject
+            moduleObject = self._modules[moduleName]
+        return moduleObject
 
     def _createMainGenerator(self, path, headers, arguments):
         i = path.find('/')
@@ -117,17 +108,13 @@ class DynamicHtml(Observable):
             nextGenerator = self._createMainGenerator(path[i+1:], headers, arguments)
         if not name in self._modules:
             raise DynamicHtmlException('File %s does not exist.' % path)
-        module = self._modules[name]
-        myLocals = {'headers': headers, 'arguments': arguments, 'pipe': nextGenerator}
-        myGlobals = {'main': module['main']}
-        exec 'generator = main(headers=headers, arguments=arguments, pipe=pipe)' in myGlobals, myLocals
-        return myLocals['generator']
+        main = self._modules[name].main
+        return main(headers=headers, arguments=arguments, pipe=nextGenerator)
 
     def handleRequest(self, RequestURI=None, *args, **kwargs):
         scheme, netloc, path, query, fragments = urlsplit(RequestURI)
         arguments = parse_qs(query)
         headers = kwargs.get('Headers', {})
-
         return self.handleHttpRequest(scheme, netloc, path, query, fragments, arguments, headers=headers)
 
     def handleHttpRequest(self, scheme, netloc, path, query='', fragments='', arguments={}, headers={}):
@@ -139,9 +126,7 @@ class DynamicHtml(Observable):
             contentType = 'text/html'
             if path.endswith('.xml'):
                 contentType = 'text/xml'
-
             yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
-
             for line in compose(generators):
                 yield line
         except DynamicHtmlException, e:
@@ -152,44 +137,41 @@ class DynamicHtml(Observable):
             yield escapeHtml(s)
             yield "</pre>"
 
-    def getGlobals(self):
-        if not self._globals:
-            self._globals = {
-                '__builtins__': {
-                    '__import__': self.__import__,
-                    # standard Python stuff
-                    'str': str,
-                    'int': int,
-                    'float': float,
-                    'len': len,
-                    'False': False,
-                    'True': True,
-                    'min': min,
-                    'max': max,
-                    'ceil': ceil,
-                    'unicode': unicode,
-                    'range': range,
-                    'enumerate': enumerate,
-                    'map': map,
-                    'sorted': sorted,
-                    'cmp': cmp,
+    def createGlobals(self):
+        return {
+            '__builtins__': {
+                '__import__': self.__import__,
+                # standard Python stuff
+                'str': str,
+                'int': int,
+                'float': float,
+                'len': len,
+                'False': False,
+                'True': True,
+                'min': min,
+                'max': max,
+                'ceil': ceil,
+                'unicode': unicode,
+                'range': range,
+                'enumerate': enumerate,
+                'map': map,
+                'sorted': sorted,
+                'cmp': cmp,
 
-                    # observable stuff
-                    'any': self.any,
-                    'all': self.all,
-                    'do': self.do,
+                # observable stuff
+                'any': self.any,
+                'all': self.all,
+                'do': self.do,
 
-                    # commonly used/needed methods
-                    'escapeHtml': escapeHtml,
-                    'escapeXml': escapeXml,
-                    'bind_stream': lambda x:wrapp(bind_stream(x)),
-                    'time': time,
-                    'urlencode': lambda x: urlencode(x, doseq=True),
-                    'decorate': decorate,
-                    'dirwalk': dirwalk,
-                    'dirname': dirname,
-                    'basename': basename
-
-                }
+                # commonly used/needed methods
+                'escapeHtml': escapeHtml,
+                'escapeXml': escapeXml,
+                'bind_stream': lambda x:wrapp(bind_stream(x)),
+                'time': time,
+                'urlencode': lambda x: urlencode(x, doseq=True),
+                'decorate': decorate,
+                'dirwalk': dirwalk,
+                'dirname': dirname,
+                'basename': basename
             }
-        return self._globals
+        }
