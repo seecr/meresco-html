@@ -6,7 +6,7 @@ from traceback import print_exc, format_exc
 from cgi import parse_qs
 from urlparse import urlsplit
 
-from pyinotify import WatchManager, Notifier, EventsCodes, ProcessEvent
+from pyinotify import EventsCodes
 
 from cgi import escape as escapeHtml
 from xml.sax.saxutils import escape as escapeXml
@@ -17,27 +17,11 @@ from math import ceil
 
 from meresco.framework import Observable, decorate, compose
 from cq2utils.wrappers import wrapp
+from cq2utils import DirectoryWatcher
 
 class Module:
     def __init__(self, moduleGlobals):
         self.__dict__ = moduleGlobals
-
-class DirectoryWatcher(object):
-    def __init__(self, path, mask, method):
-        self._wm = WatchManager()
-        self._wm.add_watch(path, mask)
-        self._notifier = Notifier(self._wm, method)
-
-    def fileno(self):
-        return self._notifier._fd
-
-    def close(self):
-        self._notifier.stop()
-
-    def __call__(self):
-        self._notifier.read_events()
-        self._notifier.process_events()
-
 class DynamicHtmlException(Exception):
     pass
 

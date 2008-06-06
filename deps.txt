@@ -1,2 +1,6 @@
 python-pyinotify (>=0.7.1)
 python-pyinotify (<<0.8)
+python-cq2utils (>=5.2)
+python-cq2utils (<<5.3)
+python-weightless (>=0.2)
+python-weightless (<<0.3)
