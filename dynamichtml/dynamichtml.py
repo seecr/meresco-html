@@ -2,7 +2,7 @@ from glob import glob
 from os.path import join, isfile, isdir, dirname, basename, abspath
 from os import walk as dirwalk
 from sys import exc_info
-from traceback import print_exc, format_exc
+from traceback import format_exc
 from cgi import parse_qs
 from urlparse import urlsplit
 
@@ -46,8 +46,8 @@ class DynamicHtml(Observable):
     def _initMonitoringForFileChanges(self, reactor):
         directoryWatcher = DirectoryWatcher(
             self._directory,
-            EventsCodes.IN_CREATE | EventsCodes.IN_MODIFY | EventsCodes.IN_MOVED_TO,
-            self._notifyHandler)
+            self._notifyHandler,
+            CreateFile=True, ModifyFile=True, MoveInFile=True)
         reactor.addReader(directoryWatcher, directoryWatcher)
 
     def _notifyHandler(self, event):
