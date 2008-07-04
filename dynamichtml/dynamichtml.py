@@ -142,6 +142,7 @@ class DynamicHtml(Observable):
                 'sorted': sorted,
                 'cmp': cmp,
                 'dict': dict,
+                'set': set,
 
                 # observable stuff
                 'any': self.any,
