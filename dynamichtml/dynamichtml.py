@@ -82,31 +82,30 @@ class DynamicHtml(Observable):
             moduleObject = self._modules[moduleName]
         return moduleObject
 
-    def _createMainGenerator(self, path, headers, arguments):
+    def _createMainGenerator(self, path, headers, arguments, **kwargs):
         i = path.find('/')
         if i < 1:
             name = path
             nextGenerator =  (i for i in [])
         else:
             name = path[:i]
-            nextGenerator = self._createMainGenerator(path[i+1:], headers, arguments)
+            nextGenerator = self._createMainGenerator(path[i+1:], headers, arguments, **kwargs)
         if not name in self._modules:
             raise DynamicHtmlException('File %s does not exist.' % path)
         main = self._modules[name].main
-        return main(headers=headers, arguments=arguments, pipe=nextGenerator)
+        return main(headers=headers, arguments=arguments, pipe=nextGenerator, **kwargs)
 
-    def handleRequest(self, RequestURI=None, *args, **kwargs):
+    def handleRequest(self, RequestURI=None, Headers=None, *args, **kwargs):
         scheme, netloc, path, query, fragments = urlsplit(RequestURI)
         arguments = parse_qs(query)
-        headers = kwargs.get('Headers', {})
-        return self.handleHttpRequest(scheme, netloc, path, query, fragments, arguments, headers=headers)
+        return self.handleHttpRequest(scheme, netloc, path, query, fragments, arguments, headers=Headers, **kwargs)
 
-    def handleHttpRequest(self, scheme, netloc, path, query='', fragments='', arguments={}, headers={}):
+    def handleHttpRequest(self, scheme, netloc, path, query='', fragments='', arguments={}, headers={}, **kwargs):
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
             path = self._indexPage
         try:
-            generators = self._createMainGenerator(path[1:], headers, arguments)
+            generators = self._createMainGenerator(path[1:], headers, arguments, **kwargs)
             contentType = 'text/html'
             if path.endswith('.xml'):
                 contentType = 'text/xml'
@@ -158,6 +157,7 @@ class DynamicHtml(Observable):
                 'decorate': decorate,
                 'dirwalk': dirwalk,
                 'dirname': dirname,
-                'basename': basename
+                'basename': basename,
+                'parse_qs': parse_qs
             }
         }

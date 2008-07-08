@@ -29,8 +29,7 @@ class DynamicHtmlTest(CQ2TestCase):
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', ''.join(result))
 
     def testSimpleGenerator(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write(
-"""
+        open(self.tempdir+'/testSimple.sf', 'w').write("""
 def main(*args, **kwargs):
   for n in ('aap', 'noot', 'mies'):
     yield str(n)
@@ -41,15 +40,13 @@ def main(*args, **kwargs):
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\naapnootmies', result)
 
     def testIncludeOther(self):
-        open(self.tempdir+'/simple.sf', 'w').write(
-"""
+        open(self.tempdir+'/simple.sf', 'w').write("""
 def main(*args, **kwargs):
     yield 'is'
     yield 'snake'
 """
         )
-        open(self.tempdir+'/other.sf', 'w').write(
-"""
+        open(self.tempdir+'/other.sf', 'w').write("""
 import simple
 def main(*args, **kwargs):
     yield 'me'
@@ -62,8 +59,7 @@ def main(*args, **kwargs):
 
 
     def testUseModuleLocals(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write(
-"""
+        open(self.tempdir+'/testSimple.sf', 'w').write("""
 moduleLocal = "local is available"
 def main(*args, **kwargs):
     yield moduleLocal
@@ -74,8 +70,7 @@ def main(*args, **kwargs):
         self.assertTrue('local is available' in result, result)
 
     def testUseModuleLocalsRecursive(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write(
-"""
+        open(self.tempdir+'/testSimple.sf', 'w').write("""
 def recursiveModuleLocal(recurse):
     if recurse:
         return recursiveModuleLocal(recurse=False)
@@ -90,8 +85,7 @@ def main(*args, **kwargs):
         self.assertTrue('recursiveModuleLocal result' in result, result)
 
     def testUseModuleLocalsCrissCross(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write(
-"""
+        open(self.tempdir+'/testSimple.sf', 'w').write("""
 def f():
     return "f()"
 
@@ -109,8 +103,7 @@ def main(*args, **kwargs):
     def testErrorWhileImporting(self):
         sys.stderr = StringIO()
         try:
-            open(self.tempdir+'/testSimple.sf', 'w').write(
-"""
+            open(self.tempdir+'/testSimple.sf', 'w').write("""
 x = 1/0
 def main(*args, **kwargs):
   pass
@@ -123,8 +116,7 @@ def main(*args, **kwargs):
             sys.stderr = sys.__stderr__
 
     def testRuntimeError(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write(
-"""
+        open(self.tempdir+'/testSimple.sf', 'w').write("""
 def main(*args, **kwargs):
   yield 1/0
   input = yield
@@ -415,3 +407,17 @@ def main(*args, **kwargs):
         d = DynamicHtml(self.tempdir, reactor=reactor)
         result = ''.join(d.handleHttpRequest('http', 'host.nl', '/page', '', '', {}))
         self.assertTrue('should not happen' not in result, result)
+
+    def testHandlePOSTRequest(self):
+        open(self.tempdir + '/page.sf', 'w').write(r"""
+def main(headers={}, Body=None, Method=None, *args, **kwargs):
+    yield 'Content-Type: %s\n' % headers.get('Content-Type')
+    yield 'Body: %s\n' % Body
+    yield 'Method: %s\n' % Method
+"""
+        )
+        reactor = Reactor()
+        d = DynamicHtml(self.tempdir, reactor=reactor)
+        result = ''.join(d.handleRequest(RequestURI= 'http://host.nl/page' , Method='POST', Body='label=value&otherlabel=value', Headers={'Content-Type':'application/x-www-form-urlencoded'}))
+
+        self.assertTrue('Content-Type: application/x-www-form-urlencoded\nBody: label=value&otherlabel=value\nMethod: POST\n' in result, result)
