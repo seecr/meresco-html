@@ -14,6 +14,7 @@ from amara.binderytools import bind_stream
 from time import time
 from urllib import urlencode
 from math import ceil
+from functools import partial
 
 from meresco.framework import Observable, decorate, compose
 from cq2utils.wrappers import wrapp
@@ -95,17 +96,12 @@ class DynamicHtml(Observable):
         main = self._modules[name].main
         return main(headers=headers, arguments=arguments, pipe=nextGenerator, **kwargs)
 
-    def handleRequest(self, RequestURI=None, Headers=None, *args, **kwargs):
-        scheme, netloc, path, query, fragments = urlsplit(RequestURI)
-        arguments = parse_qs(query)
-        return self.handleHttpRequest(scheme, netloc, path, query, fragments, arguments, headers=Headers, **kwargs)
-
-    def handleHttpRequest(self, scheme, netloc, path, query='', fragments='', arguments={}, headers={}, **kwargs):
+    def handleRequest(self, scheme='', netloc='', path='', query='', fragments='', arguments={}, Headers={}, **kwargs):
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
             path = self._indexPage
         try:
-            generators = self._createMainGenerator(path[1:], headers, arguments, **kwargs)
+            generators = self._createMainGenerator(path[1:], Headers, arguments=arguments, **kwargs)
             contentType = 'text/html'
             if path.endswith('.xml'):
                 contentType = 'text/xml'
@@ -126,6 +122,7 @@ class DynamicHtml(Observable):
                 '__import__': self.__import__,
                 # standard Python stuff
                 'str': str,
+                'repr': repr,
                 'int': int,
                 'float': float,
                 'len': len,
@@ -142,6 +139,9 @@ class DynamicHtml(Observable):
                 'cmp': cmp,
                 'dict': dict,
                 'set': set,
+                'list': list,
+                'id': id,
+                'partial': partial,
 
                 # observable stuff
                 'any': self.any,
