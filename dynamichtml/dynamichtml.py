@@ -23,7 +23,11 @@ from cq2utils import DirectoryWatcher
 class Module:
     def __init__(self, moduleGlobals):
         self.__dict__ = moduleGlobals
+
 class DynamicHtmlException(Exception):
+    pass
+
+class RedirectException(Exception):
     pass
 
 class DynamicHtml(Observable):
@@ -83,31 +87,33 @@ class DynamicHtml(Observable):
             moduleObject = self._modules[moduleName]
         return moduleObject
 
-    def _createMainGenerator(self, path, headers, arguments, **kwargs):
+    def _createMainGenerator(self, path, Headers, arguments, **kwargs):
         i = path.find('/')
         if i < 1:
             name = path
             nextGenerator =  (i for i in [])
         else:
             name = path[:i]
-            nextGenerator = self._createMainGenerator(path[i+1:], headers, arguments, **kwargs)
+            nextGenerator = self._createMainGenerator(path[i+1:], Headers=Headers, arguments=arguments, **kwargs)
         if not name in self._modules:
             raise DynamicHtmlException('File %s does not exist.' % path)
         main = self._modules[name].main
-        return main(headers=headers, arguments=arguments, pipe=nextGenerator, **kwargs)
+        return main(Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
 
     def handleRequest(self, scheme='', netloc='', path='', query='', fragments='', arguments={}, Headers={}, **kwargs):
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
             path = self._indexPage
         try:
-            generators = self._createMainGenerator(path[1:], Headers, arguments=arguments, **kwargs)
+            generators = self._createMainGenerator(path[1:], Headers=Headers, arguments=arguments, **kwargs)
             contentType = 'text/html'
             if path.endswith('.xml'):
                 contentType = 'text/xml'
             yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
             for line in compose(generators):
                 yield line
+        except RedirectException, e:
+            yield 'HTTP/1.0 302 Found\r\nLocation: %s\r\n\r\n' % str(e)
         except DynamicHtmlException, e:
             yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
         except Exception:
@@ -158,6 +164,9 @@ class DynamicHtml(Observable):
                 'dirwalk': dirwalk,
                 'dirname': dirname,
                 'basename': basename,
-                'parse_qs': parse_qs
+                'parse_qs': parse_qs,
+
+                # Exceptions
+                'Redirect': RedirectException
             }
         }
