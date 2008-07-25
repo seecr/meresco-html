@@ -27,8 +27,9 @@ class Module:
 class DynamicHtmlException(Exception):
     pass
 
-class RedirectException(Exception):
-    pass
+class Http(object):
+    def redirect(self, location):
+        return "HTTP/1.0 302 Found\r\nLocation: %(location)s\r\n\r\n" % locals()
 
 class DynamicHtml(Observable):
 
@@ -104,18 +105,31 @@ class DynamicHtml(Observable):
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
             path = self._indexPage
+
         try:
-            generators = self._createMainGenerator(path[1:], Headers=Headers, arguments=arguments, **kwargs)
+            generators = compose(self._createMainGenerator(path[1:], Headers=Headers, arguments=arguments, **kwargs))
+        except DynamicHtmlException, e:
+            yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
+            return
+
+        try:
+            firstLine = str(generators.next())
+        except Exception:
+            s = format_exc() #cannot be inlined
+            yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
+            yield str(s)
+            return
+
+        if not firstLine.startswith('HTTP/1.'):
             contentType = 'text/html'
             if path.endswith('.xml'):
                 contentType = 'text/xml'
             yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
-            for line in compose(generators):
-                yield line
-        except RedirectException, e:
-            yield 'HTTP/1.0 302 Found\r\nLocation: %s\r\n\r\n' % str(e)
-        except DynamicHtmlException, e:
-            yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
+        yield firstLine
+
+        try:
+            for line in generators:
+                yield str(line)
         except Exception:
             s = format_exc() #cannot be inlined
             yield "<pre>"
@@ -166,7 +180,6 @@ class DynamicHtml(Observable):
                 'basename': basename,
                 'parse_qs': parse_qs,
 
-                # Exceptions
-                'Redirect': RedirectException
+                'http': Http()
             }
         }

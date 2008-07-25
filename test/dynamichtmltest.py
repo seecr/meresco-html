@@ -128,7 +128,8 @@ def main(*args, **kwargs):
         )
         s = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
         result = ''.join(s.handleRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
-        self.assertTrue("integer division or modulo by zero" in result)
+        self.assertTrue("HTTP/1.0 500 Internal Server Error\r\n\r\n" in result, result)
+        self.assertTrue("integer division or modulo by zero" in result, result)
 
 
     def testObservability(self):
@@ -252,11 +253,12 @@ def main(headers={}, *args, **kwargs):
         open(self.tempdir + '/file1.sf', 'w').write("""
 def main(headers={}, *args, **kwargs):
     yield int('1')
+    yield 2
 """)
 
         d = DynamicHtml(self.tempdir, reactor=reactor)
         result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
-        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n1', ''.join(str(x) for x in result))
+        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n12', ''.join(x for x in result))
 
         open(self.tempdir + '/file1.sf', 'w').write("""
 def main(headers={}, *args, **kwargs):
@@ -428,7 +430,7 @@ def main(Headers={}, Body=None, Method=None, *args, **kwargs):
     def testRedirect(self):
         open(self.tempdir + '/page.sf', 'w').write(r"""
 def main(*args, **kwargs):
-    raise Redirect('/here')
+    yield http.redirect('/here')
 """)
         reactor = Reactor()
         d = DynamicHtml(self.tempdir, reactor=reactor)
