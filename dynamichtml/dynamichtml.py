@@ -11,6 +11,7 @@ from pyinotify import EventsCodes
 from cgi import escape as escapeHtml
 from xml.sax.saxutils import escape as escapeXml
 from amara.binderytools import bind_stream
+from lxml.etree import parse, tostring
 from time import time
 from urllib import urlencode
 from math import ceil
@@ -179,6 +180,8 @@ class DynamicHtml(Observable):
                 'dirname': dirname,
                 'basename': basename,
                 'parse_qs': parse_qs,
+                'parse': parse,
+                'tostring': tostring,
 
                 'http': Http()
             }
