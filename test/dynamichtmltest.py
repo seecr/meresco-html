@@ -149,6 +149,21 @@ def main(*args, **kwargs):
         result = d.handleRequest('http', 'host.nl', '/afile', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nsomethingsomething', ''.join(result))
 
+    def testObservabilityOutsideMainOnModuleLevel(self):
+        class X(object):
+            def getX(*args, **kwargs):
+                return "eks"
+
+        open(self.tempdir+'/afile.sf', 'w').write("""#
+x = any.getX()
+def main(*args, **kwargs):
+  yield x
+""")
+        d = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
+        d.addObserver(X())
+        result = d.handleRequest('http', 'host.nl', '/afile', '', '', {})
+        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\neks', ''.join(result))
+
 
     def testHeaders(self):
         from weightless import Reactor

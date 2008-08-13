@@ -43,7 +43,7 @@ class DynamicHtml(Observable):
         self._indexPage = indexPage
         self._allowedModules = allowedModules
         self._modules = {}
-        self._loadModuleFromPaths()
+        #self._loadModuleFromPaths()
         self._initMonitoringForFileChanges(reactor)
 
     def _loadModuleFromPaths(self):
@@ -89,6 +89,11 @@ class DynamicHtml(Observable):
             moduleObject = self._modules[moduleName]
         return moduleObject
 
+    def _getModules(self):
+        if not self._modules:
+            self._loadModuleFromPaths()
+        return self._modules
+
     def _createMainGenerator(self, path, Headers, arguments, **kwargs):
         i = path.find('/')
         if i < 1:
@@ -97,9 +102,10 @@ class DynamicHtml(Observable):
         else:
             name = path[:i]
             nextGenerator = self._createMainGenerator(path[i+1:], Headers=Headers, arguments=arguments, **kwargs)
-        if not name in self._modules:
+        modules = self._getModules()
+        if not name in modules:
             raise DynamicHtmlException('File %s does not exist.' % path)
-        main = self._modules[name].main
+        main = modules[name].main
         return main(Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
 
     def handleRequest(self, scheme='', netloc='', path='', query='', fragments='', arguments={}, Headers={}, **kwargs):
@@ -182,7 +188,6 @@ class DynamicHtml(Observable):
                 'parse_qs': parse_qs,
                 'parse': parse,
                 'tostring': tostring,
-
                 'http': Http()
             }
         }
