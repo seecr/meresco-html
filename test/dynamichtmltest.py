@@ -1,7 +1,7 @@
 from StringIO import StringIO
 import sys
 from cq2utils import CQ2TestCase
-from cq2utils import CallTrace
+from cq2utils import CallTrace, MATCHALL
 from weightless import compose, Reactor
 
 from os import makedirs, rename
@@ -451,3 +451,11 @@ def main(*args, **kwargs):
         d = DynamicHtml(self.tempdir, reactor=reactor)
         result = ''.join(d.handleRequest('http', 'host.nl', '/page', '', '', {}))
         self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /here\r\n\r\n', result)
+
+    def testKeywordArgumentsArePassed(self):
+        open(self.tempdir+'/afile.sf', 'w').write('def main(pipe, *args, **kwargs): \n  yield str(kwargs)')
+        d = DynamicHtml(self.tempdir, reactor=CallTrace('Reactor'))
+        result = ''.join(d.handleRequest(path='/afile', netloc='localhost', key='value', key2='value2'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals({'Headers':MATCHALL, 'arguments':MATCHALL, 'path':'/afile', 'netloc':'localhost', 'key':'value', 'key2':'value2', 'scheme':'', 'query': ''}, eval(body))
+

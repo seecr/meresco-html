@@ -94,17 +94,17 @@ class DynamicHtml(Observable):
             self._loadModuleFromPaths()
         return self._modules
 
-    def _createMainGenerator(self, path, Headers, arguments, **kwargs):
-        i = path.find('/')
+    def _createMainGenerator(self, _path, Headers, arguments, **kwargs):
+        i = _path.find('/')
         if i < 1:
-            name = path
+            name = _path
             nextGenerator =  (i for i in [])
         else:
-            name = path[:i]
-            nextGenerator = self._createMainGenerator(path[i+1:], Headers=Headers, arguments=arguments, **kwargs)
+            name = _path[:i]
+            nextGenerator = self._createMainGenerator(_path[i+1:], Headers=Headers, arguments=arguments, **kwargs)
         modules = self._getModules()
         if not name in modules:
-            raise DynamicHtmlException('File %s does not exist.' % path)
+            raise DynamicHtmlException('File %s does not exist.' % _path)
         main = modules[name].main
         return main(Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
 
@@ -114,7 +114,7 @@ class DynamicHtml(Observable):
             path = self._indexPage
 
         try:
-            generators = compose(self._createMainGenerator(path[1:], Headers=Headers, arguments=arguments, **kwargs))
+            generators = compose(self._createMainGenerator(path[1:], Headers=Headers, arguments=arguments, path=path, scheme=scheme, netloc=netloc, query=query, **kwargs))
         except DynamicHtmlException, e:
             yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
             return
