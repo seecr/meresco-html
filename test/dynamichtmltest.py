@@ -277,12 +277,12 @@ def main(headers={}, *args, **kwargs):
 
         open(self.tempdir + '/file1.sf', 'w').write("""
 def main(headers={}, *args, **kwargs):
-    yield escapeHtml('&<>')
+    yield escapeHtml('&<>"')
 """)
 
         d = DynamicHtml(self.tempdir, reactor=reactor)
         result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
-        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;', ''.join(result))
+        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;&quot;', ''.join(result))
 
 
     def testImportForgeinModules(self):

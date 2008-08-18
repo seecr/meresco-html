@@ -8,7 +8,7 @@ from urlparse import urlsplit
 
 from pyinotify import EventsCodes
 
-from cgi import escape as escapeHtml
+from cgi import escape as _escapeHtml
 from xml.sax.saxutils import escape as escapeXml
 from amara.binderytools import bind_stream
 from lxml.etree import parse, tostring
@@ -31,6 +31,9 @@ class DynamicHtmlException(Exception):
 class Http(object):
     def redirect(self, location):
         return "HTTP/1.0 302 Found\r\nLocation: %(location)s\r\n\r\n" % locals()
+
+def escapeHtml(aString):
+    return _escapeHtml(aString).replace('"','&quot;')
 
 class DynamicHtml(Observable):
 
