@@ -285,7 +285,7 @@ def main(headers={}, *args, **kwargs):
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;&quot;', ''.join(result))
 
 
-    def testImportForgeinModules(self):
+    def testImportForeignModules(self):
         reactor = Reactor()
 
         open(self.tempdir + '/file1.sf', 'w').write("""
@@ -459,3 +459,68 @@ def main(*args, **kwargs):
         header, body = result.split('\r\n\r\n')
         self.assertEquals({'Headers':MATCHALL, 'arguments':MATCHALL, 'path':'/afile', 'netloc':'localhost', 'key':'value', 'key2':'value2', 'scheme':'', 'query': ''}, eval(body))
 
+    def createTwoPaths(self):
+        path1 = join(self.tempdir, '1')
+        path2 = join(self.tempdir, '2')
+        makedirs(path1)
+        makedirs(path2)
+        return path1, path2
+
+    def testMoreDirectories(self):
+        path1, path2 = self.createTwoPaths()
+        open(join(path2, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "page"')
+        d = DynamicHtml(path1, extraPaths=[path2], reactor=CallTrace('Reactor'))
+        result = ''.join(d.handleRequest(path='/page'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals('page', body)
+
+    def testImportFromFirstPath(self):
+        path1, path2 = self.createTwoPaths()
+        open(join(path2, 'page.sf'), 'w').write('import one\ndef main(*args,**kwargs):\n yield one.main(*args,**kwargs)')
+        open(join(path1, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
+        d = DynamicHtml(path1, extraPaths=[path2], reactor=CallTrace('Reactor'))
+        result = ''.join(d.handleRequest(path='/page'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals('one', body)
+        
+    def testImportFromSecondPath(self):
+        from weightless import Reactor
+        reactor = Reactor()
+        path1, path2 = self.createTwoPaths()
+        open(join(path2, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
+        open(join(path1, 'page.sf'), 'w').write('import one\ndef main(*args,**kwargs):\n yield one.main(*args,**kwargs)')
+        d = DynamicHtml(path1, extraPaths=[path2], reactor=reactor)
+        result = ''.join(d.handleRequest(path='/page'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals('one', body)
+        open(join(path2, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "two"')
+        reactor.step()
+        result = ''.join(d.handleRequest(path='/page'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals('two', body)
+        
+    def testFirstDirectoryHasTheRightFile(self):
+        path1, path2 = self.createTwoPaths()
+        open(join(path1, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
+        open(join(path2, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "two"')
+        d = DynamicHtml(path1, extraPaths=[path2], reactor=CallTrace('Reactor'))
+        result = ''.join(d.handleRequest(path='/page'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals('one', body)
+
+    def testFirstDirectoryHasTheRightFileButSecondFileChanges(self):
+        from weightless import Reactor
+        reactor = Reactor()
+        path1, path2 = self.createTwoPaths()
+        open(join(path1, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
+        open(join(path2, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "two"')
+        d = DynamicHtml(path1, extraPaths=[path2], reactor=reactor)
+        result = ''.join(d.handleRequest(path='/page'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals('one', body)
+
+        open(join(path2, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "three"')
+        reactor.step()
+        result = ''.join(d.handleRequest(path='/page'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals('one', body)

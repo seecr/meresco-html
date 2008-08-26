@@ -37,11 +37,11 @@ def escapeHtml(aString):
 
 class DynamicHtml(Observable):
 
-    def __init__(self, directory, reactor=None, prefix = '', allowedModules=[], indexPage='', verbose=False):
+    def __init__(self, directory, reactor=None, prefix = '', allowedModules=[], indexPage='', verbose=False, extraPaths=[]):
         Observable.__init__(self)
         self._globals = None
         self._verbose = verbose
-        self._directory = directory
+        self._directories = [directory] + extraPaths
         self._prefix = prefix
         self._indexPage = indexPage
         self._allowedModules = allowedModules
@@ -50,25 +50,32 @@ class DynamicHtml(Observable):
         self._initMonitoringForFileChanges(reactor)
 
     def _loadModuleFromPaths(self):
-        for path in glob(self._directory + '/*.sf'):
-            self.loadModuleFromPath(path)
+        for directory in reversed(self._directories):
+            for path in glob(directory + '/*.sf'):
+                self.loadModuleFromPath(path)
 
     def _initMonitoringForFileChanges(self, reactor):
-        directoryWatcher = DirectoryWatcher(
-            self._directory,
-            self._notifyHandler,
-            CreateFile=True, ModifyFile=True, MoveInFile=True)
-        reactor.addReader(directoryWatcher, directoryWatcher)
+        for directory in self._directories:
+            directoryWatcher = DirectoryWatcher(
+                directory,
+                self._notifyHandler,
+                CreateFile=True, ModifyFile=True, MoveInFile=True)
+            reactor.addReader(directoryWatcher, directoryWatcher)
 
     def _notifyHandler(self, event):
-        self.loadModuleFromPath(join(self._directory, event.name))
+        for directory in reversed(self._directories):
+            templateFile = join(directory, event.name)
+            if isfile(templateFile):
+                self.loadModuleFromPath(templateFile)
 
     def loadModuleFromPath(self, path):
         moduleName = basename(path)[:-len('.sf')]
         moduleGlobals = self.createGlobals()
         createdLocals = {}
+        success = False
         try:
             execfile(path, moduleGlobals, createdLocals)
+            success = True
         except Exception, e:
             s = escapeHtml(format_exc())
             createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
@@ -76,6 +83,7 @@ class DynamicHtml(Observable):
         newModule = Module(moduleGlobals)
         self._replaceModuleReferencesInOtherModules(moduleName, newModule)
         self._modules[moduleName] = newModule
+        return success
 
     def _replaceModuleReferencesInOtherModules(self, moduleName, newModule):
         for module in self._modules.values():
@@ -88,7 +96,9 @@ class DynamicHtml(Observable):
         else:
             if not moduleName in self._modules:
                 filename = moduleName.replace('.', '/') + '.sf'
-                self.loadModuleFromPath(join(self._directory, filename))
+                for directory in self._directories:
+                    if self.loadModuleFromPath(join(directory, filename)):
+                        break
             moduleObject = self._modules[moduleName]
         return moduleObject
 
