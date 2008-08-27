@@ -37,11 +37,13 @@ def escapeHtml(aString):
 
 class DynamicHtml(Observable):
 
-    def __init__(self, directory, reactor=None, prefix = '', allowedModules=[], indexPage='', verbose=False, extraPaths=[]):
+    def __init__(self, directories, reactor=None, prefix = '', allowedModules=[], indexPage='', verbose=False):
         Observable.__init__(self)
         self._globals = None
         self._verbose = verbose
-        self._directories = [directory] + extraPaths
+        if type(directories) != list:
+            raise TypeError("Usage: DynamicHtml([aDirectory, ...], ....)")
+        self._directories = directories
         self._prefix = prefix
         self._indexPage = indexPage
         self._allowedModules = allowedModules
