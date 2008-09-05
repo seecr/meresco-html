@@ -284,6 +284,14 @@ def main(headers={}, *args, **kwargs):
         result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;&quot;', ''.join(result))
 
+        open(self.tempdir + '/file1.sf', 'w').write("""
+def main(headers={}, *args, **kwargs):
+    yield str(zip([1,2,3],['one','two','three']))
+""")
+
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        self.assertEquals('''HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n[(1, 'one'), (2, 'two'), (3, 'three')]''', ''.join(result))
 
     def testImportForeignModules(self):
         reactor = Reactor()
@@ -482,7 +490,7 @@ def main(*args, **kwargs):
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
         self.assertEquals('one', body)
-        
+
     def testImportFromSecondPath(self):
         from weightless import Reactor
         reactor = Reactor()
@@ -498,7 +506,7 @@ def main(*args, **kwargs):
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
         self.assertEquals('two', body)
-        
+
     def testFirstDirectoryHasTheRightFile(self):
         path1, path2 = self.createTwoPaths()
         open(join(path1, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')

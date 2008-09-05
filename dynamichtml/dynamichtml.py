@@ -175,6 +175,7 @@ class DynamicHtml(Observable):
                 'ceil': ceil,
                 'unicode': unicode,
                 'range': range,
+                'zip': zip,
                 'enumerate': enumerate,
                 'map': map,
                 'sorted': sorted,
