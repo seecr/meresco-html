@@ -5,6 +5,7 @@ from sys import exc_info
 from traceback import format_exc
 from cgi import parse_qs
 from urlparse import urlsplit
+from itertools import groupby
 
 from pyinotify import EventsCodes
 
@@ -187,6 +188,7 @@ class DynamicHtml(Observable):
                 'list': list,
                 'id': id,
                 'partial': partial,
+                'groupby': groupby,
 
                 # observable stuff
                 'any': self.any,
