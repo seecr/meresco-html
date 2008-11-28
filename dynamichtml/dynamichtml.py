@@ -1,6 +1,5 @@
 from glob import glob
 from os.path import join, isfile, isdir, dirname, basename, abspath
-from os import walk as dirwalk
 from sys import exc_info
 from traceback import format_exc
 from cgi import parse_qs
@@ -202,7 +201,6 @@ class DynamicHtml(Observable):
                 'time': time,
                 'urlencode': lambda x: urlencode(x, doseq=True),
                 'decorate': decorate,
-                'dirwalk': dirwalk,
                 'dirname': dirname,
                 'basename': basename,
                 'parse_qs': parse_qs,
