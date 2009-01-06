@@ -3,3 +3,4 @@ python-cq2utils (<<5.4)
 python-weightless (>=0.3)
 python-weightless (<<0.4)
 python-lxml
+python-meresco-core2.20
