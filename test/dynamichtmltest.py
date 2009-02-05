@@ -394,11 +394,6 @@ def main(pipe=None, *args, **kwargs):
         self.assertEquals('startend', message)
 
     def testIndexPage(self):
-        open(self.tempdir + '/page.sf', 'w').write("""
-def main(*args, **kwargs):
-    yield "index"
-
-""")
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
         result = d.handleRequest('http', 'host.nl', '/', '', '', {})
@@ -409,7 +404,7 @@ def main(*args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=reactor, indexPage='/page')
         result = d.handleRequest('http', 'host.nl', '/', '', '', {})
         headers, message = ''.join(result).split('\r\n\r\n')
-        self.assertEquals('index', message)
+        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /page', headers)
 
     def testSFExtension(self):
         open(self.tempdir + '/page1.sf', 'w').write("""

@@ -126,7 +126,8 @@ class DynamicHtml(Observable):
     def handleRequest(self, scheme='', netloc='', path='', query='', fragments='', arguments={}, Headers={}, **kwargs):
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
-            path = self._indexPage
+            yield "HTTP/1.0 302 Found\r\nLocation: %s\r\n\r\n" % self._indexPage
+            return
 
         try:
             generators = compose(self._createMainGenerator(path[1:], Headers=Headers, arguments=arguments, path=path, scheme=scheme, netloc=netloc, query=query, **kwargs))
@@ -189,6 +190,7 @@ class DynamicHtml(Observable):
                 'partial': partial,
                 'groupby': groupby,
                 'islice': islice,
+                'Exception': Exception,
 
                 # observable stuff
                 'any': self.any,
