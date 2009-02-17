@@ -17,7 +17,10 @@ from urllib import urlencode
 from math import ceil
 from functools import partial
 
-from merescocore.framework import Observable, decorate, compose
+from merescocore.framework import Observable, decorate
+from weightless import compose
+
+
 from cq2utils.wrappers import wrapp
 from cq2utils import DirectoryWatcher
 
