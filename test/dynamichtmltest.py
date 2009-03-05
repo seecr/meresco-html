@@ -396,15 +396,21 @@ def main(pipe=None, *args, **kwargs):
     def testIndexPage(self):
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/', '', '', {})
+        result = d.handleRequest(path='/')
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('File  does not exist.', message)
 
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor, indexPage='/page')
-        result = d.handleRequest('http', 'host.nl', '/', '', '', {})
+        result = d.handleRequest(path='/')
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /page', headers)
+
+        reactor = Reactor()
+        d = DynamicHtml([self.tempdir], reactor=reactor, indexPage='/page')
+        result = d.handleRequest(path='/', arguments={'a':['1']})
+        headers, message = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /page?a=1', headers)
 
     def testSFExtension(self):
         open(self.tempdir + '/page1.sf', 'w').write("""

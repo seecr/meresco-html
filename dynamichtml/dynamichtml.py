@@ -129,7 +129,10 @@ class DynamicHtml(Observable):
     def handleRequest(self, scheme='', netloc='', path='', query='', fragments='', arguments={}, Headers={}, **kwargs):
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
-            yield "HTTP/1.0 302 Found\r\nLocation: %s\r\n\r\n" % self._indexPage
+            newLocation = self._indexPage
+            if arguments:
+                newLocation = '%s?%s' % (newLocation, urlencode(arguments, doseq=True))
+            yield "HTTP/1.0 302 Found\r\nLocation: %s\r\n\r\n" % newLocation
             return
 
         try:
