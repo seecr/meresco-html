@@ -207,6 +207,7 @@ class DynamicHtml(Observable):
                 'escapeHtml': escapeHtml,
                 'escapeXml': escapeXml,
                 'bind_stream': lambda x:wrapp(bind_stream(x)),
+                'compose': compose,
                 'time': time,
                 'urlencode': lambda x: urlencode(x, doseq=True),
                 'decorate': decorate,
