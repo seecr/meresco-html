@@ -496,7 +496,7 @@ def main(*args, **kwargs):
         path1, path2 = self.createTwoPaths()
         open(join(path2, 'page.sf'), 'w').write("""
 def main(*args,**kwargs):
-  one = loadTemplate("one")
+  one = importTemplate("one")
   yield one.main(*args,**kwargs)
 """)
         open(join(path1, 'one.sf'), 'w').write("""
