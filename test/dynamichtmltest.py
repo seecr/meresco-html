@@ -492,6 +492,22 @@ def main(*args, **kwargs):
         header, body = result.split('\r\n\r\n')
         self.assertEquals('one', body)
 
+    def testImportFunction(self):
+        path1, path2 = self.createTwoPaths()
+        open(join(path2, 'page.sf'), 'w').write("""
+def main(*args,**kwargs):
+  one = import_module("one")
+  yield one.main(*args,**kwargs)
+""")
+        open(join(path1, 'one.sf'), 'w').write("""
+def main(*args,**kwargs):
+  yield "one"
+""")
+        d = DynamicHtml([path1, path2], reactor=CallTrace('Reactor'))
+        result = ''.join(d.handleRequest(path='/page'))
+        header, body = result.split('\r\n\r\n')
+        self.assertEquals('one', body)
+
     def testImportFromSecondPath(self):
         from weightless import Reactor
         reactor = Reactor()
