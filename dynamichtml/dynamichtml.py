@@ -169,7 +169,7 @@ class DynamicHtml(Observable):
         return {
             '__builtins__': {
                 '__import__': self.__import__,
-                'import_module': self.__import__,
+                'loadTemplate': lambda templateName: self.__import__(templateName),
                 # standard Python stuff
                 'str': str,
                 'repr': repr,

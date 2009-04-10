@@ -492,11 +492,11 @@ def main(*args, **kwargs):
         header, body = result.split('\r\n\r\n')
         self.assertEquals('one', body)
 
-    def testImportFunction(self):
+    def testLoadTemplate(self):
         path1, path2 = self.createTwoPaths()
         open(join(path2, 'page.sf'), 'w').write("""
 def main(*args,**kwargs):
-  one = import_module("one")
+  one = loadTemplate("one")
   yield one.main(*args,**kwargs)
 """)
         open(join(path1, 'one.sf'), 'w').write("""
