@@ -17,7 +17,10 @@ from urllib import urlencode
 from math import ceil
 from functools import partial
 
-from merescocore.framework import Observable, decorate
+try:
+    from meresco.framework import Observable, decorate
+except ImportError:
+    from meresco.framework import Observable, decorate
 from weightless import compose
 
 
