@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from glob import glob
 from os.path import join, isfile, isdir, dirname, basename, abspath
 from sys import exc_info
@@ -115,19 +116,21 @@ class DynamicHtml(Observable):
             self._loadModuleFromPaths()
         return self._modules
 
-    def _createMainGenerator(self, _path, Headers, arguments, **kwargs):
-        i = _path.find('/')
-        if i < 1:
-            name = _path
+    def _createMainGenerator(self, head, tail, Headers, arguments, **kwargs):
+        if tail == None:
             nextGenerator =  (i for i in [])
         else:
-            name = _path[:i]
-            nextGenerator = self._createMainGenerator(_path[i+1:], Headers=Headers, arguments=arguments, **kwargs)
+            nextHead, nextTail = self._splitPath(tail)
+            nextGenerator = self._createMainGenerator(nextHead, nextTail, Headers=Headers, arguments=arguments, **kwargs)
         modules = self._getModules()
-        if not name in modules:
-            raise DynamicHtmlException('File %s does not exist.' % _path)
-        main = modules[name].main
-        return main(Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
+        main = modules[head].main
+        yield main(Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
+
+    def _splitPath(self, aPath):
+        normalizedPath = '/'.join(p for p in aPath.split('/') if p)
+        if '/' in normalizedPath:
+            return normalizedPath[:normalizedPath.index('/')], normalizedPath[normalizedPath.index('/'):]
+        return normalizedPath, None
 
     def handleRequest(self, scheme='', netloc='', path='', query='', fragments='', arguments={}, Headers={}, **kwargs):
         path = path[len(self._prefix):]
@@ -139,7 +142,10 @@ class DynamicHtml(Observable):
             return
 
         try:
-            generators = compose(self._createMainGenerator(path[1:], Headers=Headers, arguments=arguments, path=path, scheme=scheme, netloc=netloc, query=query, **kwargs))
+            head, tail = self._splitPath(path)
+            if not head in self._getModules():
+                raise DynamicHtmlException('File "%s" does not exist.' % head)
+            generators = compose(self._createMainGenerator(head, tail, Headers=Headers, arguments=arguments, path=path, scheme=scheme, netloc=netloc, query=query, **kwargs))
         except DynamicHtmlException, e:
             yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
             return

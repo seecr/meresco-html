@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from StringIO import StringIO
 import sys
 from cq2utils import CQ2TestCase
@@ -14,7 +15,7 @@ class DynamicHtmlTest(CQ2TestCase):
     def testFileNotFound(self):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
-        self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile path does not exist.', ''.join(result))
+        self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile "a" does not exist.', ''.join(result))
 
     def testASimpleFlatFile(self):
         open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
@@ -215,7 +216,7 @@ def main(Headers={}, *args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=reactor)
 
         result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
-        self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile file1 does not exist.', ''.join(result))
+        self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile "file1" does not exist.', ''.join(result))
 
         rename('/tmp/file1.sf', self.tempdir+'/file1.sf')
         reactor.step()
@@ -292,6 +293,7 @@ def main(headers={}, *args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=reactor)
         result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('''HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n[(1, 'one'), (2, 'two'), (3, 'three')]''', ''.join(result))
+
 
     def testImportForeignModules(self):
         reactor = Reactor()
@@ -393,12 +395,23 @@ def main(pipe=None, *args, **kwargs):
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('startend', message)
 
+    def testPathTailDoesNotExist(self):
+        open(self.tempdir + '/page.sf', 'w').write("""
+def main(**kwargs):
+    yield "nopipe"
+""")
+        reactor = Reactor()
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        result = d.handleRequest('http', 'host.nl', '/page/doesnotexist', '', '', {})
+        headers, message = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('nopipe', message)
+
     def testIndexPage(self):
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
         result = d.handleRequest(path='/')
         headers, message = ''.join(result).split('\r\n\r\n')
-        self.assertEquals('File  does not exist.', message)
+        self.assertEquals('File "" does not exist.', message)
 
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor, indexPage='/page')
