@@ -44,19 +44,19 @@ def escapeHtml(aString):
 
 class DynamicHtml(Observable):
 
-    def __init__(self, directories, reactor=None, prefix = '', allowedModules=[], indexPage='', verbose=False):
+    def __init__(self, directories, reactor=None, prefix = '', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None):
         Observable.__init__(self)
-        self._globals = None
         self._verbose = verbose
         if type(directories) != list:
             raise TypeError("Usage: DynamicHtml([aDirectory, ...], ....)")
         self._directories = directories
         self._prefix = prefix
         self._indexPage = indexPage
-        self._allowedModules = allowedModules
+        self._allowedModules = allowedModules or []
         self._modules = {}
         #self._loadModuleFromPaths()
         self._initMonitoringForFileChanges(reactor)
+        self._additionalGlobals = additionalGlobals or {}
 
     def _loadModuleFromPaths(self):
         for directory in reversed(self._directories):
@@ -175,57 +175,57 @@ class DynamicHtml(Observable):
             yield "</pre>"
 
     def createGlobals(self):
-        return {
-            '__builtins__': {
-                '__import__': self.__import__,
-                'importTemplate': lambda templateName: self.__import__(templateName),
-                # standard Python stuff
-                'str': str,
-                'repr': repr,
-                'int': int,
-                'float': float,
-                'len': len,
-                'False': False,
-                'True': True,
-                'min': min,
-                'max': max,
-                'ceil': ceil,
-                'unicode': unicode,
-                'range': range,
-                'reduce': reduce,
-                'reversed': reversed,
-                'zip': zip,
-                'enumerate': enumerate,
-                'map': map,
-                'sorted': sorted,
-                'cmp': cmp,
-                'dict': dict,
-                'set': set,
-                'list': list,
-                'id': id,
-                'partial': partial,
-                'groupby': groupby,
-                'islice': islice,
-                'Exception': Exception,
+        result = self._additionalGlobals.copy()
+        result['__builtins__'] = {
+            '__import__': self.__import__,
+            'importTemplate': lambda templateName: self.__import__(templateName),
+            # standard Python stuff
+            'str': str,
+            'repr': repr,
+            'int': int,
+            'float': float,
+            'len': len,
+            'False': False,
+            'True': True,
+            'min': min,
+            'max': max,
+            'ceil': ceil,
+            'unicode': unicode,
+            'range': range,
+            'reduce': reduce,
+            'reversed': reversed,
+            'zip': zip,
+            'enumerate': enumerate,
+            'map': map,
+            'sorted': sorted,
+            'cmp': cmp,
+            'dict': dict,
+            'set': set,
+            'list': list,
+            'id': id,
+            'partial': partial,
+            'groupby': groupby,
+            'islice': islice,
+            'Exception': Exception,
 
-                # observable stuff
-                'any': self.any,
-                'all': self.all,
-                'do': self.do,
+            # observable stuff
+            'any': self.any,
+            'all': self.all,
+            'do': self.do,
 
-                # commonly used/needed methods
-                'escapeHtml': escapeHtml,
-                'escapeXml': escapeXml,
-                'bind_stream': lambda x:wrapp(bind_stream(x)),
-                'compose': compose,
-                'time': time,
-                'urlencode': lambda x: urlencode(x, doseq=True),
-                'decorate': decorate,
-                'dirname': dirname,
-                'basename': basename,
-                'parse_qs': parse_qs,
-                'parse': parse,
-                'tostring': tostring,
-                'http': Http()
-            }
+            # commonly used/needed methods
+            'escapeHtml': escapeHtml,
+            'escapeXml': escapeXml,
+            'bind_stream': lambda x:wrapp(bind_stream(x)),
+            'compose': compose,
+            'time': time,
+            'urlencode': lambda x: urlencode(x, doseq=True),
+            'decorate': decorate,
+            'dirname': dirname,
+            'basename': basename,
+            'parse_qs': parse_qs,
+            'parse': parse,
+            'tostring': tostring,
+            'http': Http()
         }
+        return result

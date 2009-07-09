@@ -569,3 +569,9 @@ def main(*args,**kwargs):
             self.fail()
         except TypeError, te:
             self.assertEquals("Usage: DynamicHtml([aDirectory, ...], ....)", str(te))
+
+    def testAdditionalGlobals(self):
+        open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield something')
+        d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'), additionalGlobals={'something':'YES'})
+        head,body = ''.join(d.handleRequest(path='/afile')).split('\r\n\r\n')
+        self.assertEquals('YES', body)
