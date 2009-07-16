@@ -1,10 +1,9 @@
 ## begin license ##
 #
-#    DynamicHtml is a parser that builds a parsetree for the given CQL and 
-#    can convert this into other formats.
-#    Copyright (C) 2005-2008 Seek You Too (CQ2) http://www.cq2.nl
+#    DynamicHtml is a template engine based on generators, and a sequel to Slowfoot.
+#    Copyright (C) 2008-2009 Seek You Too (CQ2) http://www.cq2.nl
 #
-#    This file is part of DynamicHtml
+#    This file is part of DynamicHtml.
 #
 #    DynamicHtml is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
