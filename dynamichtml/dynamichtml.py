@@ -76,7 +76,6 @@ class DynamicHtml(Observable):
         self._indexPage = indexPage
         self._allowedModules = allowedModules or []
         self._modules = {}
-        #self._loadModuleFromPaths()
         self._initMonitoringForFileChanges(reactor)
         self._additionalGlobals = additionalGlobals or {}
 
@@ -94,6 +93,8 @@ class DynamicHtml(Observable):
             reactor.addReader(directoryWatcher, directoryWatcher)
 
     def _notifyHandler(self, event):
+        if not self._modules:
+            self._loadModuleFromPaths()
         for directory in reversed(self._directories):
             templateFile = join(directory, event.name)
             if isfile(templateFile):

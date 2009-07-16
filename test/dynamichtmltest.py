@@ -189,7 +189,6 @@ def main(*args, **kwargs):
 
 
     def testHeaders(self):
-        from weightless import Reactor
         reactor = Reactor()
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
@@ -204,7 +203,6 @@ def main(Headers={}, *args, **kwargs):
 
 
     def testCreateFileCausesReload(self):
-        from weightless import Reactor
         reactor = Reactor()
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
@@ -215,7 +213,6 @@ def main(Headers={}, *args, **kwargs):
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
     def testModifyFileCausesReload(self):
-        from weightless import Reactor
         reactor = Reactor()
 
         open(self.tempdir+'/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "one"')
@@ -231,7 +228,6 @@ def main(Headers={}, *args, **kwargs):
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\ntwo', ''.join(result))
 
     def testFileMovedIntoDirectoryCausesReload(self):
-        from weightless import Reactor
         reactor = Reactor()
 
         open('/tmp/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "one"')
@@ -247,7 +243,6 @@ def main(Headers={}, *args, **kwargs):
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
     def testReloadImportedModules(self):
-        from weightless import Reactor
         reactor = Reactor()
 
         open(self.tempdir + '/file1.sf', 'w').write("""
@@ -275,7 +270,6 @@ def main(value, *args, **kwargs):
         self.assertTrue('changed template word!' in result, result)
 
     def testBuiltins(self):
-        from weightless import Reactor
         reactor = Reactor()
 
         open(self.tempdir + '/file1.sf', 'w').write("""
@@ -544,7 +538,6 @@ def main(*args,**kwargs):
         self.assertEquals('one', body)
 
     def testImportFromSecondPath(self):
-        from weightless import Reactor
         reactor = Reactor()
         path1, path2 = self.createTwoPaths()
         open(join(path2, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
@@ -569,7 +562,6 @@ def main(*args,**kwargs):
         self.assertEquals('one', body)
 
     def testFirstDirectoryHasTheRightFileButSecondFileChanges(self):
-        from weightless import Reactor
         reactor = Reactor()
         path1, path2 = self.createTwoPaths()
         open(join(path1, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
@@ -597,3 +589,13 @@ def main(*args,**kwargs):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'), additionalGlobals={'something':'YES'})
         head,body = ''.join(d.handleRequest(path='/afile')).split('\r\n\r\n')
         self.assertEquals('YES', body)
+
+    def testChangingFileBeforeRetrievingFirstPage(self):
+        reactor = Reactor()
+        open(join(self.tempdir, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
+        open(join(self.tempdir, 'two.sf'), 'w').write('def main(*args,**kwargs):\n yield "two"')
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        open(join(self.tempdir, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one++"')
+        reactor.step()
+        header, body = ''.join(d.handleRequest(path='/two')).split('\r\n'*2)
+        self.assertEquals('two', body)
