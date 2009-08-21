@@ -22,14 +22,10 @@
 #
 ## end license ##
 from glob import glob
-from os.path import join, isfile, isdir, dirname, basename, abspath
-from sys import exc_info
+from os.path import join, isfile, dirname, basename
 from traceback import format_exc
 from cgi import parse_qs
-from urlparse import urlsplit
 from itertools import groupby, islice
-
-from pyinotify import EventsCodes
 
 from cgi import escape as _escapeHtml
 from xml.sax.saxutils import escape as escapeXml
@@ -124,7 +120,7 @@ class DynamicHtml(Observable):
 
     def __import__(self, moduleName, globals=None, locals=None, fromlist=None):
         if moduleName in self._allowedModules:
-             moduleObject = __import__(moduleName)
+            moduleObject = __import__(moduleName)
         else:
             if not moduleName in self._modules:
                 filename = moduleName.replace('.', '/') + '.sf'
@@ -156,6 +152,7 @@ class DynamicHtml(Observable):
         return normalizedPath, None
 
     def handleRequest(self, scheme='', netloc='', path='', query='', fragments='', arguments={}, Headers={}, **kwargs):
+
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
             newLocation = self._indexPage
