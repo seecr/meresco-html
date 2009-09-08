@@ -227,6 +227,7 @@ class DynamicHtml(Observable):
             'groupby': groupby,
             'islice': islice,
             'Exception': Exception,
+            'locals': locals,
 
             # observable stuff
             'any': self.any,
