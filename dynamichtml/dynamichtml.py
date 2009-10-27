@@ -228,6 +228,7 @@ class DynamicHtml(Observable):
             'islice': islice,
             'Exception': Exception,
             'locals': locals,
+            'type': type,
 
             # observable stuff
             'any': self.any,
