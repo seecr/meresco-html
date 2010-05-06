@@ -36,8 +36,12 @@ from urllib import urlencode
 from math import ceil
 from functools import partial
 
-from meresco.core import Observable, decorate
+try:
+    from merescocore.framework import Observable, decorate
+except ImportError:
+    from meresco.framework import Observable, decorate
 from weightless import compose
+
 
 from cq2utils.wrappers import wrapp
 from cq2utils import DirectoryWatcher
