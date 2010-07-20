@@ -1,4 +1,4 @@
 python-weightless (>=0.4)
 python-weightless (<<0.5)
 python-lxml
-python-meresco-core-3.0-beta (>=6)
+python-meresco-core3.1
