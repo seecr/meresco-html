@@ -36,13 +36,7 @@ from urllib import urlencode
 from math import ceil
 from functools import partial
 
-try:
-    from meresco.core import Observable, decorate
-except ImportError:
-    try:
-        from merescocore.framework import Observable, decorate
-    except ImportError:
-        from meresco.framework import Observable, decorate
+from meresco.core import Observable, decorate
 
 from weightless import compose
 
