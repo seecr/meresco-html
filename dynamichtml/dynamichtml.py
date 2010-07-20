@@ -237,6 +237,7 @@ class DynamicHtml(Observable):
             'any': self.any,
             'all': self.all,
             'do': self.do,
+            'asyncdo': self.asyncdo,
 
             # commonly used/needed methods
             'escapeHtml': escapeHtml,

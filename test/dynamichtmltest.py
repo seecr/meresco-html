@@ -166,6 +166,7 @@ def main(*args, **kwargs):
   for i in all.something():
       yield i
   do.something()
+  yield asyncdo.something()
 """)
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         d.addObserver(Something())
