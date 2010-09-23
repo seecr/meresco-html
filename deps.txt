@@ -1,4 +1,5 @@
 python-weightless (>=0.4)
 python-weightless (<<0.5)
 python-lxml
-python-meresco-core2.22
+python-meresco-core (>= 2.22)
+python-meresco-core (<< 2.23)
