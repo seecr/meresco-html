@@ -167,24 +167,30 @@ class DynamicHtml(Observable):
             yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
             return
 
-        try:
-            firstLine = str(generators.next())
-        except Exception:
-            s = format_exc() #cannot be inlined
-            yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
-            yield str(s)
-            return
+        while True:
+            try:
+                firstValue = generators.next()
 
-        if not firstLine.startswith('HTTP/1.'):
-            contentType = 'text/html'
-            if path.endswith('.xml'):
-                contentType = 'text/xml'
-            yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
-        yield firstLine
+                if callable(firstValue):
+                    yield firstValue
+                else:
+                    firstLine = str(firstValue)
+                    if not firstLine.startswith('HTTP/1.'):
+                        contentType = 'text/html'
+                        if path.endswith('.xml'):
+                            contentType = 'text/xml'
+                        yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
+                    yield firstLine
+                    break
+            except Exception:
+                s = format_exc() #cannot be inlined
+                yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
+                yield str(s)
+                return
 
         try:
             for line in generators:
-                yield str(line)
+                yield line if callable(line) else str(line)
         except Exception:
             s = format_exc() #cannot be inlined
             yield "<pre>"
@@ -232,6 +238,7 @@ class DynamicHtml(Observable):
             'all': self.all,
             'do': self.do,
             'asyncdo': self.asyncdo,
+            'asyncany': self.asyncany,
 
             # commonly used/needed methods
             'escapeHtml': escapeHtml,
