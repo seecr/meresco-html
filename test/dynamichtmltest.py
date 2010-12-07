@@ -600,3 +600,44 @@ def main(*args,**kwargs):
         reactor.step()
         header, body = ''.join(d.handleRequest(path='/two')).split('\r\n'*2)
         self.assertEquals('two', body)
+
+    def testPassCallable(self):
+        reactor = Reactor()
+        tmplatename = join(self.tempdir, 'withcallable.sf')
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        open(tmplatename, 'w').write(
+                "def main(*args, **kwargs):\n"
+                "    def f():\n"
+                "        pass\n"
+                "    yield 'HTTP/1.0 200 Ok\\r\\n\\r\\n'\n"
+                "    yield f\n"
+                "    yield 'text2'\n")
+        reactor.step()
+        r = list(d.handleRequest(path='/withcallable'))
+        self.assertEquals("HTTP/1.0 200 Ok\r\n\r\n", r[0])
+        self.assertTrue(callable(r[1]))
+        self.assertEquals("text2", r[2])
+
+    def testPassCallableAsFirstThing(self):
+        reactor = Reactor()
+        tmplatename = join(self.tempdir, 'withcallable.sf')
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        open(tmplatename, 'w').write(
+                "def main(*args, **kwargs):\n"
+                "    def f():\n"
+                "        pass\n"
+                "    yield f\n"
+                "    yield f\n"
+                "    yield 'this is no status line'\n"
+                "    yield f\n"
+                "    yield 'text2'\n")
+        reactor.step()
+        r = list(d.handleRequest(path='/withcallable'))
+        self.assertTrue(callable(r[0]))
+        self.assertTrue(callable(r[1]))
+        self.assertEquals("HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n", r[2])
+        self.assertEquals("this is no status line", r[3])
+        self.assertTrue(callable(r[4]))
+        self.assertEquals("text2", r[5])
+
+
