@@ -170,18 +170,17 @@ class DynamicHtml(Observable):
         while True:
             try:
                 firstValue = generators.next()
-
                 if callable(firstValue):
                     yield firstValue
-                else:
-                    firstLine = str(firstValue)
-                    if not firstLine.startswith('HTTP/1.'):
-                        contentType = 'text/html'
-                        if path.endswith('.xml'):
-                            contentType = 'text/xml'
-                        yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
-                    yield firstLine
-                    break
+                    continue
+                firstLine = str(firstValue)
+                if not firstLine.startswith('HTTP/1.'):
+                    contentType = 'text/html'
+                    if path.endswith('.xml'):
+                        contentType = 'text/xml'
+                    yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
+                yield firstLine
+                break
             except Exception:
                 s = format_exc() #cannot be inlined
                 yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
