@@ -1,4 +1,3 @@
-from dynamichtml import DynamicHtml
 ## begin license ##
 #
 #    DynamicHtml is a template engine based on generators, and a sequel to Slowfoot.
@@ -21,3 +20,4 @@ from dynamichtml import DynamicHtml
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+from dynamichtml import DynamicHtml
