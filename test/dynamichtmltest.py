@@ -2,7 +2,7 @@
 ## begin license ##
 #
 #    DynamicHtml is a template engine based on generators, and a sequel to Slowfoot.
-#    Copyright (C) 2008-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2008-2011 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of DynamicHtml.
 #
@@ -25,7 +25,8 @@ from StringIO import StringIO
 import sys
 from cq2utils import CQ2TestCase
 from cq2utils import CallTrace, MATCHALL
-from weightless import compose, Reactor
+from weightless.core import compose
+from weightless.io import Reactor
 
 from os import makedirs, rename
 from os.path import join

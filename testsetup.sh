@@ -25,11 +25,13 @@ set -e
 rm -rf tmp build
 
 python setup.py install --root tmp
-cp -r test tmp/
+
+export PYTHONPATH=`pwd`/tmp/usr/lib/python2.5/site-packages 
+cp -r test tmp/test
 
 (
 cd tmp/test
-PYTHONPATH=`pwd`/tmp/usr/lib/python2.5/site-packages ./alltests.sh
+./alltests.sh
 )
 
 rm -rf tmp build
