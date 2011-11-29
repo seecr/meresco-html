@@ -37,7 +37,7 @@ class DynamicHtmlTest(CQ2TestCase):
 
     def testFileNotFound(self):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-        result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile "a" does not exist.', ''.join(result))
 
     def testCustomFileNotFound(self):
@@ -46,42 +46,28 @@ def main(**kwargs):
     yield "404 Handler"
 """)
         d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", reactor=CallTrace('Reactor'))
-        result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         headers, body = ''.join(result).split('\r\n\r\n')
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8', headers)
         self.assertEquals('404 Handler', body)
 
-    def testCustomFileNotFoundWithRedirect(self):
-        d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", notFoundPageIsRedirect=True, reactor=CallTrace('Reactor'))
-        result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
-        headers, body = ''.join(result).split('\r\n\r\n')
-        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /redirect_to_me', headers)
-        self.assertEquals('', body)
-
     def testCustomFileNotFoundToFileThatDoesExist(self):
         d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", reactor=CallTrace('Reactor'))
-        result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         headers, body = ''.join(result).split('\r\n\r\n')
         self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8', headers)
         self.assertEquals('File "redirect_to_me" does not exist.', body)
     
-    def testCustomFileNotFoundToFileThatDoesExistWithRedirect(self):
-        d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", notFoundPageIsRedirect=True, reactor=CallTrace('Reactor'))
-        result = d.handleRequest('http', 'host.nl', '/redirect_to_me', '?query=something', '#fragments', {'query': 'something'})
-        headers, body = ''.join(result).split('\r\n\r\n')
-        self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8', headers)
-        self.assertEquals('File "redirect_to_me" does not exist.', body)
-
     def testASimpleFlatFile(self):
         open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-        result = d.handleRequest('http', 'host.nl', '/afile', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', ''.join(result))
 
     def testPrefix(self):
         open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'), prefix='/prefix')
-        result = d.handleRequest('http', 'host.nl', '/prefix/afile', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/prefix/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', ''.join(result))
 
     def testSimpleGenerator(self):
@@ -92,7 +78,7 @@ def main(*args, **kwargs):
 """
         )
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-        result = ''.join(s.handleRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\naapnootmies', result)
 
     def testIncludeOther(self):
@@ -110,7 +96,7 @@ def main(*args, **kwargs):
 """
         )
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-        result = ''.join(compose(s.handleRequest('http', 'host.nl', '/other', '?query=something', '#fragments', {'query': 'something'})))
+        result = ''.join(compose(s.handleRequest(scheme='http', netloc='host.nl', path='/other', query='?query=something', fragments='#fragments', arguments={'query': 'something'})))
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nmeissnake', result)
 
     def testUseModuleLocals(self):
@@ -121,7 +107,7 @@ def main(*args, **kwargs):
 """
             )
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-        result = ''.join(s.handleRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('local is available' in result, result)
 
     def testUseModuleLocalsRecursive(self):
@@ -136,7 +122,7 @@ def main(*args, **kwargs):
 """
             )
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-        result = ''.join(s.handleRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('recursiveModuleLocal result' in result, result)
 
     def testUseModuleLocalsCrissCross(self):
@@ -152,7 +138,7 @@ def main(*args, **kwargs):
 """
             )
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-        result = ''.join(s.handleRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('g(f())' in result, result)
 
     def testErrorWhileImporting(self):
@@ -165,7 +151,8 @@ def main(*args, **kwargs):
 """
             )
             s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-            result = ''.join(s.handleRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+            result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
+
             self.assertTrue('x = 1/0\nZeroDivisionError: integer division or modulo by zero' in result)
         finally:
             sys.stderr = sys.__stderr__
@@ -182,7 +169,7 @@ def main(*args, **kwargs):
 """
         )
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-        result = ''.join(s.handleRequest('http', 'host.nl', '/testSimple', '?query=something', '#fragments', {'query': 'something'}))
+        result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue("HTTP/1.0 500 Internal Server Error\r\n\r\n" in result, result)
         self.assertTrue("integer division or modulo by zero" in result, result)
 
@@ -202,7 +189,7 @@ def main(*args, **kwargs):
 """)
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         d.addObserver(Something())
-        result = d.handleRequest('http', 'host.nl', '/afile', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nsomethingsomething', ''.join(result))
 
     def testObservabilityOutsideMainOnModuleLevel(self):
@@ -217,7 +204,7 @@ def main(*args, **kwargs):
 """)
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         d.addObserver(X())
-        result = d.handleRequest('http', 'host.nl', '/afile', '', '', {})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\neks', ''.join(result))
 
 
@@ -231,7 +218,7 @@ def main(Headers={}, *args, **kwargs):
 """)
         reactor.step()
 
-        result = d.handleRequest('http', 'host.nl', '/file', '?query=something', '#fragments', arguments={'query': 'something'}, Headers={'key': 'value'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file', query='?query=something', fragments='#fragments', arguments={'query': 'something'}, Headers={'key': 'value'})
         self.assertEquals("""HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n{'key': 'value'}""", ''.join(result))
 
 
@@ -242,7 +229,7 @@ def main(Headers={}, *args, **kwargs):
         open(self.tempdir+'/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "one"')
         reactor.step()
 
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
     def testModifyFileCausesReload(self):
@@ -251,13 +238,13 @@ def main(Headers={}, *args, **kwargs):
         open(self.tempdir+'/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "one"')
         d = DynamicHtml([self.tempdir], reactor=reactor)
 
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
         open(self.tempdir+'/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "two"')
         reactor.step()
 
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\ntwo', ''.join(result))
 
     def testFileMovedIntoDirectoryCausesReload(self):
@@ -266,13 +253,13 @@ def main(Headers={}, *args, **kwargs):
         open('/tmp/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "one"')
         d = DynamicHtml([self.tempdir], reactor=reactor)
 
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile "file1" does not exist.', ''.join(result))
 
         rename('/tmp/file1.sf', self.tempdir+'/file1.sf')
         reactor.step()
 
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
     def testReloadImportedModules(self):
@@ -290,7 +277,7 @@ def main(*args, **kwargs):
 """)
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = ''.join(d.handleRequest('http', 'host.nl', '/file2'))
+        result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/file2'))
         self.assertTrue('original template word!' in result, result)
 
         open(self.tempdir + '/file1.sf', 'w').write("""
@@ -299,7 +286,7 @@ def main(value, *args, **kwargs):
 """)
 
         reactor.step()
-        result = ''.join(d.handleRequest('http', 'host.nl', '/file2'))
+        result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/file2'))
         self.assertTrue('changed template word!' in result, result)
 
     def testBuiltins(self):
@@ -312,7 +299,7 @@ def main(headers={}, *args, **kwargs):
 """)
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nTrueFalse', ''.join(result))
 
         open(self.tempdir + '/file1.sf', 'w').write("""
@@ -322,7 +309,7 @@ def main(headers={}, *args, **kwargs):
 """)
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n12', ''.join(x for x in result))
 
         open(self.tempdir + '/file1.sf', 'w').write("""
@@ -331,7 +318,7 @@ def main(headers={}, *args, **kwargs):
 """)
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;&quot;', ''.join(result))
 
         open(self.tempdir + '/file1.sf', 'w').write("""
@@ -340,7 +327,7 @@ def main(headers={}, *args, **kwargs):
 """)
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('''HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n[(1, 'one'), (2, 'two'), (3, 'three')]''', ''.join(result))
 
 
@@ -355,7 +342,7 @@ def main(headers={}, *args, **kwargs):
 """)
 
         d = DynamicHtml([self.tempdir], reactor=reactor, allowedModules=['Ft'])
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         resultText = ''.join(result)
         self.assertTrue(resultText.endswith("/Ft/__init__.pyc'>"), resultText)
 
@@ -367,7 +354,7 @@ def main(headers={}, *args, **kwargs):
 """)
 
         reactor.step()
-        result = d.handleRequest('http', 'host.nl', '/file1', '?query=something', '#fragments', {'query': 'something'})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n\n4Suite: an open-source platform for XML and RDF processing.\n\nCopyright 2004 Fourthought, Inc. (USA).\nDetailed license and copyright information: http://4suite.org/COPYRIGHT\nProject home, documentation, distributions: http://4suite.org/\n', ''.join(result))
 
     def testPipelining(self):
@@ -385,7 +372,7 @@ def main(pipe=None, *args, **kwargs):
 """)
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/pipe1/pipe2', '', '', {})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/pipe1/pipe2')
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('onetwothreefour', message)
 
@@ -403,7 +390,7 @@ def main(pipe=None, *args, **kwargs):
 
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/' + '/'.join(filenames), '', '', {})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/' + '/'.join(filenames))
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('0123456789', message)
 
@@ -425,7 +412,7 @@ def main(pipe=None, *args, **kwargs):
 """)
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/pipe1/pipe2', '', '', {})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/pipe1/pipe2')
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertTrue('integer division or modulo by zero' in message)
 
@@ -440,7 +427,7 @@ def main(pipe=None, *args, **kwargs):
 """)
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/page', '', '', {})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/page')
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('startend', message)
 
@@ -451,7 +438,7 @@ def main(**kwargs):
 """)
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = d.handleRequest('http', 'host.nl', '/page/doesnotexist', '', '', {})
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/page/doesnotexist')
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEquals('nopipe', message)
 
@@ -486,7 +473,7 @@ def main(*args, **kwargs):
 """)
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = ''.join(d.handleRequest('http', 'host.nl', '/page2', '', '', {}))
+        result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page2'))
         self.assertTrue('page1' in result, result)
 
     def testIgnoreNonSFExtensions(self):
@@ -496,7 +483,7 @@ def main(*args, **kwargs):
 """)
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = ''.join(d.handleRequest('http', 'host.nl', '/page', '', '', {}))
+        result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page'))
         self.assertTrue('should not happen' not in result, result)
 
     def testHandlePOSTRequest(self):
@@ -509,7 +496,7 @@ def main(Headers={}, Body=None, Method=None, *args, **kwargs):
         )
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = ''.join(d.handleRequest('http', 'host.nl', '/page', '', '', arguments={}, RequestURI= 'http://host.nl/page' , Method='POST', Body='label=value&otherlabel=value', Headers={'Content-Type':'application/x-www-form-urlencoded'}))
+        result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page', arguments={}, RequestURI='http://host.nl/page', Method='POST', Body='label=value&otherlabel=value', Headers={'Content-Type':'application/x-www-form-urlencoded'}))
 
         self.assertTrue('Content-Type: application/x-www-form-urlencoded\nBody: label=value&otherlabel=value\nMethod: POST\n' in result, result)
 
@@ -520,7 +507,7 @@ def main(*args, **kwargs):
 """)
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        result = ''.join(d.handleRequest('http', 'host.nl', '/page', '', '', {}))
+        result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page'))
         self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /here\r\n\r\n', result)
 
     def testKeywordArgumentsArePassed(self):
@@ -528,7 +515,7 @@ def main(*args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = ''.join(d.handleRequest(path='/afile', netloc='localhost', key='value', key2='value2'))
         header, body = result.split('\r\n\r\n')
-        self.assertEquals({'Headers':MATCHALL, 'arguments':MATCHALL, 'path':'/afile', 'netloc':'localhost', 'key':'value', 'key2':'value2', 'scheme':'', 'query': ''}, eval(body))
+        self.assertEquals({'Headers':{}, 'arguments':{}, 'path':'/afile', 'netloc':'localhost', 'key':'value', 'key2':'value2', 'scheme':'', 'query': ''}, eval(body))
 
     def createTwoPaths(self):
         path1 = join(self.tempdir, '1')
@@ -671,5 +658,4 @@ def main(*args,**kwargs):
         self.assertEquals("this is no status line", r[3])
         self.assertTrue(callable(r[4]))
         self.assertEquals("text2", r[5])
-
 

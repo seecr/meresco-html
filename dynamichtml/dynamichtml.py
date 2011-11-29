@@ -62,7 +62,7 @@ def escapeHtml(aString):
 
 class DynamicHtml(Observable):
 
-    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None, notFoundPageIsRedirect=False):
+    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None):
         Observable.__init__(self)
         self._verbose = verbose
         if type(directories) != list:
@@ -71,7 +71,6 @@ class DynamicHtml(Observable):
         self._prefix = prefix
         self._indexPage = indexPage
         self._notFoundPage = notFoundPage
-        self._notFoundPageIsRedirect = notFoundPageIsRedirect
         self._allowedModules = allowedModules or []
         self._modules = {}
         self._initMonitoringForFileChanges(reactor)
@@ -137,7 +136,9 @@ class DynamicHtml(Observable):
             self._loadModuleFromPaths()
         return self._modules
 
-    def _createMainGenerator(self, head, tail, Headers, arguments, **kwargs):
+    def _createMainGenerator(self, head, tail, Headers=None, arguments=None, **kwargs):
+        Headers = Headers or {}
+        arguments = arguments or {}
         if tail == None:
             nextGenerator =  (i for i in [])
         else:
@@ -153,7 +154,14 @@ class DynamicHtml(Observable):
             return normalizedPath[:normalizedPath.index('/')], normalizedPath[normalizedPath.index('/'):]
         return normalizedPath, None
 
-    def handleRequest(self, scheme='', netloc='', path='', query='', fragments='', arguments={}, Headers={}, **kwargs):
+    def _createGenerators(self, path, scheme='', **kwargs):
+        head, tail = self._splitPath(path)
+        if not head in self._getModules():
+            raise DynamicHtmlException('File "%s" does not exist.' % head)
+        return compose(self._createMainGenerator(head, tail, path=path, **kwargs))
+
+    def handleRequest(self, path='', **kwargs):
+        arguments = kwargs.get('arguments', {})
 
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
@@ -163,31 +171,18 @@ class DynamicHtml(Observable):
             yield redirectTo(newLocation)
             return
 
-        def createGenerators(path):
-            head, tail = self._splitPath(path)
-            if not head in self._getModules():
-                raise DynamicHtmlException('File "%s" does not exist.' % head)
-            return compose(self._createMainGenerator(head, tail, Headers=Headers, arguments=arguments, path=path, scheme=scheme, netloc=netloc, query=query, **kwargs))
-
         try:
-            generators = createGenerators(path)
+            generators = self._createGenerators(path, **kwargs)
         except DynamicHtmlException, e:
             FourOFourMessage = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n%s'
-            if self._notFoundPageIsRedirect:
-                response = redirectTo(self._notFoundPage)
-                if path == self._notFoundPage:
-                    response = FourOFourMessage % str(e)
-                yield response
+            if self._notFoundPage is None:
+                yield FourOFourMessage % str(e)
                 return
 
-            if not self._notFoundPage is None:
-                try:
-                    generators = createGenerators(self._notFoundPage)
-                except DynamicHtmlException, innerException:
-                    yield FourOFourMessage % str(innerException)
-                    return
-            else:
-                yield FourOFourMessage % str(e)
+            try:
+                generators = self._createGenerators(self._notFoundPage, **kwargs)
+            except DynamicHtmlException, innerException:
+                yield FourOFourMessage % str(innerException)
                 return
 
         while True:
