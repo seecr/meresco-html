@@ -40,6 +40,12 @@ class DynamicHtmlTest(CQ2TestCase):
         result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
         self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile "a" does not exist.', ''.join(result))
 
+    def testCustomFileNotFound(self):
+        d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", reactor=CallTrace('Reactor'))
+        result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
+        headers, message = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /redirect_to_me', headers)
+
     def testASimpleFlatFile(self):
         open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
@@ -80,7 +86,6 @@ def main(*args, **kwargs):
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = ''.join(compose(s.handleRequest('http', 'host.nl', '/other', '?query=something', '#fragments', {'query': 'something'})))
         self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nmeissnake', result)
-
 
     def testUseModuleLocals(self):
         open(self.tempdir+'/testSimple.sf', 'w').write("""

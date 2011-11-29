@@ -50,16 +50,19 @@ class Module:
 class DynamicHtmlException(Exception):
     pass
 
+def redirectTo(location):
+    return "HTTP/1.0 302 Found\r\nLocation: %s\r\n\r\n" % location
+
 class Http(object):
     def redirect(self, location):
-        return "HTTP/1.0 302 Found\r\nLocation: %(location)s\r\n\r\n" % locals()
+        return redirectTo(location)
 
 def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
 
 class DynamicHtml(Observable):
 
-    def __init__(self, directories, reactor=None, prefix = '', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None):
+    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None):
         Observable.__init__(self)
         self._verbose = verbose
         if type(directories) != list:
@@ -67,6 +70,7 @@ class DynamicHtml(Observable):
         self._directories = directories
         self._prefix = prefix
         self._indexPage = indexPage
+        self._notFoundPage = notFoundPage
         self._allowedModules = allowedModules or []
         self._modules = {}
         self._initMonitoringForFileChanges(reactor)
@@ -155,7 +159,7 @@ class DynamicHtml(Observable):
             newLocation = self._indexPage
             if arguments:
                 newLocation = '%s?%s' % (newLocation, urlencode(arguments, doseq=True))
-            yield "HTTP/1.0 302 Found\r\nLocation: %s\r\n\r\n" % newLocation
+            yield redirectTo(newLocation)
             return
 
         try:
@@ -164,7 +168,11 @@ class DynamicHtml(Observable):
                 raise DynamicHtmlException('File "%s" does not exist.' % head)
             generators = compose(self._createMainGenerator(head, tail, Headers=Headers, arguments=arguments, path=path, scheme=scheme, netloc=netloc, query=query, **kwargs))
         except DynamicHtmlException, e:
-            yield 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
+            response = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
+            if not self._notFoundPage is None:
+                response = redirectTo(self._notFoundPage)
+
+            yield response
             return
 
         while True:
