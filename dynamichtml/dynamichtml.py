@@ -3,6 +3,7 @@
 #
 #    DynamicHtml is a template engine based on generators, and a sequel to Slowfoot.
 #    Copyright (C) 2008-2011 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 #    This file is part of DynamicHtml.
 #
@@ -43,6 +44,7 @@ from weightless.core import compose
 from cq2utils.wrappers import wrapp
 from cq2utils import DirectoryWatcher
 
+
 class Module:
     def __init__(self, moduleGlobals):
         self.__dict__ = moduleGlobals
@@ -60,8 +62,8 @@ class Http(object):
 def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
 
-class DynamicHtml(Observable):
 
+class DynamicHtml(Observable):
     def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None):
         Observable.__init__(self)
         self._verbose = verbose
@@ -161,11 +163,10 @@ class DynamicHtml(Observable):
         return compose(self._createMainGenerator(head, tail, path=path, **kwargs))
 
     def handleRequest(self, path='', **kwargs):
-        arguments = kwargs.get('arguments', {})
-
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
             newLocation = self._indexPage
+            arguments = kwargs.get('arguments', {})
             if arguments:
                 newLocation = '%s?%s' % (newLocation, urlencode(arguments, doseq=True))
             yield redirectTo(newLocation)
@@ -174,15 +175,13 @@ class DynamicHtml(Observable):
         try:
             generators = self._createGenerators(path, **kwargs)
         except DynamicHtmlException, e:
-            FourOFourMessage = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n%s'
             if self._notFoundPage is None:
-                yield FourOFourMessage % str(e)
+                yield FourOFourMessage + str(e)
                 return
-
             try:
                 generators = self._createGenerators(self._notFoundPage, **kwargs)
             except DynamicHtmlException, innerException:
-                yield FourOFourMessage % str(innerException)
+                yield FourOFourMessage + str(innerException)
                 return
 
         while True:
@@ -273,3 +272,6 @@ class DynamicHtml(Observable):
             'http': Http()
         }
         return result
+            
+FourOFourMessage = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n'
+
