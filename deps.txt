@@ -1,3 +1,4 @@
 python-lxml
+python-amara
 python-meresco-core (>= 3.1.7)
 python-meresco-core (<< 3.2)
