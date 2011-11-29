@@ -136,17 +136,17 @@ class DynamicHtml(Observable):
             self._loadModuleFromPaths()
         return self._modules
 
-    def _createMainGenerator(self, head, tail, Headers=None, arguments=None, **kwargs):
+    def _createMainGenerator(self, head, tail, scheme='', netloc='', path='', query='', Headers=None, arguments=None, **kwargs):
         Headers = Headers or {}
         arguments = arguments or {}
         if tail == None:
             nextGenerator =  (i for i in [])
         else:
             nextHead, nextTail = self._splitPath(tail)
-            nextGenerator = self._createMainGenerator(nextHead, nextTail, Headers=Headers, arguments=arguments, **kwargs)
+            nextGenerator = self._createMainGenerator(nextHead, nextTail, scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, **kwargs)
         modules = self._getModules()
         main = modules[head].main
-        yield main(Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
+        yield main(scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
 
     def _splitPath(self, aPath):
         normalizedPath = '/'.join(p for p in aPath.split('/') if p)
