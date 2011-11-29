@@ -41,10 +41,36 @@ class DynamicHtmlTest(CQ2TestCase):
         self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile "a" does not exist.', ''.join(result))
 
     def testCustomFileNotFound(self):
+        open(join(self.tempdir, "redirect_to_me.sf"), 'w').write("""
+def main(**kwargs):
+    yield "404 Handler"
+""")
         d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", reactor=CallTrace('Reactor'))
         result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
-        headers, message = ''.join(result).split('\r\n\r\n')
+        headers, body = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8', headers)
+        self.assertEquals('404 Handler', body)
+
+    def testCustomFileNotFoundWithRedirect(self):
+        d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", notFoundPageIsRedirect=True, reactor=CallTrace('Reactor'))
+        result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
+        headers, body = ''.join(result).split('\r\n\r\n')
         self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /redirect_to_me', headers)
+        self.assertEquals('', body)
+
+    def testCustomFileNotFoundToFileThatDoesExist(self):
+        d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", reactor=CallTrace('Reactor'))
+        result = d.handleRequest('http', 'host.nl', '/a/path', '?query=something', '#fragments', {'query': 'something'})
+        headers, body = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8', headers)
+        self.assertEquals('File "redirect_to_me" does not exist.', body)
+    
+    def testCustomFileNotFoundToFileThatDoesExistWithRedirect(self):
+        d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", notFoundPageIsRedirect=True, reactor=CallTrace('Reactor'))
+        result = d.handleRequest('http', 'host.nl', '/redirect_to_me', '?query=something', '#fragments', {'query': 'something'})
+        headers, body = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8', headers)
+        self.assertEquals('File "redirect_to_me" does not exist.', body)
 
     def testASimpleFlatFile(self):
         open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')

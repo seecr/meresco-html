@@ -62,7 +62,7 @@ def escapeHtml(aString):
 
 class DynamicHtml(Observable):
 
-    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None):
+    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None, notFoundPageIsRedirect=False):
         Observable.__init__(self)
         self._verbose = verbose
         if type(directories) != list:
@@ -71,6 +71,7 @@ class DynamicHtml(Observable):
         self._prefix = prefix
         self._indexPage = indexPage
         self._notFoundPage = notFoundPage
+        self._notFoundPageIsRedirect = notFoundPageIsRedirect
         self._allowedModules = allowedModules or []
         self._modules = {}
         self._initMonitoringForFileChanges(reactor)
@@ -162,18 +163,32 @@ class DynamicHtml(Observable):
             yield redirectTo(newLocation)
             return
 
-        try:
+        def createGenerators(path):
             head, tail = self._splitPath(path)
             if not head in self._getModules():
                 raise DynamicHtmlException('File "%s" does not exist.' % head)
-            generators = compose(self._createMainGenerator(head, tail, Headers=Headers, arguments=arguments, path=path, scheme=scheme, netloc=netloc, query=query, **kwargs))
-        except DynamicHtmlException, e:
-            response = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n' + str(e)
-            if not self._notFoundPage is None:
-                response = redirectTo(self._notFoundPage)
+            return compose(self._createMainGenerator(head, tail, Headers=Headers, arguments=arguments, path=path, scheme=scheme, netloc=netloc, query=query, **kwargs))
 
-            yield response
-            return
+        try:
+            generators = createGenerators(path)
+        except DynamicHtmlException, e:
+            FourOFourMessage = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n%s'
+            if self._notFoundPageIsRedirect:
+                response = redirectTo(self._notFoundPage)
+                if path == self._notFoundPage:
+                    response = FourOFourMessage % str(e)
+                yield response
+                return
+
+            if not self._notFoundPage is None:
+                try:
+                    generators = createGenerators(self._notFoundPage)
+                except DynamicHtmlException, innerException:
+                    yield FourOFourMessage % str(innerException)
+                    return
+            else:
+                yield FourOFourMessage % str(e)
+                return
 
         while True:
             try:
