@@ -1,41 +1,43 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
-#
-#    DynamicHtml is a template engine based on generators, and a sequel to Slowfoot.
-#    Copyright (C) 2008-2011 Seek You Too (CQ2) http://www.cq2.nl
-#    Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
-#
-#    This file is part of DynamicHtml.
-#
-#    DynamicHtml is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    DynamicHtml is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with DynamicHtml; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# 
+# "DynamicHtml" is a template engine based on generators, and a sequel to Slowfoot. 
+# 
+# Copyright (C) 2008-2011 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2011-2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# 
+# This file is part of "DynamicHtml"
+# 
+# "DynamicHtml" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# "DynamicHtml" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with "DynamicHtml"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# 
 ## end license ##
+
 from StringIO import StringIO
 import sys
-from cq2utils import CQ2TestCase
-from cq2utils import CallTrace, MATCHALL
-from weightless.core import compose
-from weightless.io import Reactor
-
 from os import makedirs, rename
 from os.path import join
 
+from seecr.test import SeecrTestCase, CallTrace
+
+from weightless.core import compose
+from weightless.io import Reactor
+
 from dynamichtml import DynamicHtml
 
-class DynamicHtmlTest(CQ2TestCase):
 
+class DynamicHtmlTest(SeecrTestCase):
     def testFileNotFound(self):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
@@ -162,11 +164,7 @@ def main(*args, **kwargs):
         open(self.tempdir+'/testSimple.sf', 'w').write("""
 def main(*args, **kwargs):
   yield 1/0
-  input = yield
-  next.send(bewerk(input))
-  data = next.next()
-  yield bewerk(data)
-  yield any.process()
+  yield "should not get here"
 """
         )
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
@@ -177,21 +175,25 @@ def main(*args, **kwargs):
 
     def testObservability(self):
         class Something(object):
-            def something(*args, **kwargs):
+            def returnSomething(*args, **kwargs):
                 return "something"
+            def generateSomething(*args, **kwargs):
+                yield "something"
+            def something(*args, **kwargs):
+                pass
 
         open(self.tempdir+'/afile.sf', 'w').write("""#
 def main(*args, **kwargs):
-  yield any.something()
-  for i in all.something():
+  yield call.returnSomething()
+  for i in all.generateSomething():
       yield i
   do.something()
-  yield asyncdo.something()
+  yield any.generateSomething()
 """)
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         d.addObserver(Something())
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
-        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nsomethingsomething', ''.join(result))
+        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nsomethingsomethingsomething', ''.join(result))
 
     def testObservabilityOutsideMainOnModuleLevel(self):
         class X(object):
@@ -199,7 +201,7 @@ def main(*args, **kwargs):
                 return "eks"
 
         open(self.tempdir+'/afile.sf', 'w').write("""#
-x = any.getX()
+x = call.getX()
 def main(*args, **kwargs):
   yield x
 """)
