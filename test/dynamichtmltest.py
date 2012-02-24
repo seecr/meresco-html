@@ -347,7 +347,10 @@ def main(headers={}, *args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=reactor, allowedModules=['Ft'])
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         resultText = ''.join(result)
-        self.assertTrue(resultText.endswith("/Ft/__init__.pyc'>"), resultText)
+        self.assertTrue(
+                resultText.endswith("/Ft/__init__.pyc'>") or
+                resultText.endswith("/Ft/__init__.py'>"),
+                resultText)
 
         open(self.tempdir + '/file1.sf', 'w').write("""
 import Ft

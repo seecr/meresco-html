@@ -1,3 +1,4 @@
+#!/bin/bash
 ## begin license ##
 #
 #    DynamicHtml is a template engine based on generators, and a sequel to Slowfoot.
@@ -21,17 +22,37 @@
 #
 ## end license ##
 set -e
+rm -rf tmp build
+mydir=$(cd $(dirname $0); pwd)
+
+fullPythonVersion=python2.6
+VERSION="x.y.z"
 
 rm -rf tmp build
+${fullPythonVersion} setup.py install --root tmp
 
-python setup.py install --root tmp
+if [ -f /etc/debian_version ]; then
+    USR_DIR=`pwd`/tmp/usr/local
+    SITE_PACKAGE_DIR=${USR_DIR}/lib/${fullPythonVersion}/dist-packages
+else
+    USR_DIR=`pwd`/tmp/usr
+    SITE_PACKAGE_DIR=${USR_DIR}/lib/${fullPythonVersion}/site-packages
+fi
 
-export PYTHONPATH=`pwd`/tmp/usr/lib/python2.5/site-packages 
+export PYTHONPATH=${SITE_PACKAGE_DIR}:${PYTHONPATH}
+
 cp -r test tmp/test
 
+find tmp -type f -exec sed -r -e \
+    "/DO_NOT_DISTRIBUTE/d;
+    s/\\\$Version:[^\\\$]*\\\$/\\\$Version: ${VERSION}\\\$/" -i {} \;
+
+
+set +o errexit
 (
 cd tmp/test
 ./alltests.sh
 )
+set -o errexit
 
 rm -rf tmp build
