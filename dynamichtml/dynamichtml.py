@@ -37,7 +37,7 @@ from lxml.etree import parse, tostring
 from time import time
 from urllib import urlencode
 from math import ceil
-from functools import partial
+from functools import partial, reduce
 
 from meresco.core import Observable, decorate
 
@@ -135,7 +135,7 @@ class DynamicHtml(Observable):
             if moduleName in module.__dict__:
                 module.__dict__[moduleName] = newModule
 
-    def __import__(self, moduleName, globals=None, locals=None, fromlist=None):
+    def __import__(self, moduleName, globals=None, locals=None, fromlist=None, level=None):
         if moduleName in self._allowedModules:
             moduleObject = __import__(moduleName)
         else:
