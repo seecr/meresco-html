@@ -41,7 +41,7 @@ from functools import partial
 
 from meresco.core import Observable, decorate
 
-from weightless.core import compose
+from weightless.core import compose, Yield
 
 from cq2utils.wrappers import wrapp
 from cq2utils import DirectoryWatcher
@@ -65,6 +65,16 @@ def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
 
 
+class ObservableProxy(object):
+
+    def __init__(self, observable):
+        self.any = observable.any
+        self.all = observable.all
+        self.call = observable.call
+        self.do = observable.do
+        self.once = observable.once
+
+
 class DynamicHtml(Observable):
     def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None):
         Observable.__init__(self)
@@ -79,6 +89,8 @@ class DynamicHtml(Observable):
         self._modules = {}
         self._initMonitoringForFileChanges(reactor)
         self._additionalGlobals = additionalGlobals or {}
+
+        self._observableProxy = ObservableProxy(self)
 
     def _loadModuleFromPaths(self):
         for directory in reversed(self._directories):
@@ -189,7 +201,7 @@ class DynamicHtml(Observable):
         while True:
             try:
                 firstValue = generators.next()
-                if callable(firstValue):
+                if firstValue is Yield or callable(firstValue):
                     yield firstValue
                     continue
                 firstLine = str(firstValue)
@@ -208,7 +220,7 @@ class DynamicHtml(Observable):
 
         try:
             for line in generators:
-                yield line if callable(line) else str(line)
+                yield line if line is Yield or callable(line) else str(line)
         except Exception:
             s = format_exc() #cannot be inlined
             yield "<pre>"
@@ -251,17 +263,16 @@ class DynamicHtml(Observable):
             'locals': locals,
             'type': type,
 
-            # observable stuff
-            'any': self.any,
-            'all': self.all,
-            'do': self.do,
-            'call': self.call,
+            # weightless stuff
+            'Yield': Yield,
+
+            # observables proxy
+            'observable': self._observableProxy,
 
             # commonly used/needed methods
             'escapeHtml': escapeHtml,
             'escapeXml': escapeXml,
             'bind_stream': lambda x:wrapp(bind_stream(x)),
-            'compose': compose,
             'time': time,
             'urlencode': lambda x: urlencode(x, doseq=True),
             'decorate': decorate,

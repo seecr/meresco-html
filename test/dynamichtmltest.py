@@ -31,7 +31,7 @@ from os.path import join
 
 from seecr.test import SeecrTestCase, CallTrace
 
-from weightless.core import compose
+from weightless.core import compose, Yield
 from weightless.io import Reactor
 
 from dynamichtml import DynamicHtml
@@ -172,28 +172,39 @@ def main(*args, **kwargs):
         self.assertTrue("HTTP/1.0 500 Internal Server Error\r\n\r\n" in result, result)
         self.assertTrue("integer division or modulo by zero" in result, result)
 
-
     def testObservability(self):
+        onces = []
+        dos = []
         class Something(object):
-            def returnSomething(*args, **kwargs):
-                return "something"
-            def generateSomething(*args, **kwargs):
-                yield "something"
-            def something(*args, **kwargs):
-                pass
+            def callSomething(self, *args, **kwargs):
+                return "call"
+            def allSomething(self, *args, **kwargs):
+                yield "all"
+            def anySomething(self, *args, **kwargs):
+                yield "any"
+                raise StopIteration('retval')
+            def doSomething(self, *args, **kwargs):
+                dos.append(True)
+            def onceSomething(self, *args, **kwargs):
+                onces.append(True)
 
         open(self.tempdir+'/afile.sf', 'w').write("""#
 def main(*args, **kwargs):
-  yield call.returnSomething()
-  for i in all.generateSomething():
-      yield i
-  do.something()
-  yield any.generateSomething()
+  result = observable.call.callSomething()
+  yield result
+  yield observable.all.allSomething()
+  result = yield observable.any.anySomething()
+  assert result == 'retval'
+  observable.do.doSomething()
+  yield observable.once.onceSomething()
 """)
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         d.addObserver(Something())
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
-        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\nsomethingsomethingsomething', ''.join(result))
+        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\ncallallany', ''.join(result))
+
+        self.assertEquals([True], dos)
+        self.assertEquals([True], onces)
 
     def testObservabilityOutsideMainOnModuleLevel(self):
         class X(object):
@@ -201,7 +212,7 @@ def main(*args, **kwargs):
                 return "eks"
 
         open(self.tempdir+'/afile.sf', 'w').write("""#
-x = call.getX()
+x = observable.call.getX()
 def main(*args, **kwargs):
   yield x
 """)
@@ -641,6 +652,21 @@ def main(*args,**kwargs):
         r = list(d.handleRequest(path='/withcallable'))
         self.assertEquals("HTTP/1.0 200 Ok\r\n\r\n", r[0])
         self.assertTrue(callable(r[1]))
+        self.assertEquals("text2", r[2])
+
+    def testPassYield(self):
+        reactor = Reactor()
+        tmplatename = join(self.tempdir, 'withyield.sf')
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        open(tmplatename, 'w').write(
+                "def main(*args, **kwargs):\n"
+                "    yield 'HTTP/1.0 200 Ok\\r\\n\\r\\n'\n"
+                "    yield Yield\n"
+                "    yield 'text2'\n")
+        reactor.step()
+        r = list(d.handleRequest(path='/withyield'))
+        self.assertEquals("HTTP/1.0 200 Ok\r\n\r\n", r[0])
+        self.assertTrue(Yield is r[1], r[1])
         self.assertEquals("text2", r[2])
 
     def testPassCallableAsFirstThing(self):
