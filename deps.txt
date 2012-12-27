@@ -1,5 +1,4 @@
 python-lxml
-python-amara
 seecr-core (>= 1.0)
 seecr-core (<< 1.1)
 python-meresco-components (>= 4.3.17)

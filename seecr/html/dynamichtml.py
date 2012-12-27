@@ -32,7 +32,6 @@ from itertools import groupby, islice
 
 from cgi import escape as _escapeHtml
 from xml.sax.saxutils import escape as escapeXml
-from amara.binderytools import bind_stream
 from lxml.etree import parse, tostring
 from time import time
 from urllib import urlencode
@@ -43,7 +42,6 @@ from meresco.core import Observable, decorate
 
 from weightless.core import compose, Yield
 
-from cq2utils.wrappers import wrapp
 from cq2utils import DirectoryWatcher
 
 
@@ -272,7 +270,6 @@ class DynamicHtml(Observable):
             # commonly used/needed methods
             'escapeHtml': escapeHtml,
             'escapeXml': escapeXml,
-            'bind_stream': lambda x:wrapp(bind_stream(x)),
             'time': time,
             'urlencode': lambda x: urlencode(x, doseq=True),
             'decorate': decorate,
