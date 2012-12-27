@@ -2,7 +2,7 @@
 # 
 # All rights reserved.
 # 
-# Copyright (C) 2011 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 ## end license ##
 
