@@ -1,0 +1,11 @@
+
+def main(**kwargs):
+    yield '''<html>
+    <head>
+        <title>Example page</title>
+    </head>
+    <body>'''
+    yield '''<h1>Example</h1>\n'''
+    yield '''<p>Seecr: <img src="/static/seecr-logo-smaller.png"></img></p>\n'''
+    yield '''</body>
+</html>'''
