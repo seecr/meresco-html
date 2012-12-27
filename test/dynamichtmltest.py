@@ -34,7 +34,7 @@ from seecr.test import SeecrTestCase, CallTrace
 from weightless.core import compose, Yield
 from weightless.io import Reactor
 
-from dynamichtml import DynamicHtml
+from seecr.html import DynamicHtml
 
 
 class DynamicHtmlTest(SeecrTestCase):

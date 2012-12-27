@@ -1,10 +1,11 @@
 
 from meresco.core import Observable
 from meresco.components.http import ObservableHttpServer, ApacheLogger, PathFilter, FileServer
-from dynamichtml import DynamicHtml
 from weightless.io import Reactor
 from weightless.core import compose, be
 from sys import stdout
+
+from dynamichtml import DynamicHtml
 
 def dna(reactor, port, dynamic, static, verbose=True):
     apacheLogger = ApacheLogger(stdout) if verbose else ApacheLogger()
