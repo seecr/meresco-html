@@ -29,3 +29,16 @@ from seecr.test.utils import getRequest
 class ServerTest(IntegrationTestCase):
     def testServer(self):
         header, body = getRequest(path='/', port=self.port, parse=False)
+        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /index', header)
+
+    def testExamplePage(self):
+        header, body = getRequest(path='/example', port=self.port, parse=False)
+        self.assertTrue(' 200 ' in header, header)
+        self.assertTrue('<img src="/static/seecr-logo-smaller.png">' in body, body)
+
+    def testStatic(self):
+        header, body = getRequest(path='/static/seecr-logo-smaller.png', port=self.port, parse=False)
+        self.assertTrue(' 200 ' in header, header)
+        self.assertTrue('ContentType: image/png' in header, header)
+
+
