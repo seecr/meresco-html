@@ -26,14 +26,22 @@
 
 from distutils.core import setup
 
+from os import walk, listdir
+from os.path import join
+data_files = []
+for path, dirs, files in walk('doc'):
+    data_files.append((path.replace('doc', '/usr/share/doc/seecr-html'), [join(path, f) for f in files if f != 'license.conf']))
+
 setup(
-    name='dynamichtml',
-    packages=['dynamichtml'],
+    name='seecr-html',
+    packages=['seecr.html'],
+    data_files=data_files,
+    scripts=[join('bin', f) for f in listdir('bin')],
     version='%VERSION%',
     author='Seecr (Seek You Too B.V.)',
     author_email='info@seecr.nl',
-    description='DynamicHtml is a template engine based on generators, and a sequel to Slowfoot',
-    long_description='DynamicHtml is a template engine based on generators, and a sequel to Slowfoot',
+    description='Seecr Html is a template engine based on generators and a sequel to Slowfoot',
+    long_description='Seecr Html is a template engine based on generators and a sequel to Slowfoot. It is also known as "DynamicHtml"',
     license='GNU Public License',
     platforms='all',
 )

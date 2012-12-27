@@ -28,35 +28,20 @@
 set -e
 rm -rf tmp build
 mydir=$(cd $(dirname $0); pwd)
+source /usr/share/seecr-test/functions
 
-fullPythonVersion=python2.6
 VERSION="x.y.z"
 
-rm -rf tmp build
-${fullPythonVersion} setup.py install --root tmp
+definePythonVars
 
-if [ -f /etc/debian_version ]; then
-    USR_DIR=`pwd`/tmp/usr/local
-    SITE_PACKAGE_DIR=${USR_DIR}/lib/${fullPythonVersion}/dist-packages
-else
-    USR_DIR=`pwd`/tmp/usr
-    SITE_PACKAGE_DIR=${USR_DIR}/lib/${fullPythonVersion}/site-packages
-fi
-
-export PYTHONPATH=${SITE_PACKAGE_DIR}:${PYTHONPATH}
-
+${PYTHON} setup.py install --root tmp
+cp seecr/__init__.py ${SITEPACKAGES}/seecr/
 cp -r test tmp/test
-
 find tmp -type f -exec sed -r -e \
-    "/DO_NOT_DISTRIBUTE/d;
-    s/\\\$Version:[^\\\$]*\\\$/\\\$Version: ${VERSION}\\\$/" -i {} \;
+    "s,^docDir.*$,docDir = '$mydir/tmp/usr/share/doc/seecr-html'," -i {} \;
 
+removeDoNotDistribute tmp
 
-set +o errexit
-(
-cd tmp/test
-./alltests.sh
-)
-set -o errexit
+runtests "$@"
 
 rm -rf tmp build
