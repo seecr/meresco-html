@@ -6,11 +6,11 @@ from weightless.io import Reactor
 from weightless.core import compose, be
 from sys import stdout
 
-def dna(reactor, port, dynamic, static, verbose):
-
+def dna(reactor, port, dynamic, static, verbose=True):
+    apacheLogger = ApacheLogger(stdout) if verbose else ApacheLogger()
     return (Observable(),
         (ObservableHttpServer(reactor, port=port),
-            (ApacheLogger(),
+            (apacheLogger,
                 (PathFilter('/static'),
                     (FileServer(static),)
                 ),
