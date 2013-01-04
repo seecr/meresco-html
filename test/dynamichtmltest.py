@@ -692,3 +692,21 @@ def main(*args,**kwargs):
         self.assertTrue(callable(r[4]))
         self.assertEquals("text2", r[5])
 
+    def testSetAttributeOnTemplateObjectNotAllowed(self):
+        open(self.tempdir + '/two.sf', 'w').write(r"""
+
+def main(*args, **kwargs):
+    yield "Hoi"
+""")
+        open(self.tempdir + '/one.sf', 'w').write(r"""
+
+import two
+two.three = 3
+
+def main(*args, **kwargs):
+    yield "Hoi"
+""")
+        reactor = Reactor()
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        result =  ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/one', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
+        self.assertTrue('AttributeError' in result, result)

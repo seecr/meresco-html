@@ -59,6 +59,11 @@ class TemplateModule(object):
             self._globals = self._loadGlobals()
         return self._globals[attr]
 
+    def __setattr__(self, name, value):
+        if name in ['_loadGlobals', '_globals']:
+            return object.__setattr__(self, name, value)
+        raise AttributeError("Set of an attribute is not allowed on a TemplateModule")
+
 class DynamicHtmlException(Exception):
     pass
 
