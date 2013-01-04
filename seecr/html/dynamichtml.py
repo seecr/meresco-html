@@ -46,13 +46,16 @@ from cq2utils import DirectoryWatcher
 
 
 class Module(object):
-    def __init__(self, moduleGlobals):
-        self._globals = moduleGlobals
+    def __init__(self, load):
+        self._loadGlobals = load
+        self._globals = None
 
-    def _updateGlobals(self, moduleGlobals):
-        self._globals = moduleGlobals
+    def _mustReload(self):
+        self._globals = None
 
     def __getattr__(self, attr):
+        if self._globals is None:
+            self._globals = self._loadGlobals()
         return self._globals[attr]
 
 class DynamicHtmlException(Exception):
@@ -99,7 +102,8 @@ class DynamicHtml(Observable):
     def _loadModuleFromPaths(self):
         for directory in reversed(self._directories):
             for path in glob(directory + '/*.sf'):
-                self.loadModuleFromPath(path)
+                moduleName = basename(path)[:-len('.sf')]
+                self.loadModule(moduleName)
 
     def _initMonitoringForFileChanges(self, reactor):
         for directory in self._directories:
@@ -112,39 +116,39 @@ class DynamicHtml(Observable):
     def _notifyHandler(self, event):
         if not self._modules:
             self._loadModuleFromPaths()
-        for directory in reversed(self._directories):
-            templateFile = join(directory, event.name)
-            if isfile(templateFile):
-                self.loadModuleFromPath(templateFile)
+        if not event.name.endswith('.sf'):
+            return
+        moduleName = basename(event.name)[:-len('.sf')]
+        self.loadModule(moduleName)
 
-    def loadModuleFromPath(self, path):
-        moduleName = basename(path)[:-len('.sf')]
-        moduleGlobals = self.createGlobals()
-        createdLocals = {}
-        success = False
-        try:
-            execfile(path, moduleGlobals, createdLocals)
-            success = True
-        except Exception, e:
-            s = escapeHtml(format_exc())
-            createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
-        moduleGlobals.update(createdLocals)
+    def _pathForModuleName(self, name):
+        for directory in self._directories:
+            path = join(directory, '%s.sf' % name)
+            if isfile(path):
+                return path
 
-
+    def loadModule(self, moduleName):
         if moduleName in self._modules:
-            self._modules[moduleName]._updateGlobals(moduleGlobals)
+            self._modules[moduleName]._mustReload()
         else:
-            self._modules[moduleName] = Module(moduleGlobals)
-        return success
+            def load():
+                moduleGlobals = self.createGlobals()
+                createdLocals = {}
+                try:
+                    path = self._pathForModuleName(moduleName)
+                    execfile(path, moduleGlobals, createdLocals)
+                except Exception, e:
+                    s = escapeHtml(format_exc())
+                    createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
+                moduleGlobals.update(createdLocals)
+                return moduleGlobals
+            self._modules[moduleName] = Module(load)
 
     def __import__(self, moduleName, globals=None, locals=None, fromlist=None, level=None):
         if moduleName in self._allowedModules:
             return __import__(moduleName)
         if not moduleName in self._modules:
-            filename = moduleName.replace('.', '/') + '.sf'
-            for directory in self._directories:
-                if self.loadModuleFromPath(join(directory, filename)):
-                    break
+            self.loadModule(moduleName)
         return self._modules[moduleName]
 
     def _getModules(self):
