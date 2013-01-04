@@ -45,7 +45,7 @@ from weightless.core import compose, Yield
 from cq2utils import DirectoryWatcher
 
 
-class Module(object):
+class TemplateModule(object):
     def __init__(self, load):
         self._loadGlobals = load
         self._globals = None
@@ -93,20 +93,16 @@ class DynamicHtml(Observable):
         self._indexPage = indexPage
         self._notFoundPage = notFoundPage
         self._allowedModules = allowedModules or []
-        self._modules = {}
-        self._initMonitoringForFileChanges(reactor)
+        self._templates = {}
         self._additionalGlobals = additionalGlobals or {}
-
         self._observableProxy = ObservableProxy(self)
+        self._initialize(reactor)
 
-    def _loadModuleFromPaths(self):
-        for directory in reversed(self._directories):
-            for path in glob(directory + '/*.sf'):
-                moduleName = basename(path)[:-len('.sf')]
-                self.loadModule(moduleName)
-
-    def _initMonitoringForFileChanges(self, reactor):
+    def _initialize(self, reactor):
         for directory in self._directories:
+            for path in glob(directory + '/*.sf'):
+                templateName = basename(path)[:-len('.sf')]
+                self.loadTemplateModule(templateName)
             directoryWatcher = DirectoryWatcher(
                 directory,
                 self._notifyHandler,
@@ -114,47 +110,40 @@ class DynamicHtml(Observable):
             reactor.addReader(directoryWatcher, directoryWatcher)
 
     def _notifyHandler(self, event):
-        if not self._modules:
-            self._loadModuleFromPaths()
         if not event.name.endswith('.sf'):
             return
-        moduleName = basename(event.name)[:-len('.sf')]
-        self.loadModule(moduleName)
+        templateName = basename(event.name)[:-len('.sf')]
+        self.loadTemplateModule(templateName)
 
-    def _pathForModuleName(self, name):
+    def _pathForTemplateName(self, name):
         for directory in self._directories:
             path = join(directory, '%s.sf' % name)
             if isfile(path):
                 return path
 
-    def loadModule(self, moduleName):
-        if moduleName in self._modules:
-            self._modules[moduleName]._mustReload()
+    def loadTemplateModule(self, templateName):
+        if templateName in self._templates:
+            self._templates[templateName]._mustReload()
         else:
             def load():
                 moduleGlobals = self.createGlobals()
                 createdLocals = {}
                 try:
-                    path = self._pathForModuleName(moduleName)
+                    path = self._pathForTemplateName(templateName)
                     execfile(path, moduleGlobals, createdLocals)
                 except Exception, e:
                     s = escapeHtml(format_exc())
                     createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
                 moduleGlobals.update(createdLocals)
                 return moduleGlobals
-            self._modules[moduleName] = Module(load)
+            self._templates[templateName] = TemplateModule(load)
 
     def __import__(self, moduleName, globals=None, locals=None, fromlist=None, level=None):
         if moduleName in self._allowedModules:
             return __import__(moduleName)
-        if not moduleName in self._modules:
-            self.loadModule(moduleName)
-        return self._modules[moduleName]
-
-    def _getModules(self):
-        if not self._modules:
-            self._loadModuleFromPaths()
-        return self._modules
+        if not moduleName in self._templates:
+            self.loadTemplateModule(moduleName)
+        return self._templates[moduleName]
 
     def _createMainGenerator(self, head, tail, scheme='', netloc='', path='', query='', Headers=None, arguments=None, **kwargs):
         Headers = Headers or {}
@@ -164,8 +153,7 @@ class DynamicHtml(Observable):
         else:
             nextHead, nextTail = self._splitPath(tail)
             nextGenerator = self._createMainGenerator(nextHead, nextTail, scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, **kwargs)
-        modules = self._getModules()
-        main = modules[head].main
+        main = self._templates[head].main
         yield main(scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
 
     def _splitPath(self, aPath):
@@ -176,7 +164,7 @@ class DynamicHtml(Observable):
 
     def _createGenerators(self, path, scheme='', **kwargs):
         head, tail = self._splitPath(path)
-        if not head in self._getModules():
+        if not head in self._templates:
             raise DynamicHtmlException('File "%s" does not exist.' % head)
         return compose(self._createMainGenerator(head, tail, path=path, **kwargs))
 
