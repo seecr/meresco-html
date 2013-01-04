@@ -45,9 +45,15 @@ from weightless.core import compose, Yield
 from cq2utils import DirectoryWatcher
 
 
-class Module:
+class Module(object):
     def __init__(self, moduleGlobals):
-        self.__dict__ = moduleGlobals
+        self._globals = moduleGlobals
+
+    def _updateGlobals(self, moduleGlobals):
+        self._globals = moduleGlobals
+
+    def __getattr__(self, attr):
+        return self._globals[attr]
 
 class DynamicHtmlException(Exception):
     pass
@@ -123,27 +129,23 @@ class DynamicHtml(Observable):
             s = escapeHtml(format_exc())
             createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
         moduleGlobals.update(createdLocals)
-        newModule = Module(moduleGlobals)
-        self._replaceModuleReferencesInOtherModules(moduleName, newModule)
-        self._modules[moduleName] = newModule
-        return success
 
-    def _replaceModuleReferencesInOtherModules(self, moduleName, newModule):
-        for module in self._modules.values():
-            if moduleName in module.__dict__:
-                module.__dict__[moduleName] = newModule
+
+        if moduleName in self._modules:
+            self._modules[moduleName]._updateGlobals(moduleGlobals)
+        else:
+            self._modules[moduleName] = Module(moduleGlobals)
+        return success
 
     def __import__(self, moduleName, globals=None, locals=None, fromlist=None, level=None):
         if moduleName in self._allowedModules:
-            moduleObject = __import__(moduleName)
-        else:
-            if not moduleName in self._modules:
-                filename = moduleName.replace('.', '/') + '.sf'
-                for directory in self._directories:
-                    if self.loadModuleFromPath(join(directory, filename)):
-                        break
-            moduleObject = self._modules[moduleName]
-        return moduleObject
+            return __import__(moduleName)
+        if not moduleName in self._modules:
+            filename = moduleName.replace('.', '/') + '.sf'
+            for directory in self._directories:
+                if self.loadModuleFromPath(join(directory, filename)):
+                    break
+        return self._modules[moduleName]
 
     def _getModules(self):
         if not self._modules:
