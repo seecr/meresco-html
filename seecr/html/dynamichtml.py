@@ -44,6 +44,7 @@ from meresco.core import Observable, decorate
 from weightless.core import compose, Yield
 
 from cq2utils import DirectoryWatcher
+import exceptions
 
 
 class TemplateModule(object):
@@ -243,6 +244,7 @@ class DynamicHtml(Observable):
             'ceil': ceil,
             'unicode': unicode,
             'range': range,
+            'xrange': xrange,
             'reduce': reduce,
             'reversed': reversed,
             'zip': zip,
@@ -280,6 +282,7 @@ class DynamicHtml(Observable):
             'tostring': tostring,
             'http': Http()
         }
+        result['__builtins__'].update((excName, excType) for excName, excType in vars(exceptions).items() if not excName.startswith('_'))
         return result
             
 FourOFourMessage = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n'
