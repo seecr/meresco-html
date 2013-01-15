@@ -38,5 +38,7 @@ class SecureZone(Observable):
                 any(path.startswith(excluded) for excluded in self._excluding):
             yield self.all.handleRequest(session=session, path=path, query=query, **kwargs)
             return
-        session['originalPath'] = '%s%s' % (path, "?%s" % query if query else "")
+        session[ORIGINAL_PATH] = '%s%s' % (path, "?%s" % query if query else "")
         yield redirectHttp % self._loginPath
+
+ORIGINAL_PATH = 'originalPath'

@@ -29,6 +29,7 @@ from meresco.components.http.utils import CRLF, redirectHttp, okHtml
 from cgi import parse_qs
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join, dirname
+from securezone import ORIGINAL_PATH
 
 class BasicHtmlLoginForm(Observable):
     def __init__(self, action, loginPath, home="/", name=None):
@@ -60,7 +61,8 @@ class BasicHtmlLoginForm(Observable):
         password = bodyArgs.get('password', [None])[0]
         if self.call.validateUser(username=username, password=password):
             session['user'] = User(username)
-            yield redirectHttp % self._home
+            url = session.get(ORIGINAL_PATH, self._home)
+            yield redirectHttp % url
         else:
             session['BasicHtmlLoginForm.formValues'] = {'username': username, 'errorMessage': 'Invalid username or password'}
             yield redirectHttp % self._loginPath
