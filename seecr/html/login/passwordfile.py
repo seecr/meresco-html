@@ -30,13 +30,12 @@ from os import rename, chmod
 from hashlib import md5
 from stat import S_IRUSR, S_IWUSR
 from re import compile as reCompile
+from random import choice
+from string import digits as _SALT_1, ascii_letters as _SALT_2
 USER_RW = S_IRUSR | S_IWUSR
 
 def md5Hash(data):
     return md5(data).hexdigest()
-
-def saltedPasswordHasher(salt):
-    return lambda data: md5Hash(data + salt)
 
 def simplePasswordTest(passwd):
     return bool(passwd.strip())
@@ -45,23 +44,27 @@ VALIDNAME=reCompile(r'^[\w@\-\.]+$')
 def usernameTest(username):
     return bool(VALIDNAME.match(username))
 
+def randomString(length=5):
+    return ''.join(choice(_SALT_1 + _SALT_2) for i in xrange(length))
+
 class PasswordFile(object):
+    version=2
 
     def __init__(self,
             filename,
-            hashPassword,
+            hashMethod=md5Hash,
             passwordTest=simplePasswordTest,
             usernameTest=usernameTest):
-        self._hashPassword = hashPassword
+        self._hashMethod = hashMethod
         self._passwordTest = passwordTest
         self._usernameTest = usernameTest
         self._filename = filename
         self._users = {}
         if not isfile(filename):
-            self._users['admin'] = self._hashPassword('admin')
             self._makePersistent()
+            self._setUser('admin', 'admin')
         else:
-            self._users = jsonRead(open(filename))
+            self._users.update(self._read())
 
     def addUser(self, username, password):
         if not self._usernameTest(username):
@@ -77,8 +80,9 @@ class PasswordFile(object):
     def validateUser(self, username, password):
         valid = False
         try:
-            valid = self._users[username] == self._hashPassword(password)
-        except:
+            user = self._users[username]
+            valid = user['password'] == self._hashMethod(password + user['salt'])
+        except KeyError:
             pass
         return valid
 
@@ -95,15 +99,19 @@ class PasswordFile(object):
 
     def _makePersistent(self):
         tmpFilename = self._filename + ".tmp"
-        jsonWrite(self._users, open(tmpFilename, 'w'))
+        jsonWrite(dict(users=self._users, version=self.version), open(tmpFilename, 'w'))
         rename(tmpFilename, self._filename)
         chmod(self._filename, USER_RW)
+
+    def _read(self):
+        result = jsonRead(open(self._filename))
+        assert result['version'] == self.version, 'Expected database version %s' % self.version
+        return result['users']
         
     def _setUser(self, username, password):
         if not self._passwordTest(password):
             raise ValueError('Invalid password.')
-        self._users[username] = self._hashPassword(password)
+        salt = randomString()
+        self._users[username] = dict(salt=salt, password=self._hashMethod(password + salt))
         self._makePersistent()
 
-def createPasswordFile(filename, salt):
-    return PasswordFile(filename, hashPassword=saltedPasswordHasher(salt))

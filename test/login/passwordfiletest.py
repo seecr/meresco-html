@@ -32,25 +32,26 @@ from hashlib import md5
 from uuid import uuid4
 from seecr.html.login import PasswordFile
 
-poorHash = lambda pwd: ''.join(reversed(pwd))
+poorHash = lambda data: ''.join(reversed(data))
 
 class PasswordFileTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.filename=join(self.tempdir, 'passwd')
-        self.pwd = PasswordFile(filename=self.filename, hashPassword=poorHash)
+        self.pwd = PasswordFile(filename=self.filename, hashMethod=poorHash)
 
     def testReadPasswordFile(self):
-        passwdHash = poorHash('password')
-        userlist = {'John':passwdHash}
-        jsonSave(userlist, open(self.filename, 'w'))
-        pf = PasswordFile(filename=self.filename, hashPassword=poorHash)
+        passwdHash = poorHash('passwordsalt')
+        data = dict(users={'John':{'salt':'salt', 'password':passwdHash}}, version=PasswordFile.version)
+        jsonSave(data, open(self.filename, 'w'))
+        pf = PasswordFile(filename=self.filename, hashMethod=poorHash)
         self.assertTrue(pf.validateUser('John', 'password'))
 
     def testAddUser(self):
         self.pwd.addUser(username='John', password='password')
+        self.assertTrue(self.pwd.validateUser('John', 'password'))
         # reopen file.
-        pf = PasswordFile(filename=self.filename, hashPassword=poorHash)
+        pf = PasswordFile(filename=self.filename, hashMethod=poorHash)
         self.assertTrue(pf.validateUser('John', 'password'))
 
     def testValidPassword(self):

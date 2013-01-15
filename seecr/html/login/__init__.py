@@ -24,7 +24,7 @@
 # 
 ## end license ##
 
-from passwordfile import PasswordFile, createPasswordFile
+from passwordfile import PasswordFile
 from basichtmlloginform import BasicHtmlLoginForm
 from securezone import SecureZone
 
