@@ -26,4 +26,5 @@
 
 from passwordfile import PasswordFile, createPasswordFile
 from basichtmlloginform import BasicHtmlLoginForm
+from securezone import SecureZone
 
