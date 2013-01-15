@@ -1,10 +1,9 @@
-#!/usr/bin/env python2.5
 ## begin license ##
 # 
 # "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot. 
 # It is also known as "DynamicHtml". 
 # 
-# Copyright (C) 2008-2009 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
 # Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Seecr Html"
@@ -25,21 +24,6 @@
 # 
 ## end license ##
 
-from sys import path
-from os import system, listdir
-from os.path import isdir, join
-system("find .. -name '*.pyc' | xargs rm -f")
-if isdir('../deps.d'):
-    for d in listdir('../deps.d'):
-        path.insert(0, join('../deps.d', d))
-path.insert(0, '..')
+from passwordfile import PasswordFile, createPasswordFile
+from basichtmlloginform import BasicHtmlLoginForm
 
-from unittest import main
-
-from dynamichtmltest import DynamicHtmlTest
-
-from login.passwordfiletest import PasswordFileTest
-from login.basichtmlloginformtest import BasicHtmlLoginFormTest
-
-if __name__ == '__main__':
-        main()
