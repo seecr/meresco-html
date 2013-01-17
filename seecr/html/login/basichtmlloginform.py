@@ -32,7 +32,7 @@ from os.path import join, dirname
 from securezone import ORIGINAL_PATH
 
 class BasicHtmlLoginForm(Observable):
-    def __init__(self, action, loginPath, home="/", name=None):
+    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None):
         Observable.__init__(self, name=name)
         self._action = action
         self._loginPath = loginPath
@@ -42,6 +42,7 @@ class BasicHtmlLoginForm(Observable):
             'remove': self.handleRemove,
             'newUser': self.handleNewUser,
         }
+        self._userIsAdminMethod = userIsAdminMethod
 
 
     def handleRequest(self, Method, path, **kwargs):
@@ -61,7 +62,7 @@ class BasicHtmlLoginForm(Observable):
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
         if self.call.validateUser(username=username, password=password):
-            session['user'] = User(username)
+            session['user'] = User(username, isAdminMethod=self._userIsAdminMethod)
             url = session.get(ORIGINAL_PATH, self._home)
             yield redirectHttp % url
         else:
@@ -76,7 +77,7 @@ class BasicHtmlLoginForm(Observable):
         username = quoteattr(formValues.get('username', ''))
         action = quoteattr(self._action)
         formUrl = quoteattr(path)
-        yield """    <form method="POST" action=%(action)s>
+        yield """    <form method="POST" name="login" action=%(action)s>
         <input type="hidden" name="formUrl" value=%(formUrl)s/>
         <dl>
             <dt>Username</dt>
@@ -87,6 +88,7 @@ class BasicHtmlLoginForm(Observable):
         </dl>
     </form>
 </div>""" % locals()
+        session.pop('BasicHtmlLoginForm.formValues', None)
 
     def newUserForm(self, session, path, **kwargs):
         formValues = session.get('BasicHtmlLoginForm.newUserFormValues', {}) if session else {}
@@ -102,7 +104,7 @@ class BasicHtmlLoginForm(Observable):
         action = quoteattr(join(self._action, 'newUser'))
         formUrl = quoteattr(path)
         returnUrl = quoteattr(kwargs.get('returnUrl', path))
-        yield """    <form method="POST" action=%(action)s>
+        yield """    <form method="POST" name="newUser" action=%(action)s>
         <input type="hidden" name="formUrl" value=%(formUrl)s/>
         <input type="hidden" name="returnUrl" value=%(returnUrl)s/>
         <dl>
@@ -116,6 +118,7 @@ class BasicHtmlLoginForm(Observable):
         </dl>
     </form>
 </div>""" % locals()
+        session.pop('BasicHtmlLoginForm.newUserFormValues', None)
 
     def handleNewUser(self, session, Body, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
@@ -166,7 +169,7 @@ class BasicHtmlLoginForm(Observable):
             return
         if 'errorMessage' in formValues:
             yield '    <p class="error">%s</p>\n' % xmlEscape(formValues['errorMessage'])
-        yield """<form method="POST" action=%s>
+        yield """<form method="POST" name="changePassword" action=%s>
         <input type="hidden" name="formUrl" value=%s/>
         <input type="hidden" name="username" value=%s/>
         <dl>
@@ -180,6 +183,39 @@ class BasicHtmlLoginForm(Observable):
         </dl>
     </form>
 </div>""" % (quoteattr(join(self._action, 'changepassword')), quoteattr(path), quoteattr(session['user'].name))
+        session.pop('BasicHtmlLoginForm.formValues', None)
+
+    def userList(self, session, path, **kwargs):
+        yield """<div id="login">\n"""
+        if not 'user' in session:
+            yield '<p class="error">Please login to show user list.</p>\n</div>'
+            return
+        user = session['user']
+        if user.isAdmin():
+            yield """<script type="text/javascript">
+function deleteUser(username) {
+    if (confirm("Are you sure?")) {
+        document.removeUser.username.value = username;
+        document.removeUser.submit();
+    }
+}
+            </script>"""
+            yield """<form name="removeUser" method="POST" action=%s>
+            <input type="hidden" name="formUrl" value=%s/>
+            <input type="hidden" name="username"/>""" % (
+                    quoteattr(join(self._action, 'remove')),
+                    quoteattr(path),
+                )
+        yield '<ul>\n'
+        for username in sorted(self.call.listUsernames()):
+            yield '<li>%s' % xmlEscape(username)
+            if user.isAdmin() and user.name != username:
+                yield """ <a href="javascript:deleteUser('%s');">delete</a>""" % username
+            yield '</li>\n'
+        yield '</ul>\n'
+        if user.isAdmin():
+            yield '</form>\n'
+        yield '</div>\n'
 
     def handleRemove(self, session, Body, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
@@ -196,10 +232,11 @@ class BasicHtmlLoginForm(Observable):
         yield redirectHttp % formUrl
 
 class User(object):
-    def __init__(self, name):
+    def __init__(self, name, isAdminMethod=None):
         self.name = name
+        self._isAdmin = lambda name: name == 'admin' if isAdminMethod is None else isAdminMethod
 
     def isAdmin(self):
-        return self.name == "admin"
+        return self._isAdmin(self.name)
 
 

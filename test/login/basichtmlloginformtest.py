@@ -48,7 +48,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         result = joco(self.form.loginForm(session={}, path='/page/login2'))
 
         self.assertEqualsWS("""<div id="login">
-    <form method="POST" action="/action">
+    <form method="POST" name="login" action="/action">
     <input type="hidden" name="formUrl" value="/page/login2"/>
         <dl>
             <dt>Username</dt>
@@ -68,7 +68,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         result = joco(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return'))
         self.assertEqualsWS("""<div id="login">
     <p class="error">BAD BOY</p>
-    <form method="POST" action="/action/newUser">
+    <form method="POST" name="newUser" action="/action/newUser">
     <input type="hidden" name="formUrl" value="/page/login2"/>
     <input type="hidden" name="returnUrl" value="/return"/>
         <dl>
@@ -151,7 +151,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         self.assertEqualsWS("""<div id="login">
     <p class="error">Invalid &lt;username&gt; or "password"</p>
-    <form method="POST" action="/action">
+    <form method="POST" name="login" action="/action">
     <input type="hidden" name="formUrl" value="/show/login"/>
         <dl>
             <dt>Username</dt>
@@ -172,7 +172,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         self.assertEqualsWS("""<div id="login">
     <p class="error">BAD BOY</p>
-    <form method="POST" action="/action/changepassword">
+    <form method="POST" name="changePassword" action="/action/changepassword">
     <input type="hidden" name="formUrl" value="/show/changepasswordform"/>
     <input type="hidden" name="username" value="username"/>
         <dl>
@@ -321,3 +321,34 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEquals(set(['existing', 'admin']), set(pf.listUsernames())) 
         self.assertEquals({'errorMessage':'Passwords do not match', 'username':'newuser'}, session['BasicHtmlLoginForm.newUserFormValues'])
 
+    def testShowUserList(self):
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        pf.addUser('one', 'password')
+        pf.addUser('two', 'password')
+        pf.addUser('three', 'password')
+        
+        session = {'user':User('two', isAdminMethod=lambda name:True)}
+
+        result = joco(self.form.userList(session=session, path='/show/login'))
+
+        self.assertEqualsWS("""<div id="login">
+    <script type="text/javascript">
+function deleteUser(username) {
+    if (confirm("Are you sure?")) {
+        document.removeUser.username.value = username;
+        document.removeUser.submit();
+    }
+}
+</script>
+<form name="removeUser" method="POST" action="/action/remove">
+    <input type="hidden" name="formUrl" value="/show/login"/>
+    <input type="hidden" name="username"/>
+    <ul>
+        <li>admin <a href="javascript:deleteUser('admin');">delete</a></li>
+        <li>one <a href="javascript:deleteUser('one');">delete</a></li>
+        <li>three <a href="javascript:deleteUser('three');">delete</a></li>
+        <li>two</li>
+    </ul>
+    </form>
+</div>""", result)

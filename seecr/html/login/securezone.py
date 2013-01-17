@@ -39,6 +39,7 @@ class SecureZone(Observable):
             yield self.all.handleRequest(session=session, path=path, query=query, **kwargs)
             return
         session[ORIGINAL_PATH] = '%s%s' % (path, "?%s" % query if query else "")
+        session['BasicHtmlLoginForm.formValues'] = {'errorMessage': 'Login required for "%s"' % path}
         yield redirectHttp % self._loginPath
 
 ORIGINAL_PATH = 'originalPath'

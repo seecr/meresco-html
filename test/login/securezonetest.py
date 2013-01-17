@@ -46,7 +46,7 @@ class SecureZoneTest(SeecrTestCase):
 
         self.assertEquals(redirectHttp % '/page_with_login', response)
         self.assertEquals(0, len(observer.calledMethods))
-        self.assertEquals({'originalPath':'/secret_page?a=b'}, session)
+        self.assertEquals({'originalPath':'/secret_page?a=b', 'BasicHtmlLoginForm.formValues':{'errorMessage': 'Login required for "/secret_page"'}}, session)
 
     def testSecureZoneWithoutQuery(self):
         secureZone = SecureZone('/page_with_login')
@@ -60,7 +60,7 @@ class SecureZoneTest(SeecrTestCase):
 
         self.assertEquals(redirectHttp % '/page_with_login', response)
         self.assertEquals(0, len(observer.calledMethods))
-        self.assertEquals({'originalPath':'/secret_page'}, session)
+        self.assertEquals({'originalPath':'/secret_page', 'BasicHtmlLoginForm.formValues': {'errorMessage': 'Login required for "/secret_page"'}}, session)
 
     def testSecureZoneAllowed(self):
         secureZone = SecureZone('/page_with_login')
