@@ -40,6 +40,7 @@ class BasicHtmlLoginForm(Observable):
         self._actions = {
             'changepassword': self.handleChangePassword,
             'remove': self.handleRemove,
+            'newUser': self.handleNewUser,
         }
 
 
@@ -86,6 +87,56 @@ class BasicHtmlLoginForm(Observable):
         </dl>
     </form>
 </div>""" % locals()
+
+    def newUserForm(self, session, path, **kwargs):
+        formValues = session.get('BasicHtmlLoginForm.newUserFormValues', {}) if session else {}
+        yield """<div id="login">\n"""
+        if not 'user' in session:
+            yield '<p class="error">Please login to add new users.</p>\n</div>'
+            return
+        if 'errorMessage' in formValues:
+            yield '    <p class="error">%s</p>\n' % xmlEscape(formValues['errorMessage'])
+        if 'successMessage' in formValues:
+            yield '    <p class="success">%s</p>\n' % xmlEscape(formValues['successMessage'])
+        username = quoteattr(formValues.get('username', ''))
+        action = quoteattr(join(self._action, 'newUser'))
+        formUrl = quoteattr(path)
+        returnUrl = quoteattr(kwargs.get('returnUrl', path))
+        yield """    <form method="POST" action=%(action)s>
+        <input type="hidden" name="formUrl" value=%(formUrl)s/>
+        <input type="hidden" name="returnUrl" value=%(returnUrl)s/>
+        <dl>
+            <dt>Username</dt>
+            <dd><input type="text" name="username" value=%(username)s/></dd>
+            <dt>Password</dt>
+            <dd><input type="password" name="password"/></dd>
+            <dt>Retype password</dt>
+            <dd><input type="password" name="retypedPassword"/></dd>
+            <dd class="submit"><input type="submit" value="add"/></dd>
+        </dl>
+    </form>
+</div>""" % locals()
+
+    def handleNewUser(self, session, Body, **kwargs):
+        bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
+        username = bodyArgs.get('username', [None])[0]
+        password = bodyArgs.get('password', [None])[0]
+        retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
+        formUrl = bodyArgs.get('formUrl', [self._home])[0]
+        returnUrl = bodyArgs.get('returnUrl', [formUrl])[0]
+
+        targetUrl = formUrl
+        if password != retypedPassword:
+            session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': 'Passwords do not match'}
+        else:
+            try:
+                self.call.addUser(username=username, password=password)
+                session['BasicHtmlLoginForm.newUserFormValues']={'successMessage': 'Added user "%s"' % username}
+                targetUrl = returnUrl
+            except ValueError, e:
+                session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': str(e)}
+        
+        yield redirectHttp % targetUrl
 
     def handleChangePassword(self, session, Body, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}

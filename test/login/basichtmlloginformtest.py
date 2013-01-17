@@ -31,9 +31,10 @@ from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.http.utils import CRLF
 from urllib import urlencode
 
-from seecr.html.login import BasicHtmlLoginForm
+from seecr.html.login import BasicHtmlLoginForm, PasswordFile
 from seecr.html.login.basichtmlloginform import User
 from seecr.html.login.securezone import ORIGINAL_PATH
+from os.path import join
 
 def joco(gen):
     return ''.join(compose(gen))
@@ -55,6 +56,29 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             <dt>Password</dt>
             <dd><input type="password" name="password"/></dd>
             <dd class="submit"><input type="submit" value="login"/></dd>
+        </dl>
+    </form>
+</div>""", result)
+
+    def testNewUserForm(self):
+        session = {
+            'user': User('username'),
+            'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
+        }
+        result = joco(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return'))
+        self.assertEqualsWS("""<div id="login">
+    <p class="error">BAD BOY</p>
+    <form method="POST" action="/action/newUser">
+    <input type="hidden" name="formUrl" value="/page/login2"/>
+    <input type="hidden" name="returnUrl" value="/return"/>
+        <dl>
+            <dt>Username</dt>
+            <dd><input type="text" name="username" value=""/></dd>
+            <dt>Password</dt>
+            <dd><input type="password" name="password"/></dd>
+            <dt>Retype password</dt>
+            <dd><input type="password" name="retypedPassword"/></dd>
+            <dd class="submit"><input type="submit" value="add"/></dd>
         </dl>
     </form>
 </div>""", result)
@@ -244,3 +268,56 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEquals(['hasUser'], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/userlist\r\n\r\n", result)
         self.assertEquals({'errorMessage': 'User "user" does not exist.'}, session['BasicHtmlLoginForm.formValues'])
+
+    def testNewUserWithPOSTsucceeds(self):
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        pf.addUser('existing', 'password')
+        Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
+        session = {'user':User('existing')}
+
+        result = joco(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+
+        header, body = result.split(CRLF*2)
+        self.assertTrue('302' in header)
+        self.assertTrue('Location: /return' in header)
+
+        self.assertEquals(set(['existing', 'newuser', 'admin']), set(pf.listUsernames())) 
+        self.assertTrue(pf.validateUser('newuser', 'secret'))
+        self.assertEquals('Added user "newuser"', session['BasicHtmlLoginForm.newUserFormValues']['successMessage'])
+
+    def testNewUserWithPOSTFails(self):
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        pf.addUser('existing', 'password')
+        pf.addUser('newuser', 'oldpassword')
+        Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='newpassword', formUrl='/page/newUser', returnUrl='/return'))
+        session = {'user':User('existing')}
+
+        result = joco(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+
+        header, body = result.split(CRLF*2)
+        self.assertTrue('302' in header)
+        self.assertTrue('Location: /page/newUser' in header)
+
+        self.assertEquals(set(['existing', 'newuser', 'admin']), set(pf.listUsernames())) 
+        self.assertTrue(pf.validateUser('newuser', 'oldpassword'))
+        self.assertFalse(pf.validateUser('newuser', 'newpassword'))
+        self.assertEquals({'errorMessage':'User already exists.', 'username':'newuser'}, session['BasicHtmlLoginForm.newUserFormValues'])
+
+    def testNewUserWithPOSTFailsDifferentPasswords(self):
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        pf.addUser('existing', 'password')
+        Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='retypedpassword', formUrl='/page/newUser', returnUrl='/return'))
+        session = {'user':User('existing')}
+
+        result = joco(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+
+        header, body = result.split(CRLF*2)
+        self.assertTrue('302' in header)
+        self.assertTrue('Location: /page/newUser' in header)
+
+        self.assertEquals(set(['existing', 'admin']), set(pf.listUsernames())) 
+        self.assertEquals({'errorMessage':'Passwords do not match', 'username':'newuser'}, session['BasicHtmlLoginForm.newUserFormValues'])
+
