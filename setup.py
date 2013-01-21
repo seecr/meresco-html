@@ -34,7 +34,7 @@ for path, dirs, files in walk('doc'):
 
 setup(
     name='seecr-html',
-    packages=['seecr.html'],
+    packages=['seecr.html', 'seecr.html.login'],
     data_files=data_files,
     scripts=[join('bin', f) for f in listdir('bin')],
     version='%VERSION%',
