@@ -37,7 +37,7 @@ path.insert(0, '..')                                   #DO_NOT_DISTRIBUTE
 from unittest import main
 
 from dynamichtmltest import DynamicHtmlTest
-
+from servertest import ServerTest
 from login.passwordfiletest import PasswordFileTest
 from login.securezonetest import SecureZoneTest
 from login.basichtmlloginformtest import BasicHtmlLoginFormTest

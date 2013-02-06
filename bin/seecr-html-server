@@ -19,9 +19,12 @@ from seecr.html.server import startServer
 
 if __name__ == '__main__':
     parser = ParseArguments()
-    parser.addOption('', '--port', type='int', help='Port', default=8000)
-    parser.addOption('', '--dynamic', help='Dynamic html dir', mandatory=True)
-    parser.addOption('', '--static', help='Static dir', mandatory=True)
+    parser.addOption('', '--port', type='int', help='Port number', default=8000)
+    parser.addOption('', '--dynamic', help='Directory for dynamic files', mandatory=True)
+    parser.addOption('', '--static', help='Directory for static files', mandatory=True)
+    parser.addOption('', '--index', help="Default dynamic file", default="/index")
+    parser.addOption('', '--staticpath', help="HTTP path for static files", default="/static")
+    parser.addOption('', '--dynpath', help="HTTP path for dynamic files", default="/")
 
     options, arguments = parser.parse()
 

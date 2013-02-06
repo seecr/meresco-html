@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 # 
 # "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot. 
 # It is also known as "DynamicHtml". 
 # 
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2008-2011 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2011-2013 Seecr (Seek You Too B.V.) http://seecr.nl
 # 
 # This file is part of "Seecr Html"
 # 
@@ -23,20 +25,20 @@
 # 
 ## end license ##
 
-from seecr.test.integrationtestcase import IntegrationTestCase
-from seecr.test.utils import getRequest
+from os.path import join
 
-class ServerTest(IntegrationTestCase):
-    def testServer(self):
-        header, body = getRequest(path='/', port=self.port, parse=False)
-        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /index', header)
+from weightless.core import compose
+from seecr.test import SeecrTestCase
+from seecr.html.server import handler
 
-    def testExamplePage(self):
-        header, body = getRequest(path='/example', port=self.port, parse=False)
-        self.assertTrue(' 200 ' in header, header)
-        self.assertTrue('<img src="/static/seecr-logo-smaller.png">' in body, body)
+def serialize(generator):
+    return "".join(compose(generator))
 
-    def testStatic(self):
-        header, body = getRequest(path='/static/seecr-logo-smaller.png', port=self.port, parse=False)
-        self.assertTrue(' 200 ' in header, header)
-        self.assertTrue('Content-Type: image/png' in header, header)
+class ServerTest(SeecrTestCase):
+
+    def testOne(self):
+        open(join(self.tempdir, "tst"), "w").write("hello!")
+        h = handler(self.tempdir, "/dyn", "index.html", "/s", "/d")
+        x = h.all.handleRequest(path="/s/tst")
+        self.assertTrue("hello!" in serialize(x))
+
