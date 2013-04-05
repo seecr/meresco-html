@@ -40,3 +40,5 @@ class ServerTest(IntegrationTestCase):
         header, body = getRequest(path='/static/seecr-logo-smaller.png', port=self.port, parse=False)
         self.assertTrue(' 200 ' in header, header)
         self.assertTrue('Content-Type: image/png' in header, header)
+
+

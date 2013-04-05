@@ -110,12 +110,11 @@ class DynamicHtml(Observable):
             for path in glob(directory + '/*.sf'):
                 templateName = basename(path)[:-len('.sf')]
                 self.loadTemplateModule(templateName)
-            if reactor:
-                directoryWatcher = DirectoryWatcher(
-                    directory,
-                    self._notifyHandler,
-                    CreateFile=True, ModifyFile=True, MoveInFile=True)
-                reactor.addReader(directoryWatcher, directoryWatcher)
+            directoryWatcher = DirectoryWatcher(
+                directory,
+                self._notifyHandler,
+                CreateFile=True, ModifyFile=True, MoveInFile=True)
+            reactor.addReader(directoryWatcher, directoryWatcher)
 
     def _notifyHandler(self, event):
         if not event.name.endswith('.sf'):

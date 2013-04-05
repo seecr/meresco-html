@@ -23,7 +23,7 @@
 # 
 ## end license ##
 
-from meresco.core import Observable, Transparent
+from meresco.core import Observable
 from meresco.components.http import ObservableHttpServer, ApacheLogger, PathFilter, FileServer, PathRename
 from weightless.io import Reactor
 from weightless.core import compose, be
@@ -31,55 +31,29 @@ from sys import stdout
 
 from dynamichtml import DynamicHtml
 
-#class ObservableDirectoryWatcher(Observable):
-#    """Idee to get rid of events sources in handlers"""
-#    def __init__(self, reactor, directory, handlerName):
-#        dirWatcher = DirectoryWatcher(directory,
-#                self._notifyHandler,
-#                CreateFile=True, ModifyFile=True, MoveInFile=True)
-#        reactor.addReader(dirWatcher, dirWatcher)
-#        self._handlerName = handlerName
-#
-#    def _notifyHandler(self, event):
-#        self.do.unknown(self.handlerName, event)
-
-def bear(dna):
-    being = be(dna)
-    list(compose(being.once.observer_init()))
-    return being
-
-def httpserver(reactor, port=None, verbose=None, **kwargs):
-    hook = Transparent()
-    dna = \
-        (Observable(),
-            (ObservableHttpServer(reactor, port=port),
-                (ApacheLogger(stdout) if verbose else ApacheLogger(),
-                    (hook,)
+def dna(reactor, port, dynamic, static, verbose=True):
+    apacheLogger = ApacheLogger(stdout) if verbose else ApacheLogger()
+    return (Observable(),
+        (ObservableHttpServer(reactor, port=port),
+            (apacheLogger,
+                (PathFilter('/static'),
+                    (PathRename(lambda path: path[len('/static'):]),
+                        (FileServer(static),)
+                    )
+                ),
+                (PathFilter('/', excluding=['/static']),
+                    (DynamicHtml([dynamic], reactor=reactor, indexPage='/index'),)
                 )
             )
         )
-    return bear(dna), hook
-
-def handler(static, dynamic, index, staticpath, dynpath, **kwargs):
-    dna = \
-            (Transparent(),
-                (PathFilter(staticpath), #, excluding=[dynpath]),
-                    (PathRename(lambda path: path[len(staticpath):]),
-                        (FileServer(static),)
-                    ),
-                ),
-                (PathFilter(dynpath, excluding=[staticpath]),
-                        #(PathRename(lambda path: path[len(dynpath):]),
-                        (DynamicHtml([dynamic], indexPage=index),)
-                        #),
-                ),
-            )
-    return bear(dna)
+    )
 
 def startServer(**kwargs):
     reactor = Reactor()
-    server, hook = httpserver(reactor, **kwargs)
-    hook.addObserver(handler(**kwargs))
+
+    server = be(dna(reactor=reactor, **kwargs))
+    list(compose(server.once.observer_init()))
+
     print "Ready to rumble at", kwargs['port']
     reactor.loop()
 
