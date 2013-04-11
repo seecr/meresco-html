@@ -149,6 +149,8 @@ class DynamicHtml(Observable):
         if moduleName in self._allowedModules:
             return __import__(moduleName)
         if not moduleName in self._templates:
+            # TS: Required for out-of-initial-loading-order importing of
+            #     another template (at initialize()-time).
             self.loadTemplateModule(moduleName)
         return self._templates[moduleName]
 
