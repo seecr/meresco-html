@@ -43,7 +43,7 @@ from meresco.core import Observable, decorate
 
 from weightless.core import compose, Yield
 
-from cq2utils import DirectoryWatcher
+from meresco.components import DirectoryWatcher
 import exceptions
 
 
