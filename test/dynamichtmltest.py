@@ -350,30 +350,27 @@ def main(headers={}, *args, **kwargs):
         reactor = Reactor()
 
         open(self.tempdir + '/file1.sf', 'w').write("""
-import Ft
+import sys
 
 def main(headers={}, *args, **kwargs):
-    yield str(Ft)
+    yield str(sys)
 """)
 
-        d = DynamicHtml([self.tempdir], reactor=reactor, allowedModules=['Ft'])
+        d = DynamicHtml([self.tempdir], reactor=reactor, allowedModules=['sys'])
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         resultText = ''.join(result)
-        self.assertTrue(
-                resultText.endswith("/Ft/__init__.pyc'>") or
-                resultText.endswith("/Ft/__init__.py'>"),
-                resultText)
+        self.assertTrue("<module 'sys' (built-in)>" in resultText, resultText)
 
         open(self.tempdir + '/file1.sf', 'w').write("""
-import Ft
+import sys
 
 def main(headers={}, *args, **kwargs):
-    yield Ft.__doc__
+    yield sys.__doc__
 """)
 
         reactor.step()
-        result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
-        self.assertEquals('HTTP/1.0 200 Ok\r\nContent-Type: text/html; charset=utf-8\r\n\r\n\n4Suite: an open-source platform for XML and RDF processing.\n\nCopyright 2004 Fourthought, Inc. (USA).\nDetailed license and copyright information: http://4suite.org/COPYRIGHT\nProject home, documentation, distributions: http://4suite.org/\n', ''.join(result))
+        result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
+        self.assertTrue('This module provides access to some objects' in result, result)
 
     def testPipelining(self):
         open(self.tempdir + '/pipe1.sf', 'w').write("""
