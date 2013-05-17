@@ -46,6 +46,7 @@ cp -r test tmp/test
 removeDoNotDistribute tmp
 find tmp -name '*.py' -exec sed -r -e "
     s/\\\$Version:[^\\\$]*\\\$/\\\$Version: ${VERSION}\\\$/;
+    s,^docDir.*$,docDir = '$mydir/tmp/usr/share/doc/seecr-html',;
     " -i '{}' \;
 
 cp -r test tmp/test
