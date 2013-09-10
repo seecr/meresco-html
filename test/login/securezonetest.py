@@ -83,27 +83,27 @@ class SecureZoneTest(SeecrTestCase):
     def testAllowedInsecurePages(self):
         secureZone = SecureZone('/page_with_login', excluding=['/allowed'])
         root = Observable()
-        observer = CallTrace('Observer', returnValues={'handleRequest' :(f for f in ['HTTP/1.0 200 Ok\r\n\r\nBody'])})
+        observer = CallTrace('Observer', returnValues={'handleRequest' :(f for f in ['HTTP/1.0 200 OK\r\n\r\nBody'])})
         secureZone.addObserver(observer)
         root.addObserver(secureZone)
         session={}
 
         response = ''.join(compose(root.all.handleRequest(path='/allowed_page', query='a=b', session=session)))
 
-        self.assertEquals('HTTP/1.0 200 Ok\r\n\r\nBody', response)
+        self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
         self.assertEquals(['handleRequest'], observer.calledMethodNames())
         self.assertEquals({}, session)
 
     def testAllowedInsecurePagesForLoginPage(self):
         secureZone = SecureZone('/page_with_login', excluding=['/allowed'])
         root = Observable()
-        observer = CallTrace('Observer', returnValues={'handleRequest' :(f for f in ['HTTP/1.0 200 Ok\r\n\r\nBody'])})
+        observer = CallTrace('Observer', returnValues={'handleRequest' :(f for f in ['HTTP/1.0 200 OK\r\n\r\nBody'])})
         secureZone.addObserver(observer)
         root.addObserver(secureZone)
         session={}
 
         response = ''.join(compose(root.all.handleRequest(path='/page_with_login', query='a=b', session=session)))
 
-        self.assertEquals('HTTP/1.0 200 Ok\r\n\r\nBody', response)
+        self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
         self.assertEquals(['handleRequest'], observer.calledMethodNames())
         self.assertEquals({}, session)

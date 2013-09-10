@@ -210,7 +210,7 @@ class DynamicHtml(Observable):
                     contentType = 'text/html'
                     if path.endswith('.xml'):
                         contentType = 'text/xml'
-                    yield 'HTTP/1.0 200 Ok\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
+                    yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
                 yield firstLine
                 break
             except Exception:
