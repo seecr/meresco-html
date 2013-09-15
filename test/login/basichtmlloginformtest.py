@@ -1,27 +1,27 @@
 ## begin license ##
-# 
-# "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot. 
-# It is also known as "DynamicHtml". 
-# 
+#
+# "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot.
+# It is also known as "DynamicHtml".
+#
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
 # Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# 
+#
 # This file is part of "Seecr Html"
-# 
+#
 # "Seecr Html" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Seecr Html" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Seecr Html"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from weightless.core import be, compose
@@ -104,12 +104,17 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
         self.assertTrue('Location: /please/go/here' in header)
+        self.assertFalse(session['user'].isAdmin())
 
         self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
 
     def testLoginWithPOSTsucceeds(self):
         observer = CallTrace()
+        def userIsAdmin(name):
+            return True
+        observer.methods['userIsAdmin'] = userIsAdmin
+        self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home', userIsAdminMethod=observer.userIsAdmin)
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
         Body = urlencode(dict(username='user', password='secret'))
@@ -118,12 +123,14 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         result = joco(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
         self.assertEquals('user', session['user'].name)
+        self.assertEquals(True, session['user'].isAdmin())
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
         self.assertTrue('Location: /home' in header)
 
-        self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['validateUser', 'userIsAdmin'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
+        self.assertEquals(('user',), observer.calledMethods[1].args)
 
     def testLoginWithPOSTfails(self):
         observer = CallTrace()
@@ -196,7 +203,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 </div>""", result)
 
     def testChangePasswordMismatch(self):
-        
+
         Body = urlencode(dict(username='user', oldPassword='correct', newPassword="good", retypedPassword="mismatch", formUrl='/show/changepasswordform'))
         session = {}
 
@@ -208,7 +215,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace()
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = False
-        
+
         Body = urlencode(dict(username='user', oldPassword='wrong', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
         session = {}
 
@@ -220,7 +227,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace()
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
-        
+
         Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
         session = {}
 
@@ -233,10 +240,10 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace()
         self.form.addObserver(observer)
         result = joco(self.form.handleRequest(
-            path='/login/remove', 
-            Client=('127.0.0.1', 3451), 
-            Method='POST', 
-            Body=urlencode(dict(username='user', formUrl='/show/userlist')), 
+            path='/login/remove',
+            Client=('127.0.0.1', 3451),
+            Method='POST',
+            Body=urlencode(dict(username='user', formUrl='/show/userlist')),
             session={}))
         self.assertEquals([], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/userlist\r\n\r\n", result)
@@ -245,24 +252,24 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace(returnValues={'hasUser': True})
         self.form.addObserver(observer)
         result = joco(self.form.handleRequest(
-            path='/login/remove', 
-            Client=('127.0.0.1', 3451), 
-            Method='POST', 
-            Body=urlencode(dict(username='user', formUrl='/show/userlist')), 
+            path='/login/remove',
+            Client=('127.0.0.1', 3451),
+            Method='POST',
+            Body=urlencode(dict(username='user', formUrl='/show/userlist')),
             session={'user': User('admin')}))
 
         self.assertEquals(['hasUser', 'removeUser'], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/userlist\r\n\r\n", result)
-    
+
     def testDeleteNonExistingUser(self):
         observer = CallTrace(returnValues={'hasUser': False})
         self.form.addObserver(observer)
         session = {'user': User('admin')}
         result = joco(self.form.handleRequest(
-            path='/login/remove', 
-            Client=('127.0.0.1', 3451), 
-            Method='POST', 
-            Body=urlencode(dict(username='user', formUrl='/show/userlist')), 
+            path='/login/remove',
+            Client=('127.0.0.1', 3451),
+            Method='POST',
+            Body=urlencode(dict(username='user', formUrl='/show/userlist')),
             session=session))
 
         self.assertEquals(['hasUser'], [m.name for m in observer.calledMethods])
@@ -282,7 +289,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('302' in header)
         self.assertTrue('Location: /return' in header)
 
-        self.assertEquals(set(['existing', 'newuser', 'admin']), set(pf.listUsernames())) 
+        self.assertEquals(set(['existing', 'newuser', 'admin']), set(pf.listUsernames()))
         self.assertTrue(pf.validateUser('newuser', 'secret'))
         self.assertEquals('Added user "newuser"', session['BasicHtmlLoginForm.newUserFormValues']['successMessage'])
 
@@ -300,7 +307,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('302' in header)
         self.assertTrue('Location: /page/newUser' in header)
 
-        self.assertEquals(set(['existing', 'newuser', 'admin']), set(pf.listUsernames())) 
+        self.assertEquals(set(['existing', 'newuser', 'admin']), set(pf.listUsernames()))
         self.assertTrue(pf.validateUser('newuser', 'oldpassword'))
         self.assertFalse(pf.validateUser('newuser', 'newpassword'))
         self.assertEquals({'errorMessage':'User already exists.', 'username':'newuser'}, session['BasicHtmlLoginForm.newUserFormValues'])
@@ -318,7 +325,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('302' in header)
         self.assertTrue('Location: /page/newUser' in header)
 
-        self.assertEquals(set(['existing', 'admin']), set(pf.listUsernames())) 
+        self.assertEquals(set(['existing', 'admin']), set(pf.listUsernames()))
         self.assertEquals({'errorMessage':'Passwords do not match', 'username':'newuser'}, session['BasicHtmlLoginForm.newUserFormValues'])
 
     def testShowUserList(self):
@@ -327,7 +334,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         pf.addUser('one', 'password')
         pf.addUser('two', 'password')
         pf.addUser('three', 'password')
-        
+
         session = {'user':User('two', isAdminMethod=lambda name:True)}
 
         result = joco(self.form.userList(session=session, path='/show/login'))
