@@ -707,3 +707,66 @@ def main(*args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=reactor)
         result =  ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/one', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('AttributeError' in result, result)
+
+    def testShouldExposeLoadedModulesForTestingPurposes(self):
+        open(self.tempdir + '/one.sf', 'w').write(r"""
+attr = 'attr'
+def sync():
+    return 'aye'
+def asyncReturn():
+    raise StopIteration('aye')
+    yield
+def observableDownward():
+    yield observable.all.something('arg', kw='kw')
+def main(*args, **kwargs):
+    yield "Hoi"
+""")
+        open(self.tempdir + '/two.sf', 'w').write(r"""
+
+import one
+
+def parameterized(arg, *args, **kwargs):
+    return arg, args, kwargs
+
+def main(*args, **kwargs):
+    yield one.observableDownward()
+""")
+        reactor = Reactor()
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        t1 = CallTrace('t1')
+        t2 = CallTrace('t2')
+        d.addObserver(t1)
+        d.addObserver(t2)
+        one = d.getModule(name='one')
+        two = d.getModule('two')
+
+        self.assertEquals(None, d.getModule('does-not-exist'))
+
+        self.assertEquals('attr', one.attr)
+        self.assertEquals('aye', one.sync())
+        try:
+            g = compose(one.asyncReturn())
+            g.next()
+        except StopIteration, e:
+            self.assertEquals(('aye',), e.args)
+        else:
+            self.fail()
+
+        self.assertEquals([], t1.calledMethodNames())
+        self.assertEquals([], t2.calledMethodNames())
+        list(compose(one.observableDownward()))
+        self.assertEquals(['something'], t1.calledMethodNames())
+        self.assertEquals(['something'], t2.calledMethodNames())
+        self.assertEquals(('arg',), t1.calledMethods[0].args)
+        self.assertEquals({'kw': 'kw'}, t1.calledMethods[0].kwargs)
+
+        self.assertEquals(('one', ('two',), {'th': 'ree'}), two.parameterized('one', 'two', th='ree'))
+
+        t1.calledMethods.reset()
+        t2.calledMethods.reset()
+        list(compose(two.main()))
+        self.assertEquals(['something'], t1.calledMethodNames())
+        self.assertEquals(['something'], t2.calledMethodNames())
+        self.assertEquals(('arg',), t2.calledMethods[0].args)
+        self.assertEquals({'kw': 'kw'}, t2.calledMethods[0].kwargs)
+

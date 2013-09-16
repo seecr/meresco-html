@@ -228,6 +228,9 @@ class DynamicHtml(Observable):
             yield escapeHtml(s)
             yield "</pre>"
 
+    def getModule(self, name):
+        return self._templates.get(name)
+
     def createGlobals(self):
         result = self._additionalGlobals.copy()
         result['__builtins__'] = {
