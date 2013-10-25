@@ -31,31 +31,19 @@ from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join, dirname
 from securezone import ORIGINAL_PATH
 
-class BasicHtmlLoginForm(Observable):
+from seecr.html import PostActions
+
+class BasicHtmlLoginForm(PostActions):
     def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None):
-        Observable.__init__(self, name=name)
+        PostActions.__init__(self, name=name)
         self._action = action
         self._loginPath = loginPath
         self._home = home
-        self._actions = {
-            'changepassword': self.handleChangePassword,
-            'remove': self.handleRemove,
-            'newUser': self.handleNewUser,
-        }
+        self.registerAction('changepassword', self.handleChangePassword)
+        self.registerAction('remove', self.handleRemove)
+        self.registerAction('newUser', self.handleNewUser)
+        self.defaultAction(self.handleLogin)
         self._userIsAdminMethod = userIsAdminMethod
-
-
-    def handleRequest(self, Method, path, **kwargs):
-        if Method == 'GET':
-            yield redirectHttp % self._home
-            return
-
-        ignored, action = path.rsplit('/', 1)
-        if action in self._actions:
-            yield self._actions[action](path=path, **kwargs)
-            return
-
-        yield self.handleLogin(path=path, **kwargs)
 
     def handleLogin(self, session=None, Body=None, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True)

@@ -24,3 +24,4 @@
 ## end license ##
 
 from dynamichtml import DynamicHtml
+from postactions import PostActions

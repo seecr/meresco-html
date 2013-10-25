@@ -84,12 +84,9 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 </div>""", result)
 
     def testRedirectOnGet(self):
-
         result = joco(self.form.handleRequest(path='/whatever', Client=('127.0.0.1', 3451), Method='GET'))
-
         header, body = result.split(CRLF*2)
-        self.assertTrue('302' in header)
-        self.assertTrue('Location: /home' in header, header)
+        self.assertTrue('405' in header)
 
     def testLoginWithPOSTsucceedsRedirectsToOriginalPath(self):
         observer = CallTrace()

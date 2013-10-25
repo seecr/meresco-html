@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 ## begin license ##
 # 
 # "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot. 
@@ -37,6 +37,8 @@ path.insert(0, '..')                                   #DO_NOT_DISTRIBUTE
 from unittest import main
 
 from dynamichtmltest import DynamicHtmlTest
+
+from postactionstest import PostActionsTest
 
 from login.passwordfiletest import PasswordFileTest
 from login.securezonetest import SecureZoneTest
