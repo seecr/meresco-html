@@ -206,7 +206,7 @@ class BasicHtmlLoginForm(PostActions):
 </div>""" % values
         session.pop('BasicHtmlLoginForm.formValues', None)
 
-    def userList(self, session, path, **kwargs):
+    def userList(self, session, path, userLink=None, **kwargs):
         yield """<div id="login">\n"""
         if not 'user' in session:
             yield '<p class="error">Please login to show user list.</p>\n</div>'
@@ -229,7 +229,11 @@ function deleteUser(username) {
                 )
         yield '<ul>\n'
         for username in sorted(self.call.listUsernames()):
-            yield '<li>%s' % xmlEscape(username)
+            yield '<li>'
+            if userLink:
+                yield '<a href="%s?user=%s">%s</a>' % (userLink, xmlEscape(username), xmlEscape(username))
+            else:
+                yield xmlEscape(userLink)
             if user.isAdmin() and user.name != username:
                 yield """ <a href="javascript:deleteUser('%s');">delete</a>""" % username
             yield '</li>\n'

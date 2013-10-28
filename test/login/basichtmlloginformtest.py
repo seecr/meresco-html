@@ -419,3 +419,35 @@ function deleteUser(username) {
     </ul>
     </form>
 </div>""", result)
+
+    def testShowUserListWithUserLink(self):
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        pf.addUser('one', 'password')
+        pf.addUser('two', 'password')
+        pf.addUser('three', 'password')
+
+        session = {'user':User('two', isAdminMethod=lambda name:True)}
+
+        result = joco(self.form.userList(session=session, path='/show/login', userLink='/user'))
+
+        self.assertEqualsWS("""<div id="login">
+    <script type="text/javascript">
+function deleteUser(username) {
+    if (confirm("Are you sure?")) {
+        document.removeUser.username.value = username;
+        document.removeUser.submit();
+    }
+}
+</script>
+<form name="removeUser" method="POST" action="/action/remove">
+    <input type="hidden" name="formUrl" value="/show/login"/>
+    <input type="hidden" name="username"/>
+    <ul>
+        <li><a href="/user?user=admin">admin</a> <a href="javascript:deleteUser('admin');">delete</a></li>
+        <li><a href="/user?user=one">one</a> <a href="javascript:deleteUser('one');">delete</a></li>
+        <li><a href="/user?user=three">three</a> <a href="javascript:deleteUser('three');">delete</a></li>
+        <li><a href="/user?user=two">two</a></li>
+    </ul>
+    </form>
+</div>""", result)
