@@ -44,7 +44,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         SeecrTestCase.setUp(self)
         self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home')
 
-    def testLoginForm(self):
+    def testLoginFormEnglish(self):
         result = joco(self.form.loginForm(session={}, path='/page/login2'))
 
         self.assertEqualsWS("""<div id="login">
@@ -55,12 +55,28 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             <dd><input type="text" name="username" value=""/></dd>
             <dt>Password</dt>
             <dd><input type="password" name="password"/></dd>
-            <dd class="submit"><input type="submit" value="login"/></dd>
+            <dd class="submit"><input type="submit" value="Login"/></dd>
         </dl>
     </form>
 </div>""", result)
 
-    def testNewUserForm(self):
+    def testLoginFormDutch(self):
+        result = joco(self.form.loginForm(session={}, path='/page/login2', lang='nl'))
+
+        self.assertEqualsWS("""<div id="login">
+    <form method="POST" name="login" action="/action">
+    <input type="hidden" name="formUrl" value="/page/login2"/>
+        <dl>
+            <dt>Gebruikersnaam</dt>
+            <dd><input type="text" name="username" value=""/></dd>
+            <dt>Wachtwoord</dt>
+            <dd><input type="password" name="password"/></dd>
+            <dd class="submit"><input type="submit" value="Inloggen"/></dd>
+        </dl>
+    </form>
+</div>""", result)
+
+    def testNewUserFormEN(self):
         session = {
             'user': User('username'),
             'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
@@ -78,7 +94,30 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             <dd><input type="password" name="password"/></dd>
             <dt>Retype password</dt>
             <dd><input type="password" name="retypedPassword"/></dd>
-            <dd class="submit"><input type="submit" value="add"/></dd>
+            <dd class="submit"><input type="submit" value="Create"/></dd>
+        </dl>
+    </form>
+</div>""", result)
+
+    def testNewUserFormNL(self):
+        session = {
+            'user': User('username'),
+            'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
+        }
+        result = joco(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return', lang="nl"))
+        self.assertEqualsWS("""<div id="login">
+    <p class="error">BAD BOY</p>
+    <form method="POST" name="newUser" action="/action/newUser">
+    <input type="hidden" name="formUrl" value="/page/login2"/>
+    <input type="hidden" name="returnUrl" value="/return"/>
+        <dl>
+            <dt>Gebruikersnaam</dt>
+            <dd><input type="text" name="username" value=""/></dd>
+            <dt>Wachtwoord</dt>
+            <dd><input type="password" name="password"/></dd>
+            <dt>Herhaal wachtwoord </dt>
+            <dd><input type="password" name="retypedPassword"/></dd>
+            <dd class="submit"><input type="submit" value="Aanmaken"/></dd>
         </dl>
     </form>
 </div>""", result)
@@ -162,12 +201,12 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             <dd><input type="text" name="username" value='&lt;us"er&gt;'/></dd>
             <dt>Password</dt>
             <dd><input type="password" name="password"/></dd>
-            <dd class="submit"><input type="submit" value="login"/></dd>
+            <dd class="submit"><input type="submit" value="Login"/></dd>
         </dl>
     </form>
 </div>""", result)
 
-    def testShowChangePasswordForm(self):
+    def testShowChangePasswordFormEn(self):
         session = {
             'user': User('username'),
             'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
@@ -186,7 +225,31 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             <dd><input type="password" name="newPassword"/></dd>
             <dt>Retype new password</dt>
             <dd><input type="password" name="retypedPassword"/></dd>
-            <dd class="submit"><input type="submit" value="change"/></dd>
+            <dd class="submit"><input type="submit" value="Change"/></dd>
+        </dl>
+    </form>
+</div>""", result)
+
+    def testShowChangePasswordFormNl(self):
+        session = {
+            'user': User('username'),
+            'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
+        }
+        result = joco(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl"))
+
+        self.assertEqualsWS("""<div id="login">
+    <p class="error">BAD BOY</p>
+    <form method="POST" name="changePassword" action="/action/changepassword">
+    <input type="hidden" name="formUrl" value="/show/changepasswordform"/>
+    <input type="hidden" name="username" value="username"/>
+        <dl>
+            <dt>Oud wachtwoord</dt>
+            <dd><input type="password" name="oldPassword"/></dd>
+            <dt>Nieuw wachtwoord</dt>
+            <dd><input type="password" name="newPassword"/></dd>
+            <dt>Herhaal nieuw wachtwoord</dt>
+            <dd><input type="password" name="retypedPassword"/></dd>
+            <dd class="submit"><input type="submit" value="Aanpassen"/></dd>
         </dl>
     </form>
 </div>""", result)

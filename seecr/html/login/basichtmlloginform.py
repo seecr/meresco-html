@@ -33,6 +33,8 @@ from securezone import ORIGINAL_PATH
 
 from seecr.html import PostActions
 
+from labels import getLabel
+
 class BasicHtmlLoginForm(PostActions):
     def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None):
         PostActions.__init__(self, name=name)
@@ -54,31 +56,42 @@ class BasicHtmlLoginForm(PostActions):
             url = session.get(ORIGINAL_PATH, self._home)
             yield redirectHttp % url
         else:
-            session['BasicHtmlLoginForm.formValues'] = {'username': username, 'errorMessage': 'Invalid username or password'}
+            session['BasicHtmlLoginForm.formValues'] = {
+                'username': username, 
+                'errorMessage': 'Invalid username or password'
+            }
             yield redirectHttp % self._loginPath
 
-    def loginForm(self, session, path, **kwargs):
+    def loginForm(self, session, path, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
         yield """<div id="login">\n"""
         if 'errorMessage' in formValues:
             yield '    <p class="error">%s</p>\n' % xmlEscape(formValues['errorMessage'])
-        username = quoteattr(formValues.get('username', ''))
-        action = quoteattr(self._action)
-        formUrl = quoteattr(path)
-        yield """    <form method="POST" name="login" action=%(action)s>
+
+        values = dict(
+            username=quoteattr(formValues.get('username', '')),
+            action=quoteattr(self._action),
+            formUrl=quoteattr(path),
+            lblUsername=getLabel(lang, 'loginForm', 'username'),
+            lblPassword=getLabel(lang, 'loginForm', 'password'),
+            lblLogin=getLabel(lang, 'loginForm', 'login')
+        )
+
+        yield """    
+    <form method="POST" name="login" action=%(action)s>
         <input type="hidden" name="formUrl" value=%(formUrl)s/>
         <dl>
-            <dt>Username</dt>
+            <dt>%(lblUsername)s</dt>
             <dd><input type="text" name="username" value=%(username)s/></dd>
-            <dt>Password</dt>
+            <dt>%(lblPassword)s</dt>
             <dd><input type="password" name="password"/></dd>
-            <dd class="submit"><input type="submit" value="login"/></dd>
+            <dd class="submit"><input type="submit" value="%(lblLogin)s"/></dd>
         </dl>
     </form>
-</div>""" % locals()
+</div>""" % values
         session.pop('BasicHtmlLoginForm.formValues', None)
 
-    def newUserForm(self, session, path, **kwargs):
+    def newUserForm(self, session, path, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.newUserFormValues', {}) if session else {}
         yield """<div id="login">\n"""
         if not 'user' in session:
@@ -88,24 +101,33 @@ class BasicHtmlLoginForm(PostActions):
             yield '    <p class="error">%s</p>\n' % xmlEscape(formValues['errorMessage'])
         if 'successMessage' in formValues:
             yield '    <p class="success">%s</p>\n' % xmlEscape(formValues['successMessage'])
-        username = quoteattr(formValues.get('username', ''))
-        action = quoteattr(join(self._action, 'newUser'))
-        formUrl = quoteattr(path)
-        returnUrl = quoteattr(kwargs.get('returnUrl', path))
-        yield """    <form method="POST" name="newUser" action=%(action)s>
+
+        values = dict(
+            username=quoteattr(formValues.get('username', '')),
+            action=quoteattr(join(self._action, 'newUser')),
+            formUrl=quoteattr(path),
+            returnUrl=quoteattr(kwargs.get('returnUrl', path)),
+            lblUsername=getLabel(lang, 'newuserForm', 'username'),
+            lblPassword=getLabel(lang, 'newuserForm', 'password'),
+            lblPasswordRepeat=getLabel(lang, 'newuserForm', 'password-repeat'),
+            lblCreate=getLabel(lang, 'newuserForm', 'create')
+        )
+
+        yield """    
+    <form method="POST" name="newUser" action=%(action)s>
         <input type="hidden" name="formUrl" value=%(formUrl)s/>
         <input type="hidden" name="returnUrl" value=%(returnUrl)s/>
         <dl>
-            <dt>Username</dt>
+            <dt>%(lblUsername)s</dt>
             <dd><input type="text" name="username" value=%(username)s/></dd>
-            <dt>Password</dt>
+            <dt>%(lblPassword)s</dt>
             <dd><input type="password" name="password"/></dd>
-            <dt>Retype password</dt>
+            <dt>%(lblPasswordRepeat)s</dt>
             <dd><input type="password" name="retypedPassword"/></dd>
-            <dd class="submit"><input type="submit" value="add"/></dd>
+            <dd class="submit"><input type="submit" value="%(lblCreate)s"/></dd>
         </dl>
     </form>
-</div>""" % locals()
+</div>""" % values
         session.pop('BasicHtmlLoginForm.newUserFormValues', None)
 
     def handleNewUser(self, session, Body, **kwargs):
@@ -149,7 +171,7 @@ class BasicHtmlLoginForm(PostActions):
 
         yield redirectHttp % targetUrl
 
-    def changePasswordForm(self, session, path, **kwargs):
+    def changePasswordForm(self, session, path, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
         yield """<div id="login">\n"""
         if not 'user' in session:
@@ -157,20 +179,31 @@ class BasicHtmlLoginForm(PostActions):
             return
         if 'errorMessage' in formValues:
             yield '    <p class="error">%s</p>\n' % xmlEscape(formValues['errorMessage'])
-        yield """<form method="POST" name="changePassword" action=%s>
-        <input type="hidden" name="formUrl" value=%s/>
-        <input type="hidden" name="username" value=%s/>
+
+        values = dict(
+            action=quoteattr(join(self._action, 'changepassword')),
+            formUrl=quoteattr(path),
+            username=quoteattr(session['user'].name),
+            lblOldPassword=getLabel(lang, "changepasswordForm", "old-password"),
+            lblNewPassword=getLabel(lang, "changepasswordForm", "new-password"),
+            lblNewPasswordRepeat=getLabel(lang, "changepasswordForm", "new-password-repeat"),
+            lblChange=getLabel(lang, "changepasswordForm", "change"),
+        )
+
+        yield """<form method="POST" name="changePassword" action=%(action)s>
+        <input type="hidden" name="formUrl" value=%(formUrl)s/>
+        <input type="hidden" name="username" value=%(username)s/>
         <dl>
-            <dt>Old password</dt>
+            <dt>%(lblOldPassword)s</dt>
             <dd><input type="password" name="oldPassword"/></dd>
-            <dt>New password</dt>
+            <dt>%(lblNewPassword)s</dt>
             <dd><input type="password" name="newPassword"/></dd>
-            <dt>Retype new password</dt>
+            <dt>%(lblNewPasswordRepeat)s</dt>
             <dd><input type="password" name="retypedPassword"/></dd>
-            <dd class="submit"><input type="submit" value="change"/></dd>
+            <dd class="submit"><input type="submit" value="%(lblChange)s"/></dd>
         </dl>
     </form>
-</div>""" % (quoteattr(join(self._action, 'changepassword')), quoteattr(path), quoteattr(session['user'].name))
+</div>""" % values
         session.pop('BasicHtmlLoginForm.formValues', None)
 
     def userList(self, session, path, **kwargs):
