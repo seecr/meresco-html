@@ -233,7 +233,7 @@ function deleteUser(username) {
             if userLink:
                 yield '<a href="%s?user=%s">%s</a>' % (userLink, xmlEscape(username), xmlEscape(username))
             else:
-                yield xmlEscape(userLink)
+                yield xmlEscape(username)
             if user.isAdmin() and user.name != username:
                 yield """ <a href="javascript:deleteUser('%s');">delete</a>""" % username
             yield '</li>\n'
