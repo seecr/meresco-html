@@ -37,6 +37,7 @@ path.insert(0, '..')                                   #DO_NOT_DISTRIBUTE
 from unittest import main
 
 from dynamichtmltest import DynamicHtmlTest
+from urlencodetest import UrlencodeTest
 
 from postactionstest import PostActionsTest
 

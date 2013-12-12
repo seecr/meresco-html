@@ -35,7 +35,7 @@ from cgi import escape as _escapeHtml
 from xml.sax.saxutils import escape as escapeXml
 from lxml.etree import parse, tostring
 from time import time
-from urllib import urlencode
+from urllib import urlencode as _urlencode
 from math import ceil
 from functools import partial, reduce
 
@@ -78,6 +78,15 @@ class Http(object):
 def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
 
+def _stringify(values):
+    if isinstance(values, basestring):
+        return str(values)
+    return [str(value) for value in values]
+
+def urlencode(query, doseq=True):
+    if hasattr(query, 'items'):
+        query = query.items()
+    return _urlencode([(k,_stringify(v)) for k,v in query], doseq)
 
 class ObservableProxy(object):
 
@@ -278,7 +287,7 @@ class DynamicHtml(Observable):
             'escapeHtml': escapeHtml,
             'escapeXml': escapeXml,
             'time': time,
-            'urlencode': lambda x: urlencode(x, doseq=True),
+            'urlencode': urlencode,
             'decorate': decorate,
             'dirname': dirname,
             'basename': basename,
