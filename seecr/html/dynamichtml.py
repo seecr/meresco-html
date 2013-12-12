@@ -84,6 +84,8 @@ def _stringify(values):
     return [str(value) for value in values]
 
 def urlencode(query, doseq=True):
+    if not doseq:
+        return _urlencode(query, doseq)
     if hasattr(query, 'items'):
         query = query.items()
     return _urlencode([(k,_stringify(v)) for k,v in query], doseq)
