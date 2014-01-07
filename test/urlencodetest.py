@@ -4,7 +4,7 @@
 # "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml".
 #
-# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2014 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Seecr Html"
 #
