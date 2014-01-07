@@ -46,8 +46,12 @@ class UrlencodeTest(SeecrTestCase):
         self.assertEquals('a=a%C3%A1p', urlencode([('a', 'aáp')]))
         self.assertEquals('a=a%C3%A1p', urlencode([('a', u'aáp')]))
 
+    def testIntegerInUrlencode(self):
+        self.assertEquals('a=3', urlencode({'a': 3}))
+
     def testUnicodeBugInDefaultUnicode(self):
         self.assertEquals('a=a%3Fp', urllib_urlencode({'a': u'a?p'}))
+        self.assertEquals('a=3', urllib_urlencode({'a': 3}))
         self.assertEquals('a=a%C3%A1p', urllib_urlencode({'a': 'a\xc3\xa1p'}))
         self.assertEquals('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}))
         self.assertEquals('a=a%C3%A1p', urllib_urlencode({'a': u'aáp'}))

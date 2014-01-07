@@ -81,7 +81,10 @@ def escapeHtml(aString):
 def _stringify(values):
     if isinstance(values, basestring):
         return str(values)
-    return [str(value) for value in values]
+    try:
+        return [str(value) for value in values]
+    except TypeError: # not iterable
+        return str(values)
 
 def urlencode(query, doseq=True):
     if not doseq:
