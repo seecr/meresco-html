@@ -52,7 +52,7 @@ class BasicHtmlLoginForm(PostActions):
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
         if self.call.validateUser(username=username, password=password):
-            session['user'] = User(username, isAdminMethod=self._userIsAdminMethod)
+            session['user'] = self.loginAsUser(username)
             url = session.pop(ORIGINAL_PATH, self._home)
             yield redirectHttp % url
         else:
@@ -61,6 +61,9 @@ class BasicHtmlLoginForm(PostActions):
                 'errorMessage': 'Invalid username or password'
             }
             yield redirectHttp % self._loginPath
+
+    def loginAsUser(self, username):
+        return User(username, isAdminMethod=self._userIsAdminMethod)
 
     def loginForm(self, session, path, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
