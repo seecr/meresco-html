@@ -53,7 +53,7 @@ class BasicHtmlLoginForm(PostActions):
         password = bodyArgs.get('password', [None])[0]
         if self.call.validateUser(username=username, password=password):
             session['user'] = User(username, isAdminMethod=self._userIsAdminMethod)
-            url = session.get(ORIGINAL_PATH, self._home)
+            url = session.pop(ORIGINAL_PATH, self._home)
             yield redirectHttp % url
         else:
             session['BasicHtmlLoginForm.formValues'] = {

@@ -141,6 +141,29 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
 
+    def testLoginWithPOSTsucceedsRedirectsToOriginalPathOnlyOnce(self):
+        observer = CallTrace()
+        self.form.addObserver(observer)
+        observer.returnValues['validateUser'] = True
+        Body = urlencode(dict(username='user', password='secret'))
+        session = {ORIGINAL_PATH:'/please/go/here'}
+
+        result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+
+        self.assertEquals('user', session['user'].name)
+        header, body = result.split(CRLF*2)
+        self.assertTrue('302' in header)
+        self.assertTrue('Location: /please/go/here' in header)
+        self.assertFalse(session['user'].isAdmin())
+
+        self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
+        self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
+
+        result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        header, body = result.split(CRLF*2)
+        self.assertTrue('302' in header)
+        self.assertTrue('Location: /home' in header, header)
+
     def testLoginWithPOSTsucceeds(self):
         observer = CallTrace()
         def userIsAdmin(name):
