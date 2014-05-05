@@ -159,19 +159,21 @@ class BasicHtmlLoginForm(PostActions):
         retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
 
+        user = session['user']
+
         targetUrl = formUrl
         if newPassword != retypedPassword:
             session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': 'New passwords do not match'}
         else:
-            if not self.call.validateUser(username=username, password=oldPassword):
-                session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': 'Username and password do not match.'}
-            else:
+            if (not oldPassword and user.isAdmin() and user.name != username) or self.call.validateUser(username=username, password=oldPassword):
                 self.call.changePassword(username, oldPassword, newPassword)
                 targetUrl = self._home
+            else:
+                session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': 'Username and password do not match.'}
 
         yield redirectHttp % targetUrl
 
-    def changePasswordForm(self, session, path, arguments, user=None, lang="en", **kwargs):
+    def changePasswordForm(self, session, path, arguments, user=None, lang="en", onlyNewPassword=False, **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
         yield """<div id="login">\n"""
         if not 'user' in session:
@@ -197,8 +199,11 @@ class BasicHtmlLoginForm(PostActions):
         <input type="hidden" name="formUrl" value=%(formUrl)s/>
         <input type="hidden" name="username" value=%(username)s/>
         <dl>
-            <dt>%(lblOldPassword)s</dt>
-            <dd><input type="password" name="oldPassword"/></dd>
+            """ % values
+        if not onlyNewPassword:
+            yield """<dt>%(lblOldPassword)s</dt>
+            <dd><input type="password" name="oldPassword"/></dd>""" % values
+        yield """
             <dt>%(lblNewPassword)s</dt>
             <dd><input type="password" name="newPassword"/></dd>
             <dt>%(lblNewPasswordRepeat)s</dt>

@@ -255,7 +255,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             'user': User('username'),
             'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
         }
-        result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl", arguments=dict(user=['myuser']), user='myuser'))
+        result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl", arguments=dict(user=['myuser']), user='myuser', onlyNewPassword=True))
 
         self.assertEqualsWS("""<div id="login">
     <p class="error">BAD BOY</p>
@@ -263,8 +263,6 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     <input type="hidden" name="formUrl" value="/show/changepasswordform?user=myuser"/>
     <input type="hidden" name="username" value="myuser"/>
         <dl>
-            <dt>Oud wachtwoord</dt>
-            <dd><input type="password" name="oldPassword"/></dd>
             <dt>Nieuw wachtwoord</dt>
             <dd><input type="password" name="newPassword"/></dd>
             <dt>Herhaal nieuw wachtwoord</dt>
@@ -284,7 +282,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
     def testChangePasswordMismatch(self):
         Body = urlencode(dict(username='user', oldPassword='correct', newPassword="good", retypedPassword="mismatch", formUrl='/show/changepasswordform'))
-        session = {}
+        session = {'user': User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals({'username':'user', 'errorMessage': 'New passwords do not match'}, session['BasicHtmlLoginForm.formValues'])
@@ -296,10 +294,55 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer.returnValues['validateUser'] = False
 
         Body = urlencode(dict(username='user', oldPassword='wrong', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
-        session = {}
+        session = {'user': User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals({'username':'user', 'errorMessage': 'Username and password do not match.'}, session['BasicHtmlLoginForm.formValues'])
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n", result)
+
+    def testChangePasswordNoOldNotAllowed(self):
+        observer = CallTrace()
+        self.form.addObserver(observer)
+        observer.returnValues['validateUser'] = False
+
+        Body = urlencode(dict(username='username', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
+        session = {
+            'user': User('username'),
+            'BasicHtmlLoginForm.formValues': {}
+        }
+
+        result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        self.assertEquals({'username':'username', 'errorMessage': 'Username and password do not match.'}, session['BasicHtmlLoginForm.formValues'])
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n", result)
+
+    def testChangePasswordNoOldForAdminOnlyAllowedForOtherUsers(self):
+        observer = CallTrace()
+        self.form.addObserver(observer)
+        observer.returnValues['validateUser'] = False
+
+        Body = urlencode(dict(username='user', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
+        session = {
+            'user': User('admin'),
+            'BasicHtmlLoginForm.formValues': {}
+        }
+
+        result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        self.assertEquals(['changePassword'], [m.name for m in observer.calledMethods])
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /home\r\n\r\n", result)
+
+    def testChangePasswordNoOldForAdminNotAllowed(self):
+        observer = CallTrace()
+        self.form.addObserver(observer)
+        observer.returnValues['validateUser'] = False
+
+        Body = urlencode(dict(username='admin', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
+        session = {
+            'user': User('admin'),
+            'BasicHtmlLoginForm.formValues': {}
+        }
+
+        result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        self.assertEquals({'username':'admin', 'errorMessage': 'Username and password do not match.'}, session['BasicHtmlLoginForm.formValues'])
         self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n", result)
 
     def testChangePassword(self):
@@ -308,7 +351,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer.returnValues['validateUser'] = True
 
         Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
-        session = {}
+        session = {'user': User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals(['validateUser', 'changePassword'], [m.name for m in observer.calledMethods])

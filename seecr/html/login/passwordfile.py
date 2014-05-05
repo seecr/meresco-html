@@ -1,27 +1,27 @@
 ## begin license ##
-# 
-# "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot. 
-# It is also known as "DynamicHtml". 
-# 
+#
+# "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot.
+# It is also known as "DynamicHtml".
+#
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
-# 
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+#
 # This file is part of "Seecr Html"
-# 
+#
 # "Seecr Html" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # "Seecr Html" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with "Seecr Html"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 from simplejson import load as jsonRead, dump as jsonWrite
@@ -87,7 +87,7 @@ class PasswordFile(object):
         return valid
 
     def changePassword(self, username, oldPassword, newPassword):
-        if not self.validateUser(username=username, password=oldPassword):
+        if oldPassword and not self.validateUser(username=username, password=oldPassword):
             raise ValueError('Username and password do not match, password NOT changed.')
         self._setUser(username=username, password=newPassword)
 
@@ -107,7 +107,7 @@ class PasswordFile(object):
         result = jsonRead(open(self._filename))
         assert result['version'] == self.version, 'Expected database version %s' % self.version
         return result['users']
-        
+
     def _setUser(self, username, password):
         if not self._passwordTest(password):
             raise ValueError('Invalid password.')
