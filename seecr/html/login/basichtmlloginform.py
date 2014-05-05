@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Seecr Html"
 #
@@ -24,16 +24,16 @@
 #
 ## end license ##
 
-from meresco.core import Observable
-from meresco.components.http.utils import CRLF, redirectHttp, okHtml
+from meresco.components.http.utils import redirectHttp
 from cgi import parse_qs
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
-from os.path import join, dirname
+from os.path import join
 from securezone import ORIGINAL_PATH
 
 from seecr.html import PostActions
 
 from labels import getLabel
+from urllib import urlencode
 
 class BasicHtmlLoginForm(PostActions):
     def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None):
@@ -57,7 +57,7 @@ class BasicHtmlLoginForm(PostActions):
             yield redirectHttp % url
         else:
             session['BasicHtmlLoginForm.formValues'] = {
-                'username': username, 
+                'username': username,
                 'errorMessage': 'Invalid username or password'
             }
             yield redirectHttp % self._loginPath
@@ -77,7 +77,7 @@ class BasicHtmlLoginForm(PostActions):
             lblLogin=getLabel(lang, 'loginForm', 'login')
         )
 
-        yield """    
+        yield """
     <form method="POST" name="login" action=%(action)s>
         <input type="hidden" name="formUrl" value=%(formUrl)s/>
         <dl>
@@ -113,7 +113,7 @@ class BasicHtmlLoginForm(PostActions):
             lblCreate=getLabel(lang, 'newuserForm', 'create')
         )
 
-        yield """    
+        yield """
     <form method="POST" name="newUser" action=%(action)s>
         <input type="hidden" name="formUrl" value=%(formUrl)s/>
         <input type="hidden" name="returnUrl" value=%(returnUrl)s/>
@@ -171,7 +171,7 @@ class BasicHtmlLoginForm(PostActions):
 
         yield redirectHttp % targetUrl
 
-    def changePasswordForm(self, session, path, lang="en", **kwargs):
+    def changePasswordForm(self, session, path, arguments, user=None, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
         yield """<div id="login">\n"""
         if not 'user' in session:
@@ -180,10 +180,13 @@ class BasicHtmlLoginForm(PostActions):
         if 'errorMessage' in formValues:
             yield '    <p class="error">%s</p>\n' % xmlEscape(formValues['errorMessage'])
 
+        formUrl = path
+        if arguments:
+            formUrl += "?" + urlencode(arguments, doseq=True)
         values = dict(
             action=quoteattr(join(self._action, 'changepassword')),
-            formUrl=quoteattr(path),
-            username=quoteattr(session['user'].name),
+            formUrl=quoteattr(formUrl),
+            username=quoteattr(session['user'].name if user is None else user),
             lblOldPassword=getLabel(lang, "changepasswordForm", "old-password"),
             lblNewPassword=getLabel(lang, "changepasswordForm", "new-password"),
             lblNewPasswordRepeat=getLabel(lang, "changepasswordForm", "new-password-repeat"),

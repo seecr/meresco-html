@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Seecr Html"
 #
@@ -24,8 +24,7 @@
 #
 ## end license ##
 
-from weightless.core import be, compose
-from meresco.core import Observable
+from weightless.core import asString
 
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.http.utils import CRLF
@@ -36,16 +35,13 @@ from seecr.html.login.basichtmlloginform import User
 from seecr.html.login.securezone import ORIGINAL_PATH
 from os.path import join
 
-def joco(gen):
-    return ''.join(compose(gen))
-
 class BasicHtmlLoginFormTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home')
 
     def testLoginFormEnglish(self):
-        result = joco(self.form.loginForm(session={}, path='/page/login2'))
+        result = asString(self.form.loginForm(session={}, path='/page/login2'))
 
         self.assertEqualsWS("""<div id="login">
     <form method="POST" name="login" action="/action">
@@ -61,7 +57,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 </div>""", result)
 
     def testLoginFormDutch(self):
-        result = joco(self.form.loginForm(session={}, path='/page/login2', lang='nl'))
+        result = asString(self.form.loginForm(session={}, path='/page/login2', lang='nl'))
 
         self.assertEqualsWS("""<div id="login">
     <form method="POST" name="login" action="/action">
@@ -81,7 +77,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             'user': User('username'),
             'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
         }
-        result = joco(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return'))
+        result = asString(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return'))
         self.assertEqualsWS("""<div id="login">
     <p class="error">BAD BOY</p>
     <form method="POST" name="newUser" action="/action/newUser">
@@ -104,7 +100,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             'user': User('username'),
             'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
         }
-        result = joco(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return', lang="nl"))
+        result = asString(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return', lang="nl"))
         self.assertEqualsWS("""<div id="login">
     <p class="error">BAD BOY</p>
     <form method="POST" name="newUser" action="/action/newUser">
@@ -123,7 +119,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 </div>""", result)
 
     def testRedirectOnGet(self):
-        result = joco(self.form.handleRequest(path='/whatever', Client=('127.0.0.1', 3451), Method='GET'))
+        result = asString(self.form.handleRequest(path='/whatever', Client=('127.0.0.1', 3451), Method='GET'))
         header, body = result.split(CRLF*2)
         self.assertTrue('405' in header)
 
@@ -134,7 +130,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         Body = urlencode(dict(username='user', password='secret'))
         session = {ORIGINAL_PATH:'/please/go/here'}
 
-        result = joco(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
         self.assertEquals('user', session['user'].name)
         header, body = result.split(CRLF*2)
@@ -156,7 +152,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         Body = urlencode(dict(username='user', password='secret'))
         session = {}
 
-        result = joco(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
         self.assertEquals('user', session['user'].name)
         self.assertEquals(True, session['user'].isAdmin())
@@ -175,7 +171,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         Body = urlencode(dict(username='user', password='wrong'))
         session = {}
 
-        result = joco(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
         self.assertFalse('user' in session)
         self.assertEquals({'username':'user', 'errorMessage': 'Invalid username or password'}, session['BasicHtmlLoginForm.formValues'])
@@ -190,7 +186,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def testLoginFormWithError(self):
         session = {}
         session['BasicHtmlLoginForm.formValues']={'username': '<us"er>', 'errorMessage': 'Invalid <username> or "password"'}
-        result = joco(self.form.loginForm(session=session, path='/show/login'))
+        result = asString(self.form.loginForm(session=session, path='/show/login'))
 
         self.assertEqualsWS("""<div id="login">
     <p class="error">Invalid &lt;username&gt; or "password"</p>
@@ -211,7 +207,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             'user': User('username'),
             'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
         }
-        result = joco(self.form.changePasswordForm(session=session, path='/show/changepasswordform'))
+        result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', arguments={}))
 
         self.assertEqualsWS("""<div id="login">
     <p class="error">BAD BOY</p>
@@ -235,7 +231,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             'user': User('username'),
             'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
         }
-        result = joco(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl"))
+        result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl", arguments={}))
 
         self.assertEqualsWS("""<div id="login">
     <p class="error">BAD BOY</p>
@@ -254,20 +250,43 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     </form>
 </div>""", result)
 
+    def testShowChangePasswordFormForSpecifiedUser(self):
+        session = {
+            'user': User('username'),
+            'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
+        }
+        result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl", arguments=dict(user=['myuser']), user='myuser'))
+
+        self.assertEqualsWS("""<div id="login">
+    <p class="error">BAD BOY</p>
+    <form method="POST" name="changePassword" action="/action/changepassword">
+    <input type="hidden" name="formUrl" value="/show/changepasswordform?user=myuser"/>
+    <input type="hidden" name="username" value="myuser"/>
+        <dl>
+            <dt>Oud wachtwoord</dt>
+            <dd><input type="password" name="oldPassword"/></dd>
+            <dt>Nieuw wachtwoord</dt>
+            <dd><input type="password" name="newPassword"/></dd>
+            <dt>Herhaal nieuw wachtwoord</dt>
+            <dd><input type="password" name="retypedPassword"/></dd>
+            <dd class="submit"><input type="submit" value="Aanpassen"/></dd>
+        </dl>
+    </form>
+</div>""", result)
+
     def testShowChangePasswordFormErrorWithoutUser(self):
         session = {}
-        result = joco(self.form.changePasswordForm(session=session, path='/show/changepasswordform'))
+        result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', arguments={}))
 
         self.assertEqualsWS("""<div id="login">
     <p class="error">Please login to change password.</p>
 </div>""", result)
 
     def testChangePasswordMismatch(self):
-
         Body = urlencode(dict(username='user', oldPassword='correct', newPassword="good", retypedPassword="mismatch", formUrl='/show/changepasswordform'))
         session = {}
 
-        result = joco(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals({'username':'user', 'errorMessage': 'New passwords do not match'}, session['BasicHtmlLoginForm.formValues'])
         self.assertEqualsWS("""HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n""", result)
 
@@ -279,7 +298,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         Body = urlencode(dict(username='user', oldPassword='wrong', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
         session = {}
 
-        result = joco(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals({'username':'user', 'errorMessage': 'Username and password do not match.'}, session['BasicHtmlLoginForm.formValues'])
         self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n", result)
 
@@ -291,7 +310,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
         session = {}
 
-        result = joco(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals(['validateUser', 'changePassword'], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /home\r\n\r\n", result)
 
@@ -299,7 +318,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def testDeleteUserNoAdmin(self):
         observer = CallTrace()
         self.form.addObserver(observer)
-        result = joco(self.form.handleRequest(
+        result = asString(self.form.handleRequest(
             path='/login/remove',
             Client=('127.0.0.1', 3451),
             Method='POST',
@@ -311,7 +330,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def testDeleteUserAsAdmin(self):
         observer = CallTrace(returnValues={'hasUser': True})
         self.form.addObserver(observer)
-        result = joco(self.form.handleRequest(
+        result = asString(self.form.handleRequest(
             path='/login/remove',
             Client=('127.0.0.1', 3451),
             Method='POST',
@@ -325,7 +344,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace(returnValues={'hasUser': False})
         self.form.addObserver(observer)
         session = {'user': User('admin')}
-        result = joco(self.form.handleRequest(
+        result = asString(self.form.handleRequest(
             path='/login/remove',
             Client=('127.0.0.1', 3451),
             Method='POST',
@@ -343,7 +362,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
         session = {'user':User('existing')}
 
-        result = joco(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
@@ -361,7 +380,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='newpassword', formUrl='/page/newUser', returnUrl='/return'))
         session = {'user':User('existing')}
 
-        result = joco(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
@@ -379,7 +398,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='retypedpassword', formUrl='/page/newUser', returnUrl='/return'))
         session = {'user':User('existing')}
 
-        result = joco(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
@@ -397,7 +416,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         session = {'user':User('two', isAdminMethod=lambda name:True)}
 
-        result = joco(self.form.userList(session=session, path='/show/login'))
+        result = asString(self.form.userList(session=session, path='/show/login'))
 
         self.assertEqualsWS("""<div id="login">
     <script type="text/javascript">
@@ -429,7 +448,7 @@ function deleteUser(username) {
 
         session = {'user':User('two', isAdminMethod=lambda name:True)}
 
-        result = joco(self.form.userList(session=session, path='/show/login', userLink='/user'))
+        result = asString(self.form.userList(session=session, path='/show/login', userLink='/user'))
 
         self.assertEqualsWS("""<div id="login">
     <script type="text/javascript">
