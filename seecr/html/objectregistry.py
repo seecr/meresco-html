@@ -66,9 +66,10 @@ class ObjectRegistry(PostActions):
         return identifier
 
     def _add(self, values, identifier, __keys__, __booleanKeys__, **kwargs):
+        olddata = values.get(identifier, {})
         data = dict()
         for key in __keys__:
-            data[key] = kwargs.get(key, [''])[0]
+            data[key] = kwargs.get(key, [olddata.get(key, '')])[0]
         for key in __booleanKeys__:
             data[key] = key in kwargs
         values[identifier] = data

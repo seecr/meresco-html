@@ -92,3 +92,31 @@ class ObjectRegistryTest(SeecrTestCase):
                 objectid: {'key1': 'value1', 'key2': '', 'enabled1': True, 'enabled2': False}
             }, registry.listObjects())
 
+    def testNoKeySendDoesNotChangeOldValue(self):
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        object1id = registry.addObject(key1=["object1"], key2=["value2"], enabled1=['on'], __keys__=['key2', 'key1'], __booleanKeys__=['enabled1', 'enabled2'])
+        self.assertEquals({
+                'key1': 'object1',
+                'key2': 'value2',
+                'enabled1': True,
+                'enabled2': False,
+            }, registry.listObjects()[object1id])
+        data = urlencode([
+                ('identifier', object1id),
+                ('key1', 'value1'),
+                ('enabled2', 'on'),
+                ('__keys__', ','.join(['key1', 'key2'])),
+                ('__booleanKeys__', ','.join(['enabled1', 'enabled2'])),
+            ])
+        header, _ = asString(registry.handleRequest(Method='POST', path='/objects/update', Body=data, session={})).split(CRLF*2)
+        redirectLocation = parseHeaders(header+CRLF)['Location']
+        path, objectid = redirectLocation.split('#')
+        self.assertEquals(object1id, objectid)
+        self.assertEquals({
+                'key1': 'value1',
+                'key2': 'value2',
+                'enabled1': False,
+                'enabled2': True,
+            }, registry.listObjects()[object1id])
+
+
