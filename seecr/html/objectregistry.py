@@ -34,6 +34,7 @@ from meresco.components.http.utils import redirectHttp
 
 from seecr.html import PostActions
 from uuid import uuid4
+from meresco.components.json import JsonDict
 
 class ObjectRegistry(PostActions):
     def __init__(self, stateDir, name, redirectPath, **kwargs):
@@ -43,6 +44,9 @@ class ObjectRegistry(PostActions):
         self._redirectPath = redirectPath
         if not isfile(self._registryFile):
             self._save({})
+
+        self._register = {}
+        self.registerKeys()
 
         self.registerAction('add', self.handleAdd)
         self.registerAction('update', self.handleUpdate)
@@ -65,12 +69,18 @@ class ObjectRegistry(PostActions):
         self._add(values, identifier=identifier, **kwargs)
         return identifier
 
-    def _add(self, values, identifier, __keys__, __booleanKeys__, **kwargs):
+    def _add(self, values, identifier, **kwargs):
         olddata = values.get(identifier, {})
         data = dict()
-        for key in __keys__:
+        for key in self._register['keys']:
             data[key] = kwargs.get(key, [olddata.get(key, '')])[0]
-        for key in __booleanKeys__:
+        for key in self._register['jsonKeys']:
+            newdata = kwargs.get(key, [None])[0]
+            if newdata is None and key in olddata:
+                data[key] = olddata[key]
+                continue
+            data[key] = JsonDict.loads(newdata or '{}')
+        for key in self._register['booleanKeys']:
             data[key] = key in kwargs
         values[identifier] = data
         self._save(values)
@@ -78,16 +88,20 @@ class ObjectRegistry(PostActions):
     def listObjects(self):
         return load(open(self._registryFile))
 
+    def registerKeys(self, keys=None, booleanKeys=None, jsonKeys=None):
+        self._register['keys'] = keys or []
+        self._register['booleanKeys'] = booleanKeys or []
+        self._register['jsonKeys'] = jsonKeys or []
+
+    def registerConversion(self, **kwargs):
+        self._register['json'] = kwargs.keys()
+
     def _handle(self, method, Body, session, **kwargs):
         formValues = parse_qs(Body, keep_blank_values=True)
         identifier = formValues.pop('identifier', [None])[0]
-        keys = formValues.pop('__keys__')[0].split(',')
-        booleanKeys = formValues.pop('__booleanKeys__')[0].split(',')
         try:
             identifier = method(
                     identifier=identifier,
-                    __keys__=keys,
-                    __booleanKeys__=booleanKeys,
                     **formValues
                 )
         except ValueError, e:
