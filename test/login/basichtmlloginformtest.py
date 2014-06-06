@@ -24,7 +24,7 @@
 #
 ## end license ##
 
-from weightless.core import asString
+from weightless.core import asString, be, Observable
 
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.http.utils import CRLF
@@ -536,3 +536,18 @@ function deleteUser(username) {
     </ul>
     </form>
 </div>""", result)
+
+    def testBroadcastAddUserToAllObservers(self):
+        values = []
+        dna = be(
+            (Observable(),
+                (BasicHtmlLoginForm(action="/action", loginPath="/"),
+                    (CallTrace(methods={'addUser': lambda *args, **kwargs: values.append(("1st", args, kwargs))}),),
+                    (CallTrace(methods={'addUser': lambda *args, **kwargs: values.append(("2nd", args, kwargs))}),),
+                    (CallTrace(methods={'addUser': lambda *args, **kwargs: values.append(("3rd", args, kwargs))}),),
+                )
+            )
+        )
+
+        asString(dna.all.handleNewUser(session={}, Body=urlencode(dict(password="password", retypedPassword="password"))))
+        self.assertEquals(3, len(values))

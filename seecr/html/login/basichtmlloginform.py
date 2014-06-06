@@ -140,13 +140,12 @@ class BasicHtmlLoginForm(PostActions):
         retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
         returnUrl = bodyArgs.get('returnUrl', [formUrl])[0]
-
         targetUrl = formUrl
         if password != retypedPassword:
             session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': 'Passwords do not match'}
         else:
             try:
-                self.call.addUser(username=username, password=password)
+                self.do.addUser(username=username, password=password)
                 session['BasicHtmlLoginForm.newUserFormValues']={'successMessage': 'Added user "%s"' % username}
                 targetUrl = returnUrl
             except ValueError, e:
