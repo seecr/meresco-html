@@ -525,6 +525,16 @@ def main(*args, **kwargs):
         result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page'))
         self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /here\r\n\r\n', result)
 
+    def testRedirectWithAdditionalHeaders(self):
+        open(self.tempdir + '/page.sf', 'w').write(r"""
+def main(*args, **kwargs):
+    yield http.redirect('/here', additionalHeaders={'Pragma': 'no-cache', 'Expires': '0'})
+""")
+        reactor = Reactor()
+        d = DynamicHtml([self.tempdir], reactor=reactor)
+        result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page'))
+        self.assertEquals('HTTP/1.0 302 Found\r\nExpires: 0\r\nLocation: /here\r\nPragma: no-cache\r\n\r\n', result)
+
     def testKeywordArgumentsArePassed(self):
         open(self.tempdir+'/afile.sf', 'w').write('def main(pipe, *args, **kwargs): \n  yield str(kwargs)')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))

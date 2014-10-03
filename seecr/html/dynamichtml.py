@@ -32,7 +32,7 @@ from cgi import parse_qs
 from itertools import groupby, islice
 
 from cgi import escape as _escapeHtml
-from xml.sax.saxutils import escape as escapeXml
+from xml.sax.saxutils import escape as escapeXml, quoteattr
 from lxml.etree import parse, tostring
 from time import time
 from urllib import urlencode as _urlencode
@@ -46,6 +46,7 @@ from weightless.core import compose, Yield
 from meresco.components import DirectoryWatcher
 import exceptions
 
+CRLF = '\r\n'
 
 class TemplateModule(object):
     def __init__(self, load):
@@ -68,12 +69,16 @@ class TemplateModule(object):
 class DynamicHtmlException(Exception):
     pass
 
-def redirectTo(location):
-    return "HTTP/1.0 302 Found\r\nLocation: %s\r\n\r\n" % location
+def redirectTo(location, additionalHeaders=None):
+    HTTP_CODE = "HTTP/1.0 302 Found\r\n"
+    headers = {'Location': location}
+    if not additionalHeaders is None:
+        headers.update(additionalHeaders)
+    return HTTP_CODE + CRLF.join("{0}: {1}".format(*i) for i in headers.items()) + CRLF + CRLF
 
 class Http(object):
-    def redirect(self, location):
-        return redirectTo(location)
+    def redirect(self, location, additionalHeaders=None):
+        return redirectTo(location, additionalHeaders=additionalHeaders)
 
 def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
@@ -290,6 +295,7 @@ class DynamicHtml(Observable):
 
             # commonly used/needed methods
             'escapeHtml': escapeHtml,
+            'quoteattr': quoteattr,
             'escapeXml': escapeXml,
             'time': time,
             'urlencode': urlencode,
@@ -303,6 +309,6 @@ class DynamicHtml(Observable):
         }
         result['__builtins__'].update((excName, excType) for excName, excType in vars(exceptions).items() if not excName.startswith('_'))
         return result
-            
+
 FourOFourMessage = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n'
 
