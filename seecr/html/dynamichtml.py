@@ -45,6 +45,8 @@ from weightless.core import compose, Yield
 
 from meresco.components import DirectoryWatcher
 import exceptions
+from simplejson import dumps, loads
+from urlparse import urlsplit, urlunsplit
 
 CRLF = '\r\n'
 
@@ -305,7 +307,11 @@ class DynamicHtml(Observable):
             'parse_qs': parse_qs,
             'parse': parse,
             'tostring': tostring,
-            'http': Http()
+            'http': Http(),
+            'dumps': dumps,
+            'loads': loads,
+            'urlsplit': urlsplit,
+            'urlunsplit': urlunsplit,
         }
         result['__builtins__'].update((excName, excType) for excName, excType in vars(exceptions).items() if not excName.startswith('_'))
         return result
