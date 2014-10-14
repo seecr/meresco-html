@@ -71,16 +71,18 @@ class TemplateModule(object):
 class DynamicHtmlException(Exception):
     pass
 
-def redirectTo(location, additionalHeaders=None):
+def redirectTo(location, additionalHeaders=None, permanent=False):
     HTTP_CODE = "HTTP/1.0 302 Found\r\n"
+    if permanent:
+        HTTP_CODE = "HTTP/1.0 301 Moved Permanently\r\n"
     headers = {'Location': location}
     if not additionalHeaders is None:
         headers.update(additionalHeaders)
     return HTTP_CODE + CRLF.join("{0}: {1}".format(*i) for i in headers.items()) + CRLF + CRLF
 
 class Http(object):
-    def redirect(self, location, additionalHeaders=None):
-        return redirectTo(location, additionalHeaders=additionalHeaders)
+    def redirect(self, location, additionalHeaders=None, permanent=False):
+        return redirectTo(location, additionalHeaders=additionalHeaders, permanent=permanent)
 
 def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
