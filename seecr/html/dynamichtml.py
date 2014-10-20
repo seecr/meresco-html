@@ -69,7 +69,23 @@ class TemplateModule(object):
         raise AttributeError("Set of an attribute is not allowed on a TemplateModule")
 
 class DynamicHtmlException(Exception):
-    pass
+    httpCodes = {
+        500: 'Internal Server Error',
+        404: 'Not Found',
+    }
+    def __init__(self, message, httpCode=500):
+        super(DynamicHtmlException, self).__init__(message)
+        self._httpCode = httpCode if httpCode in self.httpCodes else 500
+
+    @classmethod
+    def notFound(cls, filename):
+        return cls('File "%s" does not exist.' % filename, httpCode=404)
+
+    def httpHeader(self):
+        yield 'HTTP/1.0 {code} {httpCodeText}\r\nContent-Type: text/html; charset=utf-8\r\n\r\n'.format(
+                code=self._httpCode,
+                httpCodeText=self.httpCodes[self._httpCode]
+            )
 
 def redirectTo(location, additionalHeaders=None, permanent=False):
     HTTP_CODE = "HTTP/1.0 302 Found\r\n"
@@ -161,7 +177,7 @@ class DynamicHtml(Observable):
                 try:
                     path = self._pathForTemplateName(templateName)
                     execfile(path, moduleGlobals, createdLocals)
-                except Exception, e:
+                except Exception:
                     s = escapeHtml(format_exc())
                     createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
                 moduleGlobals.update(createdLocals)
@@ -185,7 +201,10 @@ class DynamicHtml(Observable):
         else:
             nextHead, nextTail = self._splitPath(tail)
             nextGenerator = self._createMainGenerator(nextHead, nextTail, scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, **kwargs)
-        main = self._templates[head].main
+        try:
+            main = self._templates[head].main
+        except:
+            raise DynamicHtmlException.notFound(head)
         yield main(scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
 
     def _splitPath(self, aPath):
@@ -197,7 +216,7 @@ class DynamicHtml(Observable):
     def _createGenerators(self, path, scheme='', **kwargs):
         head, tail = self._splitPath(path)
         if not head in self._templates:
-            raise DynamicHtmlException('File "%s" does not exist.' % head)
+            raise DynamicHtmlException.notFound(head)
         return compose(self._createMainGenerator(head, tail, path=path, **kwargs))
 
     def handleRequest(self, path='', **kwargs):
@@ -214,12 +233,14 @@ class DynamicHtml(Observable):
             generators = self._createGenerators(path, **kwargs)
         except DynamicHtmlException, e:
             if self._notFoundPage is None:
-                yield FourOFourMessage + str(e)
+                yield e.httpHeader()
+                yield str(e)
                 return
             try:
                 generators = self._createGenerators(self._notFoundPage, **kwargs)
             except DynamicHtmlException, innerException:
-                yield FourOFourMessage + str(innerException)
+                yield innerException.httpHeader()
+                yield str(innerException)
                 return
 
         while True:
@@ -236,6 +257,11 @@ class DynamicHtml(Observable):
                     yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
                 yield firstLine
                 break
+            except DynamicHtmlException, dhe:
+                s = format_exc() #cannot be inlined
+                yield dhe.httpHeader()
+                yield str(s)
+                return
             except Exception:
                 s = format_exc() #cannot be inlined
                 yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
@@ -314,9 +340,8 @@ class DynamicHtml(Observable):
             'loads': loads,
             'urlsplit': urlsplit,
             'urlunsplit': urlunsplit,
+            'DynamicHtmlException': DynamicHtmlException,
         }
         result['__builtins__'].update((excName, excType) for excName, excType in vars(exceptions).items() if not excName.startswith('_'))
         return result
-
-FourOFourMessage = 'HTTP/1.0 404 File not found\r\nContent-Type: text/html; charset=utf-8\r\n\r\n'
 
