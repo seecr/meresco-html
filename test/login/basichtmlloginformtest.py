@@ -43,7 +43,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def testLoginFormEnglish(self):
         result = asString(self.form.loginForm(session={}, path='/page/login2'))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-form">
     <form method="POST" name="login" action="/action">
     <input type="hidden" name="formUrl" value="/page/login2"/>
         <dl>
@@ -59,7 +59,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def testLoginFormDutch(self):
         result = asString(self.form.loginForm(session={}, path='/page/login2', lang='nl'))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-form">
     <form method="POST" name="login" action="/action">
     <input type="hidden" name="formUrl" value="/page/login2"/>
         <dl>
@@ -78,7 +78,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
         }
         result = asString(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return'))
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-new-user-form">
     <p class="error">BAD BOY</p>
     <form method="POST" name="newUser" action="/action/newUser">
     <input type="hidden" name="formUrl" value="/page/login2"/>
@@ -101,7 +101,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
         }
         result = asString(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return', lang="nl"))
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-new-user-form">
     <p class="error">BAD BOY</p>
     <form method="POST" name="newUser" action="/action/newUser">
     <input type="hidden" name="formUrl" value="/page/login2"/>
@@ -211,7 +211,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         session['BasicHtmlLoginForm.formValues']={'username': '<us"er>', 'errorMessage': 'Invalid <username> or "password"'}
         result = asString(self.form.loginForm(session=session, path='/show/login'))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-form">
     <p class="error">Invalid &lt;username&gt; or "password"</p>
     <form method="POST" name="login" action="/action">
     <input type="hidden" name="formUrl" value="/show/login"/>
@@ -232,7 +232,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         }
         result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', arguments={}))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-change-password-form">
     <p class="error">BAD BOY</p>
     <form method="POST" name="changePassword" action="/action/changepassword">
     <input type="hidden" name="formUrl" value="/show/changepasswordform"/>
@@ -256,7 +256,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         }
         result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl", arguments={}))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-change-password-form">
     <p class="error">BAD BOY</p>
     <form method="POST" name="changePassword" action="/action/changepassword">
     <input type="hidden" name="formUrl" value="/show/changepasswordform"/>
@@ -280,7 +280,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         }
         result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl", arguments=dict(user=['myuser']), user='myuser', onlyNewPassword=True))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-change-password-form">
     <p class="error">BAD BOY</p>
     <form method="POST" name="changePassword" action="/action/changepassword">
     <input type="hidden" name="formUrl" value="/show/changepasswordform?user=myuser"/>
@@ -299,7 +299,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         session = {}
         result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', arguments={}))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-change-password-form">
     <p class="error">Please login to change password.</p>
 </div>""", result)
 
@@ -484,7 +484,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         result = asString(self.form.userList(session=session, path='/show/login'))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-user-list">
     <script type="text/javascript">
 function deleteUser(username) {
     if (confirm("Are you sure?")) {
@@ -516,7 +516,7 @@ function deleteUser(username) {
 
         result = asString(self.form.userList(session=session, path='/show/login', userLink='/user'))
 
-        self.assertEqualsWS("""<div id="login">
+        self.assertEqualsWS("""<div id="login-user-list">
     <script type="text/javascript">
 function deleteUser(username) {
     if (confirm("Are you sure?")) {

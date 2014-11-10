@@ -67,7 +67,7 @@ class BasicHtmlLoginForm(PostActions):
 
     def loginForm(self, session, path, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
-        yield """<div id="login">\n"""
+        yield """<div id="login-form">\n"""
         if 'errorMessage' in formValues:
             yield '    <p class="error">%s</p>\n' % xmlEscape(formValues['errorMessage'])
 
@@ -96,7 +96,7 @@ class BasicHtmlLoginForm(PostActions):
 
     def newUserForm(self, session, path, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.newUserFormValues', {}) if session else {}
-        yield """<div id="login">\n"""
+        yield """<div id="login-new-user-form">\n"""
         if not 'user' in session:
             yield '<p class="error">Please login to add new users.</p>\n</div>'
             return
@@ -177,7 +177,7 @@ class BasicHtmlLoginForm(PostActions):
 
     def changePasswordForm(self, session, path, arguments, user=None, lang="en", onlyNewPassword=False, **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
-        yield """<div id="login">\n"""
+        yield """<div id="login-change-password-form">\n"""
         if not 'user' in session:
             yield '<p class="error">Please login to change password.</p>\n</div>'
             return
@@ -217,7 +217,7 @@ class BasicHtmlLoginForm(PostActions):
         session.pop('BasicHtmlLoginForm.formValues', None)
 
     def userList(self, session, path, userLink=None, **kwargs):
-        yield """<div id="login">\n"""
+        yield """<div id="login-user-list">\n"""
         if not 'user' in session:
             yield '<p class="error">Please login to show user list.</p>\n</div>'
             return
