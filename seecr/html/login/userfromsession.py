@@ -3,8 +3,7 @@
 # "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml".
 #
-# Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Seecr Html"
@@ -24,9 +23,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+from meresco.core import Observable
 
-from passwordfile import PasswordFile
-from basichtmlloginform import BasicHtmlLoginForm
-from securezone import SecureZone
-from userfromsession import UserFromSession
-
+class UserFromSession(Observable):
+    def handleRequest(self, session, user=None, **kwargs):
+        user = session.get('user', user)
+        yield self.all.handleRequest(session=session, user=user, **kwargs)
