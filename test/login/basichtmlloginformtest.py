@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from weightless.core import asString, be, Observable
+from weightless.core import asString, be, Observable, consume
 
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.http.utils import CRLF
@@ -125,7 +125,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('405' in header)
 
     def testLoginWithPOSTsucceedsRedirectsToOriginalPath(self):
-        observer = CallTrace()
+        observer = CallTrace(onlySpecifiedMethods=True)
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
         Body = urlencode(dict(username='user', password='secret'))
@@ -140,12 +140,11 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         user = session['user']
         self.assertFalse(user.isAdmin())
 
-        self.assertEquals(['validateUser', 'enhanceUser'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
-        self.assertEquals({'user': user}, observer.calledMethods[-1].kwargs)
 
     def testLoginWithPOSTsucceedsRedirectsToOriginalPathOnlyOnce(self):
-        observer = CallTrace()
+        observer = CallTrace(onlySpecifiedMethods=True)
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
         Body = urlencode(dict(username='user', password='secret'))
@@ -159,7 +158,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('Location: /please/go/here' in header)
         self.assertFalse(session['user'].isAdmin())
 
-        self.assertEquals(['validateUser', 'enhanceUser'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
 
         result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -168,7 +167,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('Location: /home' in header, header)
 
     def testLoginWithPOSTsucceeds(self):
-        observer = CallTrace()
+        observer = CallTrace(onlySpecifiedMethods=True)
         def userIsAdmin(name):
             return True
         observer.methods['userIsAdmin'] = userIsAdmin
@@ -186,7 +185,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('302' in header)
         self.assertTrue('Location: /home' in header)
 
-        self.assertEquals(['validateUser', 'enhanceUser', 'userIsAdmin'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['validateUser', 'userIsAdmin'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
         self.assertEquals(('user',), observer.calledMethods[-1].args)
 
@@ -207,6 +206,21 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'wrong'}, observer.calledMethods[0].kwargs)
+
+    def testLoginCreatesAUserByAnObserver(self):
+        observer = CallTrace()
+        user = dict(user='this object')
+        observer.returnValues['validateUser'] = True
+        observer.returnValues['userForName'] = user
+        self.form.addObserver(observer)
+        Body = urlencode(dict(username='user', password='secret'))
+        session = {ORIGINAL_PATH:'/please/go/here'}
+
+        consume(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+
+        self.assertEquals(user, session['user'])
+        self.assertEquals(['validateUser', 'userForName'], observer.calledMethodNames())
+        self.assertEquals(dict(username='user'), observer.calledMethods[-1].kwargs)
 
 
     def testLoginFormWithError(self):

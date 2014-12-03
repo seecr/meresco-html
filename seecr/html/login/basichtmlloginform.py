@@ -35,6 +35,7 @@ from seecr.html import PostActions
 
 from labels import getLabel
 from urllib import urlencode
+from weightless.core import NoneOfTheObserversRespond
 
 class BasicHtmlLoginForm(PostActions):
     def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None):
@@ -64,9 +65,10 @@ class BasicHtmlLoginForm(PostActions):
             yield redirectHttp % self._loginPath
 
     def loginAsUser(self, username):
-        user = User(username, isAdminMethod=self._userIsAdminMethod)
-        self.do.enhanceUser(user=user)
-        return user
+        try:
+            return self.call.userForName(username=username)
+        except NoneOfTheObserversRespond:
+            return User(username, isAdminMethod=self._userIsAdminMethod)
 
     def loginForm(self, session, path, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
