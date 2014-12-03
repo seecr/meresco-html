@@ -5,6 +5,7 @@
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
 # Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Seecr Html"
 #
@@ -63,7 +64,9 @@ class BasicHtmlLoginForm(PostActions):
             yield redirectHttp % self._loginPath
 
     def loginAsUser(self, username):
-        return User(username, isAdminMethod=self._userIsAdminMethod)
+        user = User(username, isAdminMethod=self._userIsAdminMethod)
+        self.do.enhanceUser(user=user)
+        return user
 
     def loginForm(self, session, path, lang="en", **kwargs):
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}

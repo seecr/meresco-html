@@ -5,6 +5,7 @@
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
 # Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Seecr Html"
 #
@@ -136,10 +137,12 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
         self.assertTrue('Location: /please/go/here' in header)
-        self.assertFalse(session['user'].isAdmin())
+        user = session['user']
+        self.assertFalse(user.isAdmin())
 
-        self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['validateUser', 'enhanceUser'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
+        self.assertEquals({'user': user}, observer.calledMethods[-1].kwargs)
 
     def testLoginWithPOSTsucceedsRedirectsToOriginalPathOnlyOnce(self):
         observer = CallTrace()
@@ -156,7 +159,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('Location: /please/go/here' in header)
         self.assertFalse(session['user'].isAdmin())
 
-        self.assertEquals(['validateUser'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['validateUser', 'enhanceUser'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
 
         result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -183,9 +186,9 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('302' in header)
         self.assertTrue('Location: /home' in header)
 
-        self.assertEquals(['validateUser', 'userIsAdmin'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['validateUser', 'enhanceUser', 'userIsAdmin'], [m.name for m in observer.calledMethods])
         self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
-        self.assertEquals(('user',), observer.calledMethods[1].args)
+        self.assertEquals(('user',), observer.calledMethods[-1].args)
 
     def testLoginWithPOSTfails(self):
         observer = CallTrace()

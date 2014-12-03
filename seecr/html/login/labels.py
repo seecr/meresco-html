@@ -3,7 +3,8 @@
 # "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml".
 #
-# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Seecr Html"
 #
@@ -43,5 +44,8 @@ LABELS = {
         'password': dict(en='Password', nl='Wachtwoord'),
         'password-repeat': dict(en="Retype password", nl="Herhaal wachtwoord"),
         'create': dict(en="Create", nl="Aanmaken")
+    },
+    'errorMessage': {
+        'loginRequiredFor': dict(en='Login required for "{0}".', nl='Inloggen verplicht voor "{0}".')
     }
 }
