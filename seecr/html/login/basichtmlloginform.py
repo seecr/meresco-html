@@ -242,6 +242,7 @@ function deleteUser(username) {
                     quoteattr(join(self._action, 'remove')),
                     quoteattr(path),
                 )
+            yield '</form>\n'
         yield '<ul>\n'
         for username in sorted(self.call.listUsernames()):
             yield '<li>'
@@ -253,8 +254,6 @@ function deleteUser(username) {
                 yield """ <a href="javascript:deleteUser('%s');">delete</a>""" % username
             yield '</li>\n'
         yield '</ul>\n'
-        if user.isAdmin():
-            yield '</form>\n'
         yield '</div>\n'
 
     def handleRemove(self, session, Body, **kwargs):
