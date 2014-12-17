@@ -38,7 +38,7 @@ from urllib import urlencode
 from weightless.core import NoneOfTheObserversRespond
 
 class BasicHtmlLoginForm(PostActions):
-    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None):
+    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None, lang='en'):
         PostActions.__init__(self, name=name)
         self._action = action
         self._loginPath = loginPath
@@ -48,6 +48,7 @@ class BasicHtmlLoginForm(PostActions):
         self.registerAction('newUser', self.handleNewUser)
         self.defaultAction(self.handleLogin)
         self._userIsAdminMethod = userIsAdminMethod
+        self._lang = lang
 
     def handleLogin(self, session=None, Body=None, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True)
@@ -60,7 +61,7 @@ class BasicHtmlLoginForm(PostActions):
         else:
             session['BasicHtmlLoginForm.formValues'] = {
                 'username': username,
-                'errorMessage': 'Invalid username or password'
+                'errorMessage': getLabel(self._lang, 'loginForm', 'invalid')
             }
             yield redirectHttp % self._loginPath
 
@@ -70,7 +71,8 @@ class BasicHtmlLoginForm(PostActions):
         except NoneOfTheObserversRespond:
             return User(username, isAdminMethod=self._userIsAdminMethod)
 
-    def loginForm(self, session, path, lang="en", **kwargs):
+    def loginForm(self, session, path, lang=None, **kwargs):
+        lang = lang or self._lang
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
         yield """<div id="login-form">\n"""
         if 'errorMessage' in formValues:
@@ -99,7 +101,8 @@ class BasicHtmlLoginForm(PostActions):
 </div>""" % values
         session.pop('BasicHtmlLoginForm.formValues', None)
 
-    def newUserForm(self, session, path, lang="en", **kwargs):
+    def newUserForm(self, session, path, lang=None, **kwargs):
+        lang = lang or self._lang
         formValues = session.get('BasicHtmlLoginForm.newUserFormValues', {}) if session else {}
         yield """<div id="login-new-user-form">\n"""
         if not 'user' in session:
@@ -147,11 +150,11 @@ class BasicHtmlLoginForm(PostActions):
         returnUrl = bodyArgs.get('returnUrl', [formUrl])[0]
         targetUrl = formUrl
         if password != retypedPassword:
-            session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': 'Passwords do not match'}
+            session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': getLabel(self._lang, "newuserForm", 'dontMatch')}
         else:
             try:
                 self.do.addUser(username=username, password=password)
-                session['BasicHtmlLoginForm.newUserFormValues']={'successMessage': 'Added user "%s"' % username}
+                session['BasicHtmlLoginForm.newUserFormValues']={'successMessage': '%s "%s"' % (getLabel(self._lang, 'newuserForm', 'added'), username)}
                 targetUrl = returnUrl
             except ValueError, e:
                 session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': str(e)}
@@ -170,17 +173,18 @@ class BasicHtmlLoginForm(PostActions):
 
         targetUrl = formUrl
         if newPassword != retypedPassword:
-            session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': 'New passwords do not match'}
+            session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'dontMatch')}
         else:
             if (not oldPassword and user.isAdmin() and user.name != username) or self.call.validateUser(username=username, password=oldPassword):
                 self.call.changePassword(username, oldPassword, newPassword)
                 targetUrl = self._home
             else:
-                session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': 'Username and password do not match.'}
+                session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'usernamePasswordDontMatch')}
 
         yield redirectHttp % targetUrl
 
-    def changePasswordForm(self, session, path, arguments, user=None, lang="en", onlyNewPassword=False, **kwargs):
+    def changePasswordForm(self, session, path, arguments, user=None, lang=None, onlyNewPassword=False, **kwargs):
+        lang = lang or self._lang
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
         yield """<div id="login-change-password-form">\n"""
         if not 'user' in session:
@@ -265,7 +269,7 @@ function deleteUser(username) {
                 self.do.removeUser(username)
             else:
                 session['BasicHtmlLoginForm.formValues'] = {
-                    'errorMessage': 'User "%s" does not exist.' % username
+                    'errorMessage': getLabel(self._lang, 'removeUserForm', 'notExists') % username
                 }
 
         yield redirectHttp % formUrl

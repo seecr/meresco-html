@@ -326,7 +326,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals({'username':'user', 'errorMessage': 'New passwords do not match'}, session['BasicHtmlLoginForm.formValues'])
-        self.assertEqualsWS("""HTTP/1.0 302 Found\r\nLocation: /show/changepasswordform\r\n\r\n""", result)
+        self.assertEqualsWS("""HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n""", result)
 
     def testChangePasswordWrongOld(self):
         observer = CallTrace()
@@ -337,8 +337,8 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         session = {'user': User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
-        self.assertEquals({'username':'user', 'errorMessage': 'Username and password do not match.'}, session['BasicHtmlLoginForm.formValues'])
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/changepasswordform\r\n\r\n", result)
+        self.assertEquals({'username':'user', 'errorMessage': 'Username and password do not match'}, session['BasicHtmlLoginForm.formValues'])
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n", result)
 
     def testChangePasswordNoOldNotAllowed(self):
         observer = CallTrace()
@@ -352,8 +352,8 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         }
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
-        self.assertEquals({'username':'username', 'errorMessage': 'Username and password do not match.'}, session['BasicHtmlLoginForm.formValues'])
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/changepasswordform\r\n\r\n", result)
+        self.assertEquals({'username':'username', 'errorMessage': 'Username and password do not match'}, session['BasicHtmlLoginForm.formValues'])
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n", result)
 
     def testChangePasswordNoOldForAdminOnlyAllowedForOtherUsers(self):
         observer = CallTrace()
@@ -368,7 +368,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals(['changePassword'], [m.name for m in observer.calledMethods])
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /home\r\n\r\n", result)
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /home\r\n\r\n", result)
 
     def testChangePasswordNoOldForAdminNotAllowed(self):
         observer = CallTrace()
@@ -382,8 +382,8 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         }
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
-        self.assertEquals({'username':'admin', 'errorMessage': 'Username and password do not match.'}, session['BasicHtmlLoginForm.formValues'])
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/changepasswordform\r\n\r\n", result)
+        self.assertEquals({'username':'admin', 'errorMessage': 'Username and password do not match'}, session['BasicHtmlLoginForm.formValues'])
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/changepasswordform\r\n\r\n", result)
 
     def testChangePassword(self):
         observer = CallTrace()
@@ -395,7 +395,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals(['validateUser', 'changePassword'], [m.name for m in observer.calledMethods])
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /home\r\n\r\n", result)
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /home\r\n\r\n", result)
 
 
     def testDeleteUserNoAdmin(self):
@@ -408,7 +408,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             Body=urlencode(dict(username='user', formUrl='/show/userlist')),
             session={}))
         self.assertEquals([], [m.name for m in observer.calledMethods])
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/userlist\r\n\r\n", result)
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/userlist\r\n\r\n", result)
 
     def testDeleteUserAsAdmin(self):
         observer = CallTrace(returnValues={'hasUser': True})
@@ -421,7 +421,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             session={'user': User('admin')}))
 
         self.assertEquals(['hasUser', 'removeUser'], [m.name for m in observer.calledMethods])
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/userlist\r\n\r\n", result)
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/userlist\r\n\r\n", result)
 
     def testDeleteNonExistingUser(self):
         observer = CallTrace(returnValues={'hasUser': False})
@@ -435,8 +435,8 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             session=session))
 
         self.assertEquals(['hasUser'], [m.name for m in observer.calledMethods])
-        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/userlist\r\n\r\n", result)
-        self.assertEquals({'errorMessage': 'User "user" does not exist.'}, session['BasicHtmlLoginForm.formValues'])
+        self.assertEquals("HTTP/1.0 302 Redirect\r\nLocation: /show/userlist\r\n\r\n", result)
+        self.assertEquals({'errorMessage': 'User "user" does not exist'}, session['BasicHtmlLoginForm.formValues'])
 
     def testNewUserWithPOSTsucceeds(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
