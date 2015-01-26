@@ -1,60 +1,43 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
-# 
-# "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot. 
-# It is also known as "DynamicHtml". 
-# 
-# Copyright (C) 2012 Seecr (Seek You Too B.V.) http://seecr.nl
-# 
-# This file is part of "Seecr Html"
-# 
-# "Seecr Html" is free software; you can redistribute it and/or modify
+#
+# "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
+# It is also known as "DynamicHtml" or "Seecr Html".
+#
+# Copyright (C) 2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+#
+# This file is part of "Meresco Html"
+#
+# "Meresco Html" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
-# "Seecr Html" is distributed in the hope that it will be useful,
+#
+# "Meresco Html" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
-# along with "Seecr Html"; if not, write to the Free Software
+# along with "Meresco Html"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# 
+#
 ## end license ##
 
 
-from os.path import isdir, join, abspath, dirname, basename
-from os import system, listdir, makedirs
-from sys import stdout
+from os.path import join, abspath, dirname
 
-from seecr.test import SeecrTestCase
-from random import randint
-from time import sleep, time 
-
-from subprocess import Popen
-from signal import SIGTERM
-from os import waitpid, kill, WNOHANG
-from urllib import urlopen, urlencode
-from re import compile, DOTALL
-from StringIO import StringIO
-from lxml.etree import parse, XMLSyntaxError, tostring
-
-from meresco.components import readConfig
-
-from traceback import print_exc
 from seecr.test.integrationtestcase import IntegrationState as _IntegrationState
 from seecr.test.portnumbergenerator import PortNumberGenerator
 
 mypath = dirname(abspath(__file__))
-docDir = '/usr/share/doc/seecr-html-server'
+docDir = '/usr/share/doc/meresco-html'
 docDir = join(dirname(dirname(mypath)), 'doc') #DO_NOT_DISTRIBUTE
 
 class IntegrationState(_IntegrationState):
     def __init__(self, stateName, tests=None, fastMode=False):
-        _IntegrationState.__init__(self, "seecr-html-server-"+stateName, tests=tests, fastMode=fastMode)
-        
+        _IntegrationState.__init__(self, "meresco-html-server-"+stateName, tests=tests, fastMode=fastMode)
+
         self.port = PortNumberGenerator.next()
 
     def binDir(self):
@@ -63,5 +46,5 @@ class IntegrationState(_IntegrationState):
         return binDir
 
     def setUp(self):
-        self._startServer('server', self.binPath('seecr-html-server'), 'http://localhost:%s/' % self.port, port=self.port, dynamic=join(docDir, 'example', 'dynamic'), static=join(docDir, 'example', 'static'))
+        self._startServer('server', self.binPath('meresco-html-server'), 'http://localhost:%s/' % self.port, port=self.port, dynamic=join(docDir, 'example', 'dynamic'), static=join(docDir, 'example', 'static'))
 

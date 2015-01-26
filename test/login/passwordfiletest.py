@@ -28,7 +28,7 @@ from seecr.test import SeecrTestCase
 from simplejson import dump as jsonSave
 
 from os.path import join
-from seecr.html.login import PasswordFile
+from meresco.html.login import PasswordFile
 
 poorHash = lambda data: ''.join(reversed(data))
 

@@ -32,7 +32,7 @@ from cgi import parse_qs
 
 from meresco.components.http.utils import redirectHttp
 
-from seecr.html import PostActions
+from meresco.html import PostActions
 from uuid import uuid4
 from meresco.components.json import JsonDict
 

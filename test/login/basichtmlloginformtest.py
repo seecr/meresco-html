@@ -31,9 +31,9 @@ from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.http.utils import CRLF
 from urllib import urlencode
 
-from seecr.html.login import BasicHtmlLoginForm, PasswordFile
-from seecr.html.login.basichtmlloginform import User
-from seecr.html.login.securezone import ORIGINAL_PATH
+from meresco.html.login import BasicHtmlLoginForm, PasswordFile
+from meresco.html.login.basichtmlloginform import User
+from meresco.html.login.securezone import ORIGINAL_PATH
 from os.path import join
 
 class BasicHtmlLoginFormTest(SeecrTestCase):

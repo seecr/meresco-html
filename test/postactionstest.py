@@ -25,7 +25,7 @@
 
 from seecr.test import SeecrTestCase
 
-from seecr.html import PostActions
+from meresco.html import PostActions
 from weightless.core import asString
 
 class PostActionsTest(SeecrTestCase):

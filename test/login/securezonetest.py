@@ -31,7 +31,7 @@ from meresco.components.http.utils import redirectHttp
 
 from seecr.test import CallTrace, SeecrTestCase
 
-from seecr.html.login import SecureZone
+from meresco.html.login import SecureZone
 
 class SecureZoneTest(SeecrTestCase):
 

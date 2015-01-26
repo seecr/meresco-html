@@ -25,7 +25,7 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from seecr.html import urlencode
+from meresco.html import urlencode
 from urllib import urlencode as urllib_urlencode
 
 class UrlencodeTest(SeecrTestCase):

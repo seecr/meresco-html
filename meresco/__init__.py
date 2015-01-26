@@ -3,7 +3,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2012, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -23,13 +23,5 @@
 #
 ## end license ##
 
-def main(**kwargs):
-    yield '''<html>
-    <head>
-        <title>Example page</title>
-    </head>
-    <body>'''
-    yield '''<h1>Example</h1>\n'''
-    yield '''<p>Seecr: <img src="/static/seecr-logo-smaller.png"></img></p>\n'''
-    yield '''</body>
-</html>'''
+from pkgutil import extend_path
+__path__ = extend_path(__path__, __name__)

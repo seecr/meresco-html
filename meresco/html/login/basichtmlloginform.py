@@ -31,7 +31,7 @@ from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
 from securezone import ORIGINAL_PATH
 
-from seecr.html import PostActions
+from meresco.html import PostActions
 
 from labels import getLabel
 from urllib import urlencode

@@ -27,7 +27,7 @@
 
 from seecr.test import SeecrTestCase
 
-from seecr.html import ObjectRegistry
+from meresco.html import ObjectRegistry
 from urllib import urlencode
 from weightless.core import asString
 from weightless.http import parseHeaders
