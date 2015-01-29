@@ -30,7 +30,7 @@ from os import walk, listdir
 from os.path import join
 data_files = []
 for path, dirs, files in walk('doc'):
-    data_files.append((path.replace('doc', '/usr/share/doc/meresco-html'), [join(path, f) for f in files if f != 'license.conf']))
+    data_files.append((path.replace('doc', '/usr/share/doc/python3-meresco-html'), [join(path, f) for f in files if f != 'license.conf']))
 
 packages = []
 for path, dirs, files in walk('meresco'):
