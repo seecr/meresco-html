@@ -25,8 +25,8 @@
 #
 ## end license ##
 
-from seecrdeps import includeParentAndDeps              #DO_NOT_DISTRIBUTE
-includeParentAndDeps(__file__)                          #DO_NOT_DISTRIBUTE
+from seecrdeps import includeParentAndDeps       #DO_NOT_DISTRIBUTE
+includeParentAndDeps(__file__, scanForDeps=True) #DO_NOT_DISTRIBUTE
 
 from unittest import main
 

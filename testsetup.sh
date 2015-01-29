@@ -30,23 +30,24 @@ rm -rf tmp build
 mydir=$(cd $(dirname $0); pwd)
 source /usr/share/seecr-tools/functions.d/test
 
-pyversions="2.6"
-if distro_is_debian_wheezy; then
-    pyversions="2.6 2.7"
-fi
+pyversions=""
+for i in 3.2 3.4; do
+    test -e /usr/bin/python${i} && pyversions="${pyversions} ${i}"
+done
 
 VERSION="x.y.z"
 
-for pyversion in $pyversions; do
-    definePythonVars $pyversion
-    echo "###### $pyversion, $PYTHON"
+for pyversion in ${pyversions}; do
+    definePythonVars ${pyversion}
+    echo "###### ${pyversion}, ${PYTHON}"
     ${PYTHON} setup.py install --root tmp
 done
 cp -r test tmp/test
 removeDoNotDistribute tmp
 find tmp -name '*.py' -exec sed -r -e "
     s/\\\$Version:[^\\\$]*\\\$/\\\$Version: ${VERSION}\\\$/;
-    s,^docDir.*$,docDir = '$mydir/tmp/usr/share/doc/meresco-html',;
+    s,^docDir.*$,docDir = '${mydir}/tmp/usr/share/doc/meresco-html',;
+    s,binDir = '/usr/bin',binDir = '${mydir}/tmp/usr/bin',;
     " -i '{}' \;
 
 cp -r test tmp/test

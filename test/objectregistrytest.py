@@ -27,7 +27,7 @@
 from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.html import ObjectRegistry
-from urllib import urlencode
+from urllib.parse import urlencode
 from weightless.core import asString
 from weightless.http import parseHeaders
 from meresco.components.http.utils import CRLF
@@ -42,7 +42,7 @@ class ObjectRegistryTest(SeecrTestCase):
         registry.registerKeys(keys=['name', 'key2', 'another'], booleanKeys=['enabled', 'feature'])
         object1id = registry.addObject(name=["object1"], key2=["value_1"], enabled=['on'])
         object2id = registry.addObject(name=["object2"], key2=["value_2"], enabled=['on'])
-        self.assertEquals({
+        self.assertEqual({
                 object1id: {'key2': 'value_1', 'enabled': True, 'name': 'object1', 'another':'', 'feature': False},
                 object2id: {'key2': 'value_2', 'enabled': True, 'name': 'object2', 'another':'', 'feature': False}
             }, registry.listObjects())
@@ -53,7 +53,7 @@ class ObjectRegistryTest(SeecrTestCase):
         self.assertEquals(['objectRemoved'], observer.calledMethodNames())
         self.assertEquals({'name':'name', 'identifier': object2id}, observer.calledMethods[0].kwargs)
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
-        self.assertEquals({
+        self.assertEqual({
                 object1id: {'key2': 'value_1', 'enabled': True, 'name': 'object1', 'another':'', 'feature': False},
             }, registry.listObjects())
 
@@ -63,7 +63,7 @@ class ObjectRegistryTest(SeecrTestCase):
         object1id = registry.addObject(name=["object1"], key2=["value_1"], enabled=['on'])
 
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
-        self.assertEquals(
+        self.assertEqual(
                 {object1id: {'key2': 'value_1', 'enabled': True, 'name': 'object1'}},
                 registry.listObjects())
 
@@ -77,7 +77,7 @@ class ObjectRegistryTest(SeecrTestCase):
         self.assertEquals(['objectAdded', 'objectUpdated'], observer.calledMethodNames())
         self.assertEquals({'name':'name', 'identifier': object1id}, observer.calledMethods[-1].kwargs)
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
-        self.assertEquals({
+        self.assertEqual({
                 object1id: {'key2': 'value_2', 'enabled': False, 'name': 'object1'}
             }, registry.listObjects())
 
@@ -141,7 +141,7 @@ class ObjectRegistryTest(SeecrTestCase):
         registry.registerKeys(keys=['one', 'four'], booleanKeys=['three'])
         registry.updateObject(identifier=object1id, one=["one"], four=["four"])
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
-        self.assertEquals({
+        self.assertEqual({
                 object1id: {'one': 'one', 'three': False, 'four': 'four'}
             }, registry.listObjects())
 
@@ -155,8 +155,8 @@ class ObjectRegistryTest(SeecrTestCase):
         header, _ = asString(registry.handleRequest(Method='POST', path='/objects/add', Body=data, session={})).split(CRLF*2)
         redirectLocation = parseHeaders(header+CRLF)['Location']
         path, objectid = redirectLocation.split('#')
-        self.assertEquals('/redirect', path)
-        self.assertEquals({
+        self.assertEqual('/redirect', path)
+        self.assertEqual({
                 objectid: {'key1': 'value1', 'key2': '', 'enabled1': True, 'enabled2': False}
             }, registry.listObjects())
 
@@ -197,7 +197,7 @@ class ObjectRegistryTest(SeecrTestCase):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(keys=['key2', 'key1'], booleanKeys=['enabled1', 'enabled2'])
         object1id = registry.addObject(key1=["object1"], key2=["value2"], enabled1=['on'])
-        self.assertEquals({
+        self.assertEqual({
                 'key1': 'object1',
                 'key2': 'value2',
                 'enabled1': True,
@@ -211,8 +211,8 @@ class ObjectRegistryTest(SeecrTestCase):
         header, _ = asString(registry.handleRequest(Method='POST', path='/objects/update', Body=data, session={})).split(CRLF*2)
         redirectLocation = parseHeaders(header+CRLF)['Location']
         path, objectid = redirectLocation.split('#')
-        self.assertEquals(object1id, objectid)
-        self.assertEquals({
+        self.assertEqual(object1id, objectid)
+        self.assertEqual({
                 'key1': 'value1',
                 'key2': 'value2',
                 'enabled1': False,
@@ -223,7 +223,7 @@ class ObjectRegistryTest(SeecrTestCase):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(keys=['key1', 'key2'], booleanKeys=['enabled1', 'enabled2'])
         object1id = registry.addObject(key1=["object1"], enabled1=['on'])
-        self.assertEquals({
+        self.assertEqual({
                 'key1': 'object1',
                 'key2': '',
                 'enabled1': True,
@@ -234,7 +234,7 @@ class ObjectRegistryTest(SeecrTestCase):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(jsonKeys=['key1', 'key2'])
         object1id = registry.addObject(key1=['{"key":"needsvalue"}'])
-        self.assertEquals({
+        self.assertEqual({
                 'key1': {'key':'needsvalue'},
                 'key2': {},
             }, registry.listObjects()[object1id])

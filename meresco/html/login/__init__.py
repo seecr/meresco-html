@@ -25,11 +25,11 @@
 #
 ## end license ##
 
-from passwordfile import PasswordFile
-from basichtmlloginform import BasicHtmlLoginForm
-from securezone import SecureZone
-from userfromsession import UserFromSession
-from remembermecookie import RememberMeCookie
+from .passwordfile import PasswordFile
+from .basichtmlloginform import BasicHtmlLoginForm
+from .securezone import SecureZone
+from .userfromsession import UserFromSession
+from .remembermecookie import RememberMeCookie
 from .userrestriction import UserRestriction
 from .groupsfile import GroupsFile
 from .usergroupsform import UserGroupsForm

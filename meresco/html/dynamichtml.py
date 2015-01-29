@@ -31,13 +31,13 @@ from traceback import format_exc
 from cgi import parse_qs
 from itertools import groupby, islice
 
-from cgi import escape as _escapeHtml
-from xml.sax.saxutils import escape as escapeXml, quoteattr
-from lxml.etree import parse, tostring
-from time import time
-from urllib import urlencode as _urlencode
-from math import ceil
 from functools import partial, reduce
+from html import escape as _escapeHtml
+from lxml.etree import parse, tostring
+from math import ceil
+from time import time
+from urllib.parse import urlencode as _urlencode
+from xml.sax.saxutils import escape as escapeXml, quoteattr
 
 from meresco.components.json import JsonList, JsonDict
 from meresco.core import Observable, decorate
@@ -45,9 +45,9 @@ from meresco.core import Observable, decorate
 from weightless.core import compose, Yield
 
 from meresco.components import DirectoryWatcher
-import exceptions
 from simplejson import dumps, loads
-from urlparse import urlsplit, urlunsplit
+from urllib.parse import urlsplit, urlunsplit
+import collections
 
 CRLF = '\r\n'
 
@@ -95,7 +95,7 @@ def redirectTo(location, additionalHeaders=None, permanent=False):
     headers = {'Location': location}
     if not additionalHeaders is None:
         headers.update(additionalHeaders)
-    return HTTP_CODE + CRLF.join("{0}: {1}".format(*i) for i in headers.items()) + CRLF + CRLF
+    return HTTP_CODE + CRLF.join("{0}: {1}".format(*i) for i in list(headers.items())) + CRLF + CRLF
 
 class Http(object):
     def redirect(self, location, additionalHeaders=None, permanent=False):
@@ -105,7 +105,7 @@ def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
 
 def _stringify(values):
-    if isinstance(values, basestring):
+    if isinstance(values, str):
         return str(values)
     try:
         return [str(value) for value in values]
@@ -116,7 +116,7 @@ def urlencode(query, doseq=True):
     if not doseq:
         return _urlencode(query, doseq)
     if hasattr(query, 'items'):
-        query = query.items()
+        query = list(query.items())
     return _urlencode([(k,_stringify(v)) for k,v in query], doseq)
 
 class ObservableProxy(object):
@@ -178,7 +178,8 @@ class DynamicHtml(Observable):
                 createdLocals = {}
                 try:
                     path = self._pathForTemplateName(templateName)
-                    execfile(path, moduleGlobals, createdLocals)
+                    with open(path) as fp:
+                        exec(compile(fp.read(), path, 'exec'), moduleGlobals, createdLocals)
                 except Exception:
                     s = escapeHtml(format_exc())
                     createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
@@ -233,22 +234,22 @@ class DynamicHtml(Observable):
 
         try:
             generators = self._createGenerators(path, **kwargs)
-        except DynamicHtmlException, e:
+        except DynamicHtmlException as e:
             if self._notFoundPage is None:
                 yield e.httpHeader()
                 yield str(e)
                 return
             try:
                 generators = self._createGenerators(self._notFoundPage, **kwargs)
-            except DynamicHtmlException, innerException:
+            except DynamicHtmlException as innerException:
                 yield innerException.httpHeader()
                 yield str(innerException)
                 return
 
         while True:
             try:
-                firstValue = generators.next()
-                if firstValue is Yield or callable(firstValue):
+                firstValue = next(generators)
+                if firstValue is Yield or isinstance(firstValue, collections.Callable):
                     yield firstValue
                     continue
                 firstLine = str(firstValue)
@@ -259,7 +260,7 @@ class DynamicHtml(Observable):
                     yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
                 yield firstLine
                 break
-            except DynamicHtmlException, dhe:
+            except DynamicHtmlException as dhe:
                 s = format_exc() #cannot be inlined
                 yield dhe.httpHeader()
                 yield str(s)
@@ -272,7 +273,7 @@ class DynamicHtml(Observable):
 
         try:
             for line in generators:
-                yield line if line is Yield or callable(line) else str(line)
+                yield line if line is Yield or isinstance(line, collections.Callable) else str(line)
         except Exception:
             s = format_exc() #cannot be inlined
             yield "<pre>"
@@ -298,16 +299,16 @@ class DynamicHtml(Observable):
             'min': min,
             'max': max,
             'ceil': ceil,
-            'unicode': unicode,
+            'unicode': str,
             'range': range,
-            'xrange': xrange,
+            'xrange': lambda *args, **kwargs: NoLongerSupported("xrange"),
             'reduce': reduce,
             'reversed': reversed,
             'zip': zip,
             'enumerate': enumerate,
             'map': map,
             'sorted': sorted,
-            'cmp': cmp,
+            'cmp': lambda *args, **kwargs: NoLongerSupported("cmp"),
             'dict': dict,
             'set': set,
             'list': list,
@@ -348,6 +349,8 @@ class DynamicHtml(Observable):
             'urlunsplit': urlunsplit,
             'DynamicHtmlException': DynamicHtmlException,
         }
-        result['__builtins__'].update((excName, excType) for excName, excType in vars(exceptions).items() if not excName.startswith('_'))
+        result['__builtins__'].update((e.__name__, e) for e in Exception.__subclasses__())
         return result
 
+def NoLongerSupported(msg):
+    raise NotImplementedError("{0} is not supported in python3".format(msg))

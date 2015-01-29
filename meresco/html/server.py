@@ -29,7 +29,7 @@ from weightless.io import Reactor
 from weightless.core import compose, be
 from sys import stdout
 
-from dynamichtml import DynamicHtml
+from .dynamichtml import DynamicHtml
 
 def dna(reactor, port, dynamic, static, verbose=True):
     apacheLogger = ApacheLogger(stdout) if verbose else ApacheLogger()
@@ -54,6 +54,6 @@ def startServer(**kwargs):
     server = be(dna(reactor=reactor, **kwargs))
     list(compose(server.once.observer_init()))
 
-    print "Ready to rumble at", kwargs['port']
+    print("Ready to rumble at", kwargs['port'])
     reactor.loop()
 

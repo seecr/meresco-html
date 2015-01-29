@@ -28,11 +28,12 @@
 
 export LANG=en_US.UTF-8
 export PYTHONPATH=.:$PYTHONPATH
-pyversions=$(pyversions --installed)
-if [ "${option:0:10}" == "--python2." ]; then
-    shift
-    pyversions="${option:2}"
-fi
+
+pyversions=""
+for i in 3.2 3.4; do
+    test -e /usr/bin/python${i} && pyversions="${pyversions} python${i}"
+done
+
 echo Found Python versions: $pyversions
 for pycmd in $pyversions; do
     echo "================ $pycmd _alltests.py $@ ================"

@@ -23,6 +23,6 @@
 #
 ## end license ##
 
-from dynamichtml import DynamicHtml, urlencode
-from postactions import PostActions
-from objectregistry import ObjectRegistry
+from .dynamichtml import DynamicHtml, urlencode
+from .postactions import PostActions
+from .objectregistry import ObjectRegistry
