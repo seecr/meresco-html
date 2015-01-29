@@ -46,7 +46,7 @@ cp -r test tmp/test
 removeDoNotDistribute tmp
 find tmp -name '*.py' -exec sed -r -e "
     s/\\\$Version:[^\\\$]*\\\$/\\\$Version: ${VERSION}\\\$/;
-    s,^docDir.*$,docDir = '${mydir}/tmp/usr/share/doc/meresco-html',;
+    s,^docDir.*$,docDir = '${mydir}/tmp/usr/share/doc/python3-meresco-html',;
     s,binDir = '/usr/bin',binDir = '${mydir}/tmp/usr/bin',;
     " -i '{}' \;
 

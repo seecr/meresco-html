@@ -31,7 +31,7 @@ from seecr.test.integrationtestcase import IntegrationState as _IntegrationState
 from seecr.test.portnumbergenerator import PortNumberGenerator
 
 mypath = dirname(abspath(__file__))
-docDir = '/usr/share/doc/meresco-html'
+docDir = '/usr/share/doc/python3-meresco-html'
 docDir = join(dirname(dirname(mypath)), 'doc') #DO_NOT_DISTRIBUTE
 
 class IntegrationState(_IntegrationState):
