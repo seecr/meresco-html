@@ -46,5 +46,5 @@ class IntegrationState(_IntegrationState):
         return binDir
 
     def setUp(self):
-        self._startServer('server', self.binPath('meresco-html-server'), 'http://localhost:%s/' % self.port, port=self.port, dynamic=join(docDir, 'example', 'dynamic'), static=join(docDir, 'example', 'static'))
+        self._startServer('server', self.binPath('meresco-html-server-py3'), 'http://localhost:%s/' % self.port, port=self.port, dynamic=join(docDir, 'example', 'dynamic'), static=join(docDir, 'example', 'static'))
 

@@ -35,7 +35,7 @@ from string import digits as _SALT_1, ascii_letters as _SALT_2
 USER_RW = S_IRUSR | S_IWUSR
 
 def md5Hash(data):
-    return md5(data).hexdigest()
+    return md5(data.encode()).hexdigest()
 
 def simplePasswordTest(passwd):
     return bool(passwd.strip())
@@ -45,7 +45,7 @@ def usernameTest(username):
     return bool(VALIDNAME.match(username))
 
 def randomString(length=5):
-    return ''.join(choice(_SALT_1 + _SALT_2) for i in xrange(length))
+    return ''.join(choice(_SALT_1 + _SALT_2) for i in range(length))
 
 class PasswordFile(object):
     version=2
@@ -92,19 +92,21 @@ class PasswordFile(object):
         self._setUser(username=username, password=newPassword)
 
     def listUsernames(self):
-        return self._users.keys()
+        return list(self._users.keys())
 
     def hasUser(self, username):
         return username in self._users
 
     def _makePersistent(self):
         tmpFilename = self._filename + ".tmp"
-        jsonWrite(dict(users=self._users, version=self.version), open(tmpFilename, 'w'))
+        with open(tmpFilename, 'w') as fp:
+            jsonWrite(dict(users=self._users, version=self.version), fp)
         rename(tmpFilename, self._filename)
         chmod(self._filename, USER_RW)
 
     def _read(self):
-        result = jsonRead(open(self._filename))
+        with open(self._filename) as fp:
+            result = jsonRead(fp)
         assert result['version'] == self.version, 'Expected database version %s' % self.version
         return result['users']
 

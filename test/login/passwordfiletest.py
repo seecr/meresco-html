@@ -41,7 +41,8 @@ class PasswordFileTest(SeecrTestCase):
     def testReadPasswordFile(self):
         passwdHash = poorHash('passwordsalt')
         data = dict(users={'John':{'salt':'salt', 'password':passwdHash}}, version=PasswordFile.version)
-        jsonSave(data, open(self.filename, 'w'))
+        with open(self.filename, 'w') as fp:
+            jsonSave(data, fp)
         pf = PasswordFile(filename=self.filename, hashMethod=poorHash)
         self.assertTrue(pf.validateUser('John', 'password'))
 
@@ -136,7 +137,7 @@ class PasswordFileTest(SeecrTestCase):
         self.pwd.addUser(username='john', password='password')
         self.pwd.addUser(username='graham', password='password2')
         self.pwd.addUser(username='hank', password='password3')
-        self.assertEquals(set(['admin', 'hank', 'graham', 'john']), set(self.pwd.listUsernames()))
+        self.assertEqual(set(['admin', 'hank', 'graham', 'john']), set(self.pwd.listUsernames()))
 
     def testHasUser(self):
         self.pwd.addUser(username='john', password='password')

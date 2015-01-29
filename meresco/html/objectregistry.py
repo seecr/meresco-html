@@ -26,9 +26,9 @@
 ## end license ##
 
 from os.path import join, isfile, isdir
-from os import makedirs
+from os import makedirs, rename
 from simplejson import load, dump
-from cgi import parse_qs
+from urllib.parse  import parse_qs
 
 from meresco.components.http.utils import redirectHttp
 
@@ -86,7 +86,8 @@ class ObjectRegistry(PostActions):
         self._save(values)
 
     def listObjects(self):
-        return load(open(self._registryFile))
+        with open(self._registryFile) as fp:
+            return load(fp)
 
     def registerKeys(self, keys=None, booleanKeys=None, jsonKeys=None):
         self._register['keys'] = keys or []
@@ -94,7 +95,7 @@ class ObjectRegistry(PostActions):
         self._register['jsonKeys'] = jsonKeys or []
 
     def registerConversion(self, **kwargs):
-        self._register['json'] = kwargs.keys()
+        self._register['json'] = list(kwargs.keys())
 
     def _handle(self, method, Body, session, **kwargs):
         formValues = parse_qs(Body, keep_blank_values=True)
@@ -104,7 +105,7 @@ class ObjectRegistry(PostActions):
                     identifier=identifier,
                     **formValues
                 )
-        except ValueError, e:
+        except ValueError as e:
             session['error'] = str(e)
         yield redirectHttp % "{0}#{1}".format(self._redirectPath, identifier)
 
@@ -120,5 +121,7 @@ class ObjectRegistry(PostActions):
         yield redirectHttp % self._redirectPath
 
     def _save(self, values):
-        dump(values, open(self._registryFile, "w"))
+        with open("%s.tmp" % self._registryFile, "w") as fp:
+            dump(values, fp)
+        rename("%s.tmp" % self._registryFile, self._registryFile)
 

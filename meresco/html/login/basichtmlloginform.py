@@ -26,15 +26,14 @@
 ## end license ##
 
 from meresco.components.http.utils import redirectHttp
-from cgi import parse_qs
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
-from securezone import ORIGINAL_PATH
+from .securezone import ORIGINAL_PATH
 
 from meresco.html import PostActions
 
-from labels import getLabel
-from urllib import urlencode
+from .labels import getLabel
+from urllib.parse import urlencode, parse_qs
 from weightless.core import NoneOfTheObserversRespond
 
 class BasicHtmlLoginForm(PostActions):
@@ -156,7 +155,7 @@ class BasicHtmlLoginForm(PostActions):
                 self.do.addUser(username=username, password=password)
                 session['BasicHtmlLoginForm.newUserFormValues']={'successMessage': '%s "%s"' % (getLabel(self._lang, 'newuserForm', 'added'), username)}
                 targetUrl = returnUrl
-            except ValueError, e:
+            except ValueError as e:
                 session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': str(e)}
 
         yield redirectHttp % targetUrl

@@ -25,8 +25,8 @@
 #
 ## end license ##
 
-from passwordfile import PasswordFile
-from basichtmlloginform import BasicHtmlLoginForm
-from securezone import SecureZone
-from userfromsession import UserFromSession
+from .passwordfile import PasswordFile
+from .basichtmlloginform import BasicHtmlLoginForm
+from .securezone import SecureZone
+from .userfromsession import UserFromSession
 

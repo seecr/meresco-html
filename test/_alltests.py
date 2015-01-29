@@ -25,14 +25,8 @@
 #
 ## end license ##
 
-from sys import path                                   #DO_NOT_DISTRIBUTE
-from os import system, listdir                         #DO_NOT_DISTRIBUTE
-from os.path import isdir, join                        #DO_NOT_DISTRIBUTE
-system("find .. -name '*.pyc' | xargs rm -f")          #DO_NOT_DISTRIBUTE
-if isdir('../deps.d'):                                 #DO_NOT_DISTRIBUTE
-    for d in listdir('../deps.d'):                     #DO_NOT_DISTRIBUTE
-        path.insert(0, join('../deps.d', d))           #DO_NOT_DISTRIBUTE
-path.insert(0, '..')                                   #DO_NOT_DISTRIBUTE
+from seecrdeps import includeParentAndDeps             #DO_NOT_DISTRIBUTE
+includeParentAndDeps(__file__)                         #DO_NOT_DISTRIBUTE
 
 from unittest import main
 
@@ -40,7 +34,6 @@ from dynamichtmltest import DynamicHtmlTest
 from objectregistrytest import ObjectRegistryTest
 from postactionstest import PostActionsTest
 from urlencodetest import UrlencodeTest
-
 
 from login.passwordfiletest import PasswordFileTest
 from login.securezonetest import SecureZoneTest

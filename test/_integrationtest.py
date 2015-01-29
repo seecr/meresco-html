@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.5
 ## begin license ##
 # 
 # "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot. 
@@ -24,13 +23,8 @@
 # 
 ## end license ##
 
-from os import system                               #DO_NOT_DISTRIBUTE
-from glob import glob                               #DO_NOT_DISTRIBUTE
-from sys import path as systemPath                  #DO_NOT_DISTRIBUTE
-system('find .. -name "*.pyc" | xargs rm -f')       #DO_NOT_DISTRIBUTE
-for path in glob('../deps.d/*'):                    #DO_NOT_DISTRIBUTE
-    systemPath.insert(0, path)                      #DO_NOT_DISTRIBUTE
-systemPath.insert(0, '..')                          #DO_NOT_DISTRIBUTE
+from seecrdeps import includeParentAndDeps          #DO_NOT_DISTRIBUTE
+includeParentAndDeps(__file__)                      #DO_NOT_DISTRIBUTE
 
 from sys import argv
 

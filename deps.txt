@@ -1,10 +1,10 @@
-python-lxml
+python3-lxml
 seecr-core (>= 1.0)
 seecr-core (<< 1.1)
-python-meresco-components (>= 4.9.9)
-python-meresco-components (<< 4.11)
-python-meresco-core (>= 4.0.3)
-python-meresco-core (<< 4.1)
-python-weightless-core (>= 0.7.8)
-python-weightless-core (<< 0.10)
-python-simplejson
+python3-meresco-components (>= 4.9.9)
+python3-meresco-components (<< 4.11)
+python3-meresco-core (>= 4.0.3)
+python3-meresco-core (<< 4.1)
+python3-weightless-core (>= 0.7.8)
+python3-weightless-core (<< 0.10)
+python3-simplejson
