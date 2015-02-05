@@ -147,6 +147,8 @@ class DynamicHtml(Observable):
 
     def _initialize(self, reactor, watch):
         for directory in self._directories:
+            if self._verbose:
+                print("loading templates in directory", directory, flush=True)
             for path in glob(directory + '/*.sf'):
                 templateName = basename(path)[:-len('.sf')]
                 self.loadTemplateModule(templateName)
@@ -171,9 +173,12 @@ class DynamicHtml(Observable):
 
     def loadTemplateModule(self, templateName):
         if templateName in self._templates:
+            if self._verbose:
+                print("reloading template", templateName, flush=True)
             self._templates[templateName]._mustReload()
         else:
             def load():
+                print("loading template", templateName, flush=True)
                 moduleGlobals = self.createGlobals()
                 createdLocals = {}
                 try:
@@ -218,12 +223,16 @@ class DynamicHtml(Observable):
 
     def _createGenerators(self, path, scheme='', **kwargs):
         head, tail = self._splitPath(path)
+        if self._verbose:
+            print(head, self._templates, flush=True)
         if not head in self._templates:
             raise DynamicHtmlException.notFound(head)
         return compose(self._createMainGenerator(head, tail, path=path, **kwargs))
 
     def handleRequest(self, path='', **kwargs):
         path = path[len(self._prefix):]
+        if self._verbose:
+            print("request path", path, flush=True)
         if path == '/' and self._indexPage:
             newLocation = self._indexPage
             arguments = kwargs.get('arguments', {})

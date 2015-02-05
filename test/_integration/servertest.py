@@ -24,12 +24,17 @@
 ## end license ##
 
 from seecr.test.integrationtestcase import IntegrationTestCase
-from seecr.test.utils import getRequest
+from seecr.test.utils import getRequest, headerToDict, postRequest
+
+from urllib.parse import urlencode
 
 class ServerTest(IntegrationTestCase):
     def testServer(self):
         header, body = getRequest(path='/', port=self.port, parse=False)
-        self.assertEqual('HTTP/1.0 302 Found\r\nLocation: /index', header)
+        headers = headerToDict(header)
+        self.assertEqual(set(['Location', 'Set-Cookie']), headers.keys())
+        self.assertEqual("/index", headers['Location'])
+        self.assertTrue(header.startswith("HTTP/1.0 302 Found"), header)
 
     def testExamplePage(self):
         header, body = getRequest(path='/example', port=self.port, parse=False)
@@ -41,4 +46,26 @@ class ServerTest(IntegrationTestCase):
         self.assertTrue(' 200 ' in header, header)
         self.assertTrue('Content-Type: image/png' in header, header)
 
+    def testRedirectedToLogin(self):
+        header, body = getRequest(path='/secure', port=self.port, parse=False)
+        parsedHeaders = headerToDict(header)
+        self.assertTrue("Location" in parsedHeaders, parsedHeaders)
+        self.assertEqual("/secure/login", parsedHeaders['Location'])
 
+    def testLoginToSecureZone(self):
+        header, body = getRequest(path='/secure', port=self.port, parse=False)
+        parsedHeaders = headerToDict(header)
+        self.assertEqual("/secure/login", parsedHeaders['Location'])
+
+        header, body = getRequest(path='/secure/login', port=self.port, parse=False)
+        parsedHeaders = headerToDict(header)
+        Cookie = parsedHeaders['Set-Cookie']
+        self.assertTrue("""<form method="POST" name="login" action="/login.action">""" in body, body)
+
+        header, body = postRequest(path="/login.action", 
+            port=self.port, parse=False, 
+            data=urlencode(dict(username="admin", password="admin", formUrl="/login")),
+            additionalHeaders=dict(Cookie=Cookie))
+        
+        header, body = getRequest(path='/secure/session', port=self.port, parse=False, additionalHeaders=dict(Cookie=Cookie))
+        self.assertTrue("'user': <meresco.html.login.basichtmlloginform" in body, body)

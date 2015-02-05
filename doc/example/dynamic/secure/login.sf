@@ -1,0 +1,8 @@
+def main(**kwargs):
+    yield """<html>
+    <body>"""
+    yield observable.any.loginForm(**kwargs)
+    yield """
+    </body>
+</html>"""
+

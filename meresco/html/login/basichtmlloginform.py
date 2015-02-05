@@ -55,7 +55,7 @@ class BasicHtmlLoginForm(PostActions):
         self._rememberMeCookie = rememberMeCookie
 
     def handleLogin(self, session=None, Body=None, **kwargs):
-        bodyArgs = parse_qs(Body, keep_blank_values=True)
+        bodyArgs = parse_qs(Body.decode(), keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
         rememberMe = bodyArgs.get('rememberMe', [None])[0] != None

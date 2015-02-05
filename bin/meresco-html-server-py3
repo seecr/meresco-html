@@ -36,6 +36,7 @@ if __name__ == '__main__':
     parser.addOption('', '--port', type='int', help='Port', default=8000)
     parser.addOption('', '--dynamic', help='Dynamic html dir', mandatory=True)
     parser.addOption('', '--static', help='Static dir', mandatory=True)
+    parser.addOption('', '--data', help='Data dir', mandatory=False)
 
     options, arguments = parser.parse()
 
