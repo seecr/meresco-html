@@ -50,7 +50,9 @@ class BasicHtmlLoginForm(PostActions):
         self._lang = lang
 
     def handleLogin(self, session=None, Body=None, **kwargs):
-        bodyArgs = parse_qs(Body.decode(), keep_blank_values=True)
+        if type(Body) == bytes:
+            Body = Body.decode()
+        bodyArgs = parse_qs(Body, keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
         if self.call.validateUser(username=username, password=password):
@@ -141,6 +143,8 @@ class BasicHtmlLoginForm(PostActions):
         session.pop('BasicHtmlLoginForm.newUserFormValues', None)
 
     def handleNewUser(self, session, Body, **kwargs):
+        if type(Body) == bytes:
+            Body = Body.decode()
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
@@ -161,6 +165,8 @@ class BasicHtmlLoginForm(PostActions):
         yield redirectHttp % targetUrl
 
     def handleChangePassword(self, session, Body, **kwargs):
+        if type(Body) == bytes:
+            Body = Body.decode()
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         username = bodyArgs.get('username', [None])[0]
         oldPassword = bodyArgs.get('oldPassword', [None])[0]
@@ -260,6 +266,8 @@ function deleteUser(username) {
         yield '</div>\n'
 
     def handleRemove(self, session, Body, **kwargs):
+        if type(Body) == bytes:
+            Body = Body.decode()
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
         if 'user' in session and session['user'].isAdmin():
