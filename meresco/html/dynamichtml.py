@@ -178,7 +178,8 @@ class DynamicHtml(Observable):
             self._templates[templateName]._mustReload()
         else:
             def load():
-                print("loading template", templateName, flush=True)
+                if self._verbose:
+                    print("loading template", templateName, flush=True)
                 moduleGlobals = self.createGlobals()
                 createdLocals = {}
                 try:
