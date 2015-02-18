@@ -270,6 +270,11 @@ def main(Headers={}, *args, **kwargs):
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\ntwo', ''.join(result))
 
+    def testNoDirectoryWatcherAddedToReactorWhenNotWatch(self):
+        reactor = CallTrace('reactor')
+        d = DynamicHtml([self.tempdir], reactor=reactor, watch=False)
+        self.assertEquals([], reactor.calledMethodNames())
+
     def testFileMovedIntoDirectoryCausesReload(self):
         reactor = Reactor()
 

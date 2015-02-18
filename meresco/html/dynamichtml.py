@@ -129,7 +129,7 @@ class ObservableProxy(object):
 
 
 class DynamicHtml(Observable):
-    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None):
+    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None, watch=True):
         Observable.__init__(self)
         self._verbose = verbose
         if type(directories) != list:
@@ -142,18 +142,19 @@ class DynamicHtml(Observable):
         self._templates = {}
         self._additionalGlobals = additionalGlobals or {}
         self._observableProxy = ObservableProxy(self)
-        self._initialize(reactor)
+        self._initialize(reactor, watch=watch)
 
-    def _initialize(self, reactor):
+    def _initialize(self, reactor, watch):
         for directory in self._directories:
             for path in glob(directory + '/*.sf'):
                 templateName = basename(path)[:-len('.sf')]
                 self.loadTemplateModule(templateName)
-            directoryWatcher = DirectoryWatcher(
-                directory,
-                self._notifyHandler,
-                CreateFile=True, ModifyFile=True, MoveInFile=True)
-            reactor.addReader(directoryWatcher, directoryWatcher)
+            if watch:
+                directoryWatcher = DirectoryWatcher(
+                    directory,
+                    self._notifyHandler,
+                    CreateFile=True, ModifyFile=True, MoveInFile=True)
+                reactor.addReader(directoryWatcher, directoryWatcher)
 
     def _notifyHandler(self, event):
         if not event.name.endswith('.sf'):
