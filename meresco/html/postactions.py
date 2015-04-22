@@ -51,7 +51,6 @@ class PostActions(Observable):
             return
         if self._default is None:
             yield successNoContentPlainText
-            yield "No Content"
             return
 
         yield self._default(path=path, **kwargs)

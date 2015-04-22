@@ -42,7 +42,7 @@ class PostActionsTest(SeecrTestCase):
         p = PostActions()
 
         response = asString(p.handleRequest(Method="POST", path="/"))
-        self.assertEquals('HTTP/1.0 204 No Content\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nNo Content', response)
+        self.assertEquals('HTTP/1.0 204 No Content\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n', response)
 
 
         def default(**kwargs):
