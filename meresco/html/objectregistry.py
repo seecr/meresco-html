@@ -80,6 +80,8 @@ class ObjectRegistry(PostActions):
                 continue
             data[key] = JsonDict.loads(newdata or '{}')
         for key in self._register['booleanKeys']:
+            data[key] = olddata.get(key, False)
+        for key in kwargs.get('__booleanKeys__', self._register['booleanKeys']):
             data[key] = key in kwargs
         values[identifier] = data
         self._save(values)

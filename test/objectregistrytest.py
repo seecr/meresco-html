@@ -1,26 +1,25 @@
 ## begin license ##
 #
-# "NBC+" also known as "ZP (ZoekPlatform)" is
-#  initiated by Stichting Bibliotheek.nl to registryide a new search service
-#  for all public libraries in the Netherlands.
+# "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
+# It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2013-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
-# This file is part of "NBC+ (Zoekplatform BNL)"
+# This file is part of "Meresco Html"
 #
-# "NBC+ (Zoekplatform BNL)" is free software; you can redistribute it and/or modify
+# "Meresco Html" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
-# "NBC+ (Zoekplatform BNL)" is distributed in the hope that it will be useful,
+# "Meresco Html" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "NBC+ (Zoekplatform BNL)"; if not, write to the Free Software
+# along with "Meresco Html"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
@@ -68,6 +67,23 @@ class ObjectRegistryTest(SeecrTestCase):
         self.assertEquals({
                 object1id: {'key2': 'value_2', 'enabled': False, 'name': 'object1'}
             }, registry.listObjects())
+
+    def testPartialUpdateObject(self):
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        registry.registerKeys(keys=['key0', 'key1'], booleanKeys=['enabled0', 'enabled1'])
+        object1id = registry.addObject(key0=["value0"], key1=["value1"], enabled0=['on'], enabled1=['on'])
+        self.assertEquals({
+                object1id: {'key0': 'value0', 'enabled0': True, 'key1': 'value1', 'enabled1': True}
+            }, registry.listObjects())
+        registry.updateObject(identifier=object1id, __booleanKeys__=['enabled1'])
+        self.assertEquals({
+                object1id: {'key0': 'value0', 'enabled0': True, 'key1': 'value1', 'enabled1': False}
+            }, registry.listObjects())
+        registry.updateObject(identifier=object1id, __booleanKeys__=['enabled1'], enabled1=['on'])
+        self.assertEquals({
+                object1id: {'key0': 'value0', 'enabled0': True, 'key1': 'value1', 'enabled1': True}
+            }, registry.listObjects())
+
 
     def testUpdateChangeKeys(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
