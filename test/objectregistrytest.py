@@ -84,6 +84,11 @@ class ObjectRegistryTest(SeecrTestCase):
                 object1id: {'key0': 'value0', 'enabled0': True, 'key1': 'value1', 'enabled1': True}
             }, registry.listObjects())
 
+        registry.updateObject(identifier=object1id, __booleanKeys__=[''])
+        self.assertEquals({
+                object1id: {'key0': 'value0', 'enabled0': True, 'key1': 'value1', 'enabled1': True}
+            }, registry.listObjects())
+
 
     def testUpdateChangeKeys(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')

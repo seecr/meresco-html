@@ -82,6 +82,8 @@ class ObjectRegistry(PostActions):
         for key in self._register['booleanKeys']:
             data[key] = olddata.get(key, False)
         for key in kwargs.get('__booleanKeys__', self._register['booleanKeys']):
+            if not key:
+                continue
             data[key] = key in kwargs
         values[identifier] = data
         self._save(values)
