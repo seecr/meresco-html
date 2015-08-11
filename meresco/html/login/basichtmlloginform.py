@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from meresco.components.http.utils import redirectHttp
+from meresco.components.http.utils import redirectHttp, CRLF
 from cgi import parse_qs
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
@@ -36,9 +36,13 @@ from meresco.html import PostActions
 from labels import getLabel
 from urllib import urlencode
 from weightless.core import NoneOfTheObserversRespond
+from rfc822 import formatdate
+from time import time
+
+TWO_WEEKS = 2*7*24*3600
 
 class BasicHtmlLoginForm(PostActions):
-    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None, lang='en'):
+    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None, lang='en', rememberMeCookieName=None, rememberMeCookieMethod=None, rememberMeCookiePeriod=TWO_WEEKS):
         PostActions.__init__(self, name=name)
         self._action = action
         self._loginPath = loginPath
@@ -49,15 +53,31 @@ class BasicHtmlLoginForm(PostActions):
         self.defaultAction(self.handleLogin)
         self._userIsAdminMethod = userIsAdminMethod
         self._lang = lang
+        self._rememberMeCookieName = rememberMeCookieName
+        self._rememberMeCookieMethod = rememberMeCookieMethod
+        self._rememberMeCookiePeriod = rememberMeCookiePeriod
+
 
     def handleLogin(self, session=None, Body=None, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
+        rememberMe = bodyArgs.get('rememberMe', [None])[0] != None
+
         if self.call.validateUser(username=username, password=password):
-            session['user'] = self.loginAsUser(username)
+            user = self.loginAsUser(username)
+            session['user'] = user
             url = session.pop(ORIGINAL_PATH, self._home)
-            yield redirectHttp % url
+            response = redirectHttp
+            if rememberMe:
+                cookie = 'Set-Cookie: %s=%s; path=/; expires=%s' % (
+                    self._rememberMeCookieName, 
+                    self._rememberMeCookieMethod('user'), 
+                    formatdate(self._now() + self._rememberMeCookiePeriod))
+                status, headers = response.split(CRLF, 1)
+                response = CRLF.join([status, cookie, headers])
+
+            yield response % url
         else:
             session['BasicHtmlLoginForm.formValues'] = {
                 'username': username,
@@ -273,6 +293,9 @@ function deleteUser(username) {
                 }
 
         yield redirectHttp % formUrl
+
+    def _now(self):
+        return time()
 
 class User(object):
     def __init__(self, name, isAdminMethod=None):

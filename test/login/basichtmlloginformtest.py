@@ -28,6 +28,7 @@
 from weightless.core import asString, be, Observable, consume
 
 from seecr.test import SeecrTestCase, CallTrace
+from seecr.test.utils import headerToDict
 from meresco.components.http.utils import CRLF
 from urllib import urlencode
 
@@ -568,3 +569,41 @@ function deleteUser(username) {
 
         asString(dna.all.handleNewUser(session={}, Body=urlencode(dict(password="password", retypedPassword="password"))))
         self.assertEquals(3, len(values))
+
+    def testSetRememberMeCookie(self):
+        observer = CallTrace(
+            methods={'validateUser': lambda username, password: True},
+            onlySpecifiedMethods=True)
+       
+        basicHtmlLoginForm = BasicHtmlLoginForm(
+            action="/action", 
+            loginPath="/", 
+            home="/index",
+            rememberMeCookieName="CID",
+            rememberMeCookieMethod=lambda user: "THIS IS THE COOKIE VALUE",
+            rememberMeCookiePeriod=3600)
+        basicHtmlLoginForm._now = lambda: 3600
+
+        dna = be(
+            (Observable(),
+                (basicHtmlLoginForm, 
+                    (observer, )
+                )
+            )
+        )
+
+        session = {}
+        header, _ = asString(dna.all.handleRequest(
+            Method="POST", 
+            path="/", 
+            session=session, 
+            Body=urlencode(dict(username="test", password="ignored", rememberMe="on"))
+        )).split('\r\n\r\n', 1)
+
+        self.assertTrue('user' in session, session)
+        headers = headerToDict(header)
+        self.assertEquals("/index", headers['Location'])
+
+        self.assertTrue('Set-Cookie' in headers, headers)
+        self.assertEquals("CID=THIS IS THE COOKIE VALUE; path=/; expires=Thu, 01 Jan 1970 02:00:00 GMT", headers['Set-Cookie'])
+
