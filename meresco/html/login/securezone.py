@@ -29,14 +29,27 @@ from meresco.components.http.utils import redirectHttp
 from labels import getLabel
 
 class SecureZone(Observable):
-    def __init__(self, loginPath, excluding=None, defaultLanguage='en'):
+    def __init__(self, loginPath, excluding=None, defaultLanguage='en', rememberMeCookieName=None, rememberMeCookieMethod=None):
         Observable.__init__(self)
         self._loginPath = loginPath
         self._defaultLanguage = defaultLanguage
         self._excluding = [] if excluding is None else excluding
+        self._rememberMeCookieName = rememberMeCookieName
+        self._rememberMeCookieMethod = rememberMeCookieMethod
 
     def handleRequest(self, session, path, query, arguments, **kwargs):
+        Headers = kwargs.get('Headers', {})
         lang = arguments.get('lang', [self._defaultLanguage])[0]
+
+        if Headers and 'Cookie' in Headers and 'user' not in session:
+            for cookie in Headers.get('Cookie','').split(';'):
+                name, value = cookie.strip().split("=", 1)
+                if name == self._rememberMeCookieName:
+                    user = self._rememberMeCookieMethod(value)
+                    if user:
+                        session['user'] = user
+                        break
+
         if 'user' in session or \
                 path == self._loginPath or \
                 any(path.startswith(excluded) for excluded in self._excluding):

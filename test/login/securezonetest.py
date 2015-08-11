@@ -26,7 +26,7 @@
 ## end license ##
 
 from meresco.core import Observable
-from weightless.core import compose
+from weightless.core import compose, consume, be, asString
 from meresco.components.http.utils import redirectHttp
 
 from seecr.test import CallTrace, SeecrTestCase
@@ -57,7 +57,7 @@ class SecureZoneTest(SeecrTestCase):
         root.addObserver(secureZone)
         session={}
 
-        response = ''.join(compose(root.all.handleRequest(path='/secret_page', query='', session=session, arguments={})))
+        response = asString(root.all.handleRequest(path='/secret_page', query='', session=session, arguments={}))
 
         self.assertEquals(redirectHttp % '/page_with_login', response)
         self.assertEquals(0, len(observer.calledMethods))
@@ -74,7 +74,7 @@ class SecureZoneTest(SeecrTestCase):
 
         user = CallTrace('user')
 
-        list(compose(root.all.handleRequest(path='/secret_page', query='a=b', session={'user':user}, arguments={})))
+        response = asString(root.all.handleRequest(path='/secret_page', query='a=b', session={'user':user}, arguments={}))
 
         self.assertEquals(1, len(observer.calledMethods))
         self.assertEquals('/secret_page', observer.calledMethods[0].kwargs['path'])
@@ -89,7 +89,7 @@ class SecureZoneTest(SeecrTestCase):
         root.addObserver(secureZone)
         session={}
 
-        response = ''.join(compose(root.all.handleRequest(path='/allowed_page', query='a=b', session=session, arguments={})))
+        response = asString(root.all.handleRequest(path='/allowed_page', query='a=b', session=session, arguments={}))
 
         self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
         self.assertEquals(['handleRequest'], observer.calledMethodNames())
@@ -98,13 +98,58 @@ class SecureZoneTest(SeecrTestCase):
     def testAllowedInsecurePagesForLoginPage(self):
         secureZone = SecureZone('/page_with_login', excluding=['/allowed'])
         root = Observable()
-        observer = CallTrace('Observer', returnValues={'handleRequest' :(f for f in ['HTTP/1.0 200 OK\r\n\r\nBody'])})
+        observer = CallTrace('Observer', 
+            returnValues={'handleRequest' :(f for f in ['HTTP/1.0 200 OK\r\n\r\nBody'])})
         secureZone.addObserver(observer)
         root.addObserver(secureZone)
         session={}
 
-        response = ''.join(compose(root.all.handleRequest(path='/page_with_login', query='a=b', session=session, arguments={})))
+        response = asString(root.all.handleRequest(path='/page_with_login', query='a=b', session=session, arguments={}))
 
         self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
         self.assertEquals(['handleRequest'], observer.calledMethodNames())
         self.assertEquals({}, session)
+
+    def testRememberMeCookie(self):
+
+        paths = []
+        def handleRequest(path, *args, **kwargs):
+            paths.append(path)
+            yield "RESPONSE"
+        
+        observer = CallTrace(methods={'handleRequest': handleRequest}) 
+        def validateRememberMeCookie(cookie):
+            return "USER" if cookie == "THIS IS THE REMEMBER ME COOKIE" else None
+
+        dna = be(
+            (Observable(),
+                (SecureZone(
+                    "/page_with_login", 
+                    excluding=['/allowed'],
+                    rememberMeCookieName="CID",
+                    rememberMeCookieMethod=validateRememberMeCookie
+                    ),
+                    (observer, ) 
+                )
+            ))
+        session = {}
+        response = asString(dna.all.handleRequest(
+            path='/some_page', 
+            query='',
+            arguments={},
+            session=session))
+        self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /page_with_login\r\n\r\n", response)
+        self.assertEquals([], paths)
+        self.assertFalse('user' in session, session)
+
+        session = {}
+        response = asString(dna.all.handleRequest(
+            path='/some_page', 
+            query='',
+            arguments={},
+            Headers=dict(Cookie="CID=THIS IS THE REMEMBER ME COOKIE"),
+            session=session))
+        self.assertEquals("RESPONSE", response)
+        self.assertEquals(['/some_page'], paths)
+        self.assertTrue('user' in session, session)
+
