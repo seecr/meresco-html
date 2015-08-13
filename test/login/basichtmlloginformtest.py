@@ -607,3 +607,25 @@ function deleteUser(username) {
         self.assertTrue('Set-Cookie' in headers, headers)
         self.assertEquals("CID=THIS IS THE COOKIE VALUE; path=/; expires=Thu, 01 Jan 1970 02:00:00 GMT", headers['Set-Cookie'])
 
+    def testLoginForWithRememberMe(self):
+        form = BasicHtmlLoginForm(
+            action='/action', 
+            loginPath='/login', 
+            home='/home',
+            rememberMeCookieName="CID",
+            rememberMeCookieMethod=lambda user: "COOKIE_VALUE")
+        result = asString(form.loginForm(session={}, path='/page/login2'))
+        self.assertEqualsWS("""<div id="login-form">
+    <form method="POST" name="login" action="/action">
+    <input type="hidden" name="formUrl" value="/page/login2"/>
+        <dl>
+            <dt>Username</dt>
+            <dd><input type="text" name="username" value=""/></dd>
+            <dt>Password</dt>
+            <dd><input type="password" name="password"/></dd>
+            <dd class="rememberMe"><input type="checkbox" name="rememberMe"/>Remember me</dd>
+            <dd class="submit"><input type="submit" value="Login"/></dd>
+        </dl>
+    </form>
+</div>""", result)
+

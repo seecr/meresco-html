@@ -57,7 +57,6 @@ class BasicHtmlLoginForm(PostActions):
         self._rememberMeCookieMethod = rememberMeCookieMethod
         self._rememberMeCookiePeriod = rememberMeCookiePeriod
 
-
     def handleLogin(self, session=None, Body=None, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
@@ -104,7 +103,8 @@ class BasicHtmlLoginForm(PostActions):
             formUrl=quoteattr(path),
             lblUsername=getLabel(lang, 'loginForm', 'username'),
             lblPassword=getLabel(lang, 'loginForm', 'password'),
-            lblLogin=getLabel(lang, 'loginForm', 'login')
+            lblLogin=getLabel(lang, 'loginForm', 'login'),
+            lblRememberMe=getLabel(lang, 'loginForm', 'rememberMe')
         )
 
         yield """
@@ -114,7 +114,13 @@ class BasicHtmlLoginForm(PostActions):
             <dt>%(lblUsername)s</dt>
             <dd><input type="text" name="username" value=%(username)s/></dd>
             <dt>%(lblPassword)s</dt>
-            <dd><input type="password" name="password"/></dd>
+            <dd><input type="password" name="password"/></dd>""" % values
+
+        if self._rememberMeCookieName:
+            yield """
+            <dd class="rememberMe"><input type="checkbox" name="rememberMe"/>%(lblRememberMe)s</dd>""" % values
+
+        yield """
             <dd class="submit"><input type="submit" value="%(lblLogin)s"/></dd>
         </dl>
     </form>

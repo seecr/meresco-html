@@ -33,6 +33,7 @@ LABELS = {
         'password': dict(en='Password', nl='Wachtwoord'),
         'login': dict(en='Login', nl="Inloggen"),
         'invalid': dict(en='Invalid username or password', nl='Ongeldige gebruikersnaam of wachtwoord'),
+        'rememberMe': dict(en="Remember me", nl="Vergeet-me-niet"),
     },
     'changepasswordForm': {
         'old-password': dict(en="Old password", nl="Oud wachtwoord"),

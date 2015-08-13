@@ -42,13 +42,16 @@ class RememberMeCookieTest(SeecrTestCase):
             paths.append(path)
             yield "RESPONSE"
         
-        observer = CallTrace(methods={'handleRequest': handleRequest}) 
         def validateMethod(cookie):
             return "USER" if cookie == "THIS IS THE REMEMBER ME COOKIE" else None
 
+        observer = CallTrace(methods={
+            'handleRequest': handleRequest, 
+            'validateCookie': validateMethod}) 
+
         dna = be(
             (Observable(),
-                (RememberMeCookie(cookieName="CID", validate=validateMethod),
+                (RememberMeCookie(cookieName="CID"),
                     (observer, ) 
                 )
             ))

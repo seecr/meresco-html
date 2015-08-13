@@ -27,10 +27,9 @@
 from meresco.core import Observable
 
 class RememberMeCookie(Observable):
-    def __init__(self, cookieName, validate, name=None):
+    def __init__(self, cookieName, name=None):
         Observable.__init__(self, name=name)
         self._cookieName = cookieName
-        self._validate = validate
 
     def handleRequest(self, session, **kwargs):
         Headers = kwargs.get('Headers', {})
@@ -39,7 +38,7 @@ class RememberMeCookie(Observable):
             for cookie in Headers.get('Cookie','').split(';'):
                 name, value = cookie.strip().split("=", 1)
                 if name == self._cookieName:
-                    user = self._validate(value)
+                    user = self.call.validateCookie(value)
                     if user:
                         session['user'] = user
                         break
