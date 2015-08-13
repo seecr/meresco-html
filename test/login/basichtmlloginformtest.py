@@ -572,16 +572,21 @@ function deleteUser(username) {
 
     def testSetRememberMeCookie(self):
         observer = CallTrace(
-            methods={'validateUser': lambda username, password: True},
+            methods={
+                'validateUser': lambda username, password: True,
+                'createCookie': lambda user: dict(
+                    name='CID',
+                    value='THIS IS THE COOKIE VALUE', 
+                    expires=3600
+                )
+            },
             onlySpecifiedMethods=True)
        
         basicHtmlLoginForm = BasicHtmlLoginForm(
             action="/action", 
             loginPath="/", 
             home="/index",
-            rememberMeCookieName="CID",
-            rememberMeCookieMethod=lambda user: "THIS IS THE COOKIE VALUE",
-            rememberMeCookiePeriod=3600)
+            rememberMeCookie=True)
         basicHtmlLoginForm._now = lambda: 3600
 
         dna = be(
@@ -612,8 +617,7 @@ function deleteUser(username) {
             action='/action', 
             loginPath='/login', 
             home='/home',
-            rememberMeCookieName="CID",
-            rememberMeCookieMethod=lambda user: "COOKIE_VALUE")
+            rememberMeCookie=True)
         result = asString(form.loginForm(session={}, path='/page/login2'))
         self.assertEqualsWS("""<div id="login-form">
     <form method="POST" name="login" action="/action">

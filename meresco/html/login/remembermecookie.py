@@ -27,17 +27,15 @@
 from meresco.core import Observable
 
 class RememberMeCookie(Observable):
-    def __init__(self, cookieName, name=None):
-        Observable.__init__(self, name=name)
-        self._cookieName = cookieName
 
     def handleRequest(self, session, **kwargs):
         Headers = kwargs.get('Headers', {})
 
         if Headers and 'Cookie' in Headers and 'user' not in session:
+            cookieName = self.call.cookieName()
             for cookie in Headers.get('Cookie','').split(';'):
                 name, value = cookie.strip().split("=", 1)
-                if name == self._cookieName:
+                if name == cookieName:
                     user = self.call.validateCookie(value)
                     if user:
                         session['user'] = user

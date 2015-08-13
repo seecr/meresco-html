@@ -47,11 +47,12 @@ class RememberMeCookieTest(SeecrTestCase):
 
         observer = CallTrace(methods={
             'handleRequest': handleRequest, 
-            'validateCookie': validateMethod}) 
+            'validateCookie': validateMethod,
+            'cookieName': lambda: "CID"}) 
 
         dna = be(
             (Observable(),
-                (RememberMeCookie(cookieName="CID"),
+                (RememberMeCookie(),
                     (observer, ) 
                 )
             ))

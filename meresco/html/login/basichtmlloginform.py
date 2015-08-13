@@ -42,7 +42,7 @@ from time import time
 TWO_WEEKS = 2*7*24*3600
 
 class BasicHtmlLoginForm(PostActions):
-    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None, lang='en', rememberMeCookieName=None, rememberMeCookieMethod=None, rememberMeCookiePeriod=TWO_WEEKS):
+    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None, lang='en', rememberMeCookie=False):
         PostActions.__init__(self, name=name)
         self._action = action
         self._loginPath = loginPath
@@ -53,9 +53,7 @@ class BasicHtmlLoginForm(PostActions):
         self.defaultAction(self.handleLogin)
         self._userIsAdminMethod = userIsAdminMethod
         self._lang = lang
-        self._rememberMeCookieName = rememberMeCookieName
-        self._rememberMeCookieMethod = rememberMeCookieMethod
-        self._rememberMeCookiePeriod = rememberMeCookiePeriod
+        self._rememberMeCookie = rememberMeCookie
 
     def handleLogin(self, session=None, Body=None, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True)
@@ -68,11 +66,12 @@ class BasicHtmlLoginForm(PostActions):
             session['user'] = user
             url = session.pop(ORIGINAL_PATH, self._home)
             response = redirectHttp
-            if rememberMe:
+            if rememberMe and self._rememberMeCookie:
+                cookieValues = self.call.createCookie(user)
                 cookie = 'Set-Cookie: %s=%s; path=/; expires=%s' % (
-                    self._rememberMeCookieName, 
-                    self._rememberMeCookieMethod('user'), 
-                    formatdate(self._now() + self._rememberMeCookiePeriod))
+                    cookieValues['name'],
+                    cookieValues['value'],
+                    formatdate(self._now() + cookieValues.get('expires', TWO_WEEKS)))
                 status, headers = response.split(CRLF, 1)
                 response = CRLF.join([status, cookie, headers])
 
@@ -116,7 +115,7 @@ class BasicHtmlLoginForm(PostActions):
             <dt>%(lblPassword)s</dt>
             <dd><input type="password" name="password"/></dd>""" % values
 
-        if self._rememberMeCookieName:
+        if self._rememberMeCookie:
             yield """
             <dd class="rememberMe"><input type="checkbox" name="rememberMe"/>%(lblRememberMe)s</dd>""" % values
 
