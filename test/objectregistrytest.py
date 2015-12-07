@@ -31,6 +31,7 @@ from urllib import urlencode
 from weightless.core import asString
 from weightless.http import parseHeaders
 from meresco.components.http.utils import CRLF
+from uuid import uuid4
 
 class ObjectRegistryTest(SeecrTestCase):
     def testAddDelete(self):
@@ -89,6 +90,31 @@ class ObjectRegistryTest(SeecrTestCase):
                 object1id: {'key0': 'value0', 'enabled0': True, 'key1': 'value1', 'enabled1': True}
             }, registry.listObjects())
 
+    def testUpdateObjectWithNonexistingIdentfier(self):
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        registry.registerKeys(keys=['key0', 'key1'])
+        identifier = str(uuid4())
+        self.assertRaises(KeyError, lambda: registry.updateObject(identifier=identifier, key0=['value']))
+
+        data = urlencode([
+                ('identifier', identifier),
+                ('key1', 'value1'),
+            ])
+        session = {}
+        header, _ = asString(registry.handleRequest(Method='POST', path='/objects/update', Body=data, session=session)).split(CRLF*2)
+        self.assertEquals({'error': '"Key \'{0}\' does not exist."'.format(identifier)}, session)
+
+    def testAddObjectWithGivenIdentifier(self):
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        registry.registerKeys(keys=['key0', 'key1'])
+        identifier = str(uuid4())
+        object1id = registry.addObject(identifier=identifier, key0=["value0"], key1=["value1"])
+        self.assertEquals(identifier, object1id)
+
+    def testAddObjectIdentifierMustBeUUID(self):
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        registry.registerKeys(keys=['key0', 'key1'])
+        self.assertRaises(ValueError, lambda: registry.addObject(identifier='identifier', key0=["value0"], key1=["value1"]))
 
     def testUpdateChangeKeys(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')

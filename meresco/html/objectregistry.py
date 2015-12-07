@@ -32,7 +32,7 @@ from cgi import parse_qs
 from meresco.components.http.utils import redirectHttp
 
 from meresco.html import PostActions
-from uuid import uuid4
+from uuid import uuid4, UUID
 from meresco.components.json import JsonDict
 
 class ObjectRegistry(PostActions):
@@ -51,9 +51,9 @@ class ObjectRegistry(PostActions):
         self.registerAction('update', self.handleUpdate)
         self.registerAction('remove', self.handleRemove)
 
-    def addObject(self, identifier='ignored', **kwargs):
+    def addObject(self, identifier=None, **kwargs):
         values = self.listObjects()
-        identifier = str(uuid4())
+        identifier = str(UUID(identifier)) if identifier else str(uuid4())
         self._add(values, identifier=identifier, **kwargs)
         return identifier
 
@@ -65,6 +65,8 @@ class ObjectRegistry(PostActions):
 
     def updateObject(self, identifier, **kwargs):
         values = self.listObjects()
+        if identifier not in values:
+            raise KeyError("Key '{0}' does not exist.".format(identifier))
         self._add(values, identifier=identifier, **kwargs)
         return identifier
 
@@ -110,7 +112,7 @@ class ObjectRegistry(PostActions):
                     identifier=identifier,
                     **formValues
                 )
-        except ValueError, e:
+        except (KeyError, ValueError), e:
             session['error'] = str(e)
         yield redirectHttp % "{0}#{1}".format(self._redirectPath, identifier)
 
