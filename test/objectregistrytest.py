@@ -31,6 +31,7 @@ from urllib import urlencode
 from weightless.core import asString
 from weightless.http import parseHeaders
 from meresco.components.http.utils import CRLF
+from meresco.html.objectregistry import ObjectRegistryException
 from uuid import uuid4
 
 class ObjectRegistryTest(SeecrTestCase):
@@ -94,7 +95,7 @@ class ObjectRegistryTest(SeecrTestCase):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(keys=['key0', 'key1'])
         identifier = str(uuid4())
-        self.assertRaises(KeyError, lambda: registry.updateObject(identifier=identifier, key0=['value']))
+        self.assertRaises(ObjectRegistryException, lambda: registry.updateObject(identifier=identifier, key0=['value']))
 
         data = urlencode([
                 ('identifier', identifier),
@@ -102,7 +103,13 @@ class ObjectRegistryTest(SeecrTestCase):
             ])
         session = {}
         header, _ = asString(registry.handleRequest(Method='POST', path='/objects/update', Body=data, session=session)).split(CRLF*2)
-        self.assertEquals({'error': '"Key \'{0}\' does not exist."'.format(identifier)}, session)
+        self.assertEquals({"ObjectRegistry" : {
+                'error': "Identifier '{0}' does not exist.".format(identifier),
+                'values': {
+                    'identifier': [identifier],
+                    'key1': ['value1']
+                }
+            }}, session)
 
     def testAddObjectWithGivenIdentifier(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
@@ -114,7 +121,7 @@ class ObjectRegistryTest(SeecrTestCase):
     def testAddObjectIdentifierMustBeUUID(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(keys=['key0', 'key1'])
-        self.assertRaises(ValueError, lambda: registry.addObject(identifier='identifier', key0=["value0"], key1=["value1"]))
+        self.assertRaises(ObjectRegistryException, lambda: registry.addObject(identifier='identifier', key0=["value0"], key1=["value1"]))
 
     def testUpdateChangeKeys(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')

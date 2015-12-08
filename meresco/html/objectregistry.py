@@ -34,13 +34,15 @@ from meresco.components.http.utils import redirectHttp
 from meresco.html import PostActions
 from uuid import uuid4, UUID
 from meresco.components.json import JsonDict
+from .labels import getLabel
 
 class ObjectRegistry(PostActions):
-    def __init__(self, stateDir, name, redirectPath, **kwargs):
+    def __init__(self, stateDir, name, redirectPath, lang='en', **kwargs):
         super(ObjectRegistry, self).__init__(name=name, **kwargs)
         isdir(stateDir) or makedirs(stateDir)
         self._registryFile = join(stateDir, "registry_{0}.json".format(name))
         self._redirectPath = redirectPath
+        self._lang = lang
         if not isfile(self._registryFile):
             self._save({})
 
@@ -53,7 +55,13 @@ class ObjectRegistry(PostActions):
 
     def addObject(self, identifier=None, **kwargs):
         values = self.listObjects()
-        identifier = str(UUID(identifier)) if identifier else str(uuid4())
+        if identifier:
+            try:
+                identifier = str(UUID(identifier))
+            except ValueError:
+                raise ObjectRegistryException('badIdentifier', identifier=identifier)
+        else:
+            identifier = str(uuid4())
         self._add(values, identifier=identifier, **kwargs)
         return identifier
 
@@ -66,7 +74,7 @@ class ObjectRegistry(PostActions):
     def updateObject(self, identifier, **kwargs):
         values = self.listObjects()
         if identifier not in values:
-            raise KeyError("Key '{0}' does not exist.".format(identifier))
+            raise ObjectRegistryException('unexistingIdentifier', identifier=identifier)
         self._add(values, identifier=identifier, **kwargs)
         return identifier
 
@@ -112,8 +120,16 @@ class ObjectRegistry(PostActions):
                     identifier=identifier,
                     **formValues
                 )
-        except (KeyError, ValueError), e:
-            session['error'] = str(e)
+        except ObjectRegistryException, e:
+            session['ObjectRegistry'] = dict(
+                error=getLabel(self._lang, 'objectRegistry', e.code).format(**e.kwargs),
+                values=dict(identifier=[identifier], **formValues)
+            )
+        except Exception, e:
+            session['ObjectRegistry'] = dict(
+                error=getLabel(self._lang, 'objectRegistry', "unexpectedException").format(str(e)),
+                values=dict(identifier=[identifier], **formValues)
+            )
         yield redirectHttp % "{0}#{1}".format(self._redirectPath, identifier)
 
     def handleAdd(self, **kwargs):
@@ -130,3 +146,8 @@ class ObjectRegistry(PostActions):
     def _save(self, values):
         dump(values, open(self._registryFile, "w"))
 
+class ObjectRegistryException(Exception):
+    def __init__(self, code, **kwargs):
+        Exception.__init__(self, code)
+        self.code = code
+        self.kwargs = kwargs
