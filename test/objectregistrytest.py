@@ -195,5 +195,9 @@ class ObjectRegistryTest(SeecrTestCase):
                 'key2': {},
             }, registry.listObjects()[object1id])
 
-
-
+    def testValidate(self):
+        def validate(*args, **kwargs):
+            raise ValueError()
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect', validate=validate)
+        registry.registerKeys(keys=['key'])
+        self.assertRaises(ValueError, lambda: registry.addObject(key=['value']))

@@ -37,12 +37,13 @@ from meresco.components.json import JsonDict
 from .labels import getLabel
 
 class ObjectRegistry(PostActions):
-    def __init__(self, stateDir, name, redirectPath, lang='en', **kwargs):
+    def __init__(self, stateDir, name, redirectPath, lang='en', validate=None, **kwargs):
         super(ObjectRegistry, self).__init__(name=name, **kwargs)
         isdir(stateDir) or makedirs(stateDir)
         self._registryFile = join(stateDir, "registry_{0}.json".format(name))
         self._redirectPath = redirectPath
         self._lang = lang
+        self._validate = validate if validate else lambda *args, **kwargs: None
         if not isfile(self._registryFile):
             self._save({})
 
@@ -79,6 +80,7 @@ class ObjectRegistry(PostActions):
         return identifier
 
     def _add(self, values, identifier, **kwargs):
+        self._validate(self, identifier=identifier, **kwargs)
         olddata = values.get(identifier, {})
         data = dict()
         for key in self._register['keys']:
@@ -130,7 +132,7 @@ class ObjectRegistry(PostActions):
                 error=getLabel(self._lang, 'objectRegistry', "unexpectedException").format(str(e)),
                 values=dict(identifier=[identifier], **formValues)
             )
-        yield redirectHttp % "{0}#{1}".format(self._redirectPath, identifier)
+        yield redirectHttp % "{0}#{1}".format(self._redirectPath, identifier or '')
 
     def handleAdd(self, **kwargs):
         yield self._handle(method=self.addObject, **kwargs)
