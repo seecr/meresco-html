@@ -1,34 +1,35 @@
 ## begin license ##
 #
-# "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot.
-# It is also known as "DynamicHtml".
+# "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
+# It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
 #
-# This file is part of "Seecr Html"
+# This file is part of "Meresco Html"
 #
-# "Seecr Html" is free software; you can redistribute it and/or modify
+# "Meresco Html" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
-# "Seecr Html" is distributed in the hope that it will be useful,
+# "Meresco Html" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "Seecr Html"; if not, write to the Free Software
+# along with "Meresco Html"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from simplejson import dump as jsonSave
+from simplejson import dump as jsonSave, dump, load
 
 from os.path import join
 from meresco.html.login import PasswordFile
+from meresco.html.login.passwordfile import md5Hash
 
 poorHash = lambda data: ''.join(reversed(data))
 
@@ -145,4 +146,23 @@ class PasswordFileTest(SeecrTestCase):
 
     def testCreateFileIfMissingWithDefaultAdmin(self):
         self.assertTrue(self.pwd.validateUser(username='admin', password='admin'))
+
+    def testConvert(self):
+        userstxt = join(self.tempdir, 'users.txt')
+        with open(userstxt, 'w') as f:
+            f.write('user1:{0}\nuser2:{1}'.format(md5Hash('secret1'), md5Hash('secret2')))
+        pwd = PasswordFile.convert(userstxt, self.filename)
+        self.assertTrue(pwd.validateUser('user1', 'secret1'))
+
+    def testCreateSaltAfterConversion(self):
+        tmpfile = join(self.tempdir, 'passwdwithoutsalt')
+        with open(tmpfile, 'w') as f:
+            dump(dict(users=dict(username=dict(salt='', password=md5Hash('secret'))), version=PasswordFile.version), f)
+        pwd = PasswordFile(tmpfile)
+        self.assertTrue(pwd.validateUser('username', 'secret'))
+        d = load(open(tmpfile))
+        self.assertTrue(5, len(d['users']['username']['salt']))
+        pwd = PasswordFile(tmpfile)
+        self.assertTrue(pwd.validateUser('username', 'secret'))
+
 
