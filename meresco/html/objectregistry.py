@@ -38,9 +38,10 @@ from .labels import getLabel
 
 class ObjectRegistry(PostActions):
     def __init__(self, stateDir, name, redirectPath, lang='en', validate=None, **kwargs):
-        super(ObjectRegistry, self).__init__(name=name, **kwargs)
+        PostActions.__init__(self, name=name, **kwargs)
+        self._name = name
         isdir(stateDir) or makedirs(stateDir)
-        self._registryFile = join(stateDir, "registry_{0}.json".format(name))
+        self._registryFile = join(stateDir, "registry_{0}.json".format(self._name))
         self._redirectPath = redirectPath
         self._lang = lang
         self._validate = validate if validate else lambda *args, **kwargs: None
@@ -64,6 +65,7 @@ class ObjectRegistry(PostActions):
         else:
             identifier = str(uuid4())
         self._add(values, identifier=identifier, **kwargs)
+        self.do.objectAdded(name=self._name, identifier=identifier)
         return identifier
 
     def removeObject(self, identifier):
@@ -71,12 +73,14 @@ class ObjectRegistry(PostActions):
         if identifier in values:
             del values[identifier]
         self._save(values)
+        self.do.objectRemoved(name=self._name, identifier=identifier)
 
     def updateObject(self, identifier, **kwargs):
         values = self.listObjects()
         if identifier not in values:
             raise ObjectRegistryException('unexistingIdentifier', identifier=identifier)
         self._add(values, identifier=identifier, **kwargs)
+        self.do.objectUpdated(name=self._name, identifier=identifier)
         return identifier
 
     def _add(self, values, identifier, **kwargs):

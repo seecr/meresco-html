@@ -24,7 +24,7 @@
 #
 ## end license ##
 
-from seecr.test import SeecrTestCase
+from seecr.test import SeecrTestCase, CallTrace
 
 from meresco.html import ObjectRegistry
 from urllib import urlencode
@@ -36,7 +36,9 @@ from uuid import uuid4
 
 class ObjectRegistryTest(SeecrTestCase):
     def testAddDelete(self):
+        observer = CallTrace('observer')
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        registry.addObserver(observer)
         registry.registerKeys(keys=['name', 'key2', 'another'], booleanKeys=['enabled', 'feature'])
         object1id = registry.addObject(name=["object1"], key2=["value_1"], enabled=['on'])
         object2id = registry.addObject(name=["object2"], key2=["value_2"], enabled=['on'])
@@ -44,7 +46,12 @@ class ObjectRegistryTest(SeecrTestCase):
                 object1id: {'key2': 'value_1', 'enabled': True, 'name': 'object1', 'another':'', 'feature': False},
                 object2id: {'key2': 'value_2', 'enabled': True, 'name': 'object2', 'another':'', 'feature': False}
             }, registry.listObjects())
+        self.assertEquals(['objectAdded', 'objectAdded'], observer.calledMethodNames())
+        self.assertEquals({'name':'name', 'identifier': object1id}, observer.calledMethods[0].kwargs)
+        observer.calledMethods.reset()
         registry.removeObject(identifier=object2id)
+        self.assertEquals(['objectRemoved'], observer.calledMethodNames())
+        self.assertEquals({'name':'name', 'identifier': object2id}, observer.calledMethods[0].kwargs)
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         self.assertEquals({
                 object1id: {'key2': 'value_1', 'enabled': True, 'name': 'object1', 'another':'', 'feature': False},
@@ -61,10 +68,14 @@ class ObjectRegistryTest(SeecrTestCase):
                 registry.listObjects())
 
     def testUpdateObject(self):
+        observer = CallTrace('observer')
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        registry.addObserver(observer)
         registry.registerKeys(keys=['key2', 'name'], booleanKeys=['enabled'])
         object1id = registry.addObject(name=["object1"], key2=["value_1"], enabled=['on'])
         registry.updateObject(identifier=object1id, name=["object1"], key2=["value_2"])
+        self.assertEquals(['objectAdded', 'objectUpdated'], observer.calledMethodNames())
+        self.assertEquals({'name':'name', 'identifier': object1id}, observer.calledMethods[-1].kwargs)
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         self.assertEquals({
                 object1id: {'key2': 'value_2', 'enabled': False, 'name': 'object1'}
