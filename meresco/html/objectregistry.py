@@ -3,7 +3,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2013-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Html"
@@ -37,7 +37,7 @@ from meresco.components.json import JsonDict
 from .labels import getLabel
 
 class ObjectRegistry(PostActions):
-    def __init__(self, stateDir, name, redirectPath, lang='en', validate=None, **kwargs):
+    def __init__(self, stateDir, name, redirectPath, lang='en', validate=None, defaults=None, **kwargs):
         PostActions.__init__(self, name=name, **kwargs)
         self._name = name
         isdir(stateDir) or makedirs(stateDir)
@@ -45,10 +45,12 @@ class ObjectRegistry(PostActions):
         self._redirectPath = redirectPath
         self._lang = lang
         self._validate = validate if validate else lambda *args, **kwargs: None
-        if not isfile(self._registryFile):
-            self._save({})
-
         self._register = {}
+        if not isfile(self._registryFile):
+            for default in defaults or []:
+                self._register[str(uuid4())] = default
+            self._save(self._register)
+
         self.registerKeys()
 
         self.registerAction('add', self.handleAdd)

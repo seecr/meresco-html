@@ -3,7 +3,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2013-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2013-2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Html"
@@ -212,3 +212,17 @@ class ObjectRegistryTest(SeecrTestCase):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect', validate=validate)
         registry.registerKeys(keys=['key'])
         self.assertRaises(ValueError, lambda: registry.addObject(key=['value']))
+
+    def testDefaults(self):
+        defaults = [
+            {"name": "object1", "key2": "value_1", "enabled": True},
+            {"name": "object2", "key2": "value_2", "enabled": True},
+        ]
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect', defaults=defaults)
+        registry.registerKeys(keys=['name', 'key2'], booleanKeys=['enabled'])
+        objs = registry.listObjects()
+        self.assertEqual(2, len(objs))
+        self.assertEqual(sorted([
+                {'key2': 'value_1', 'enabled': True, 'name': 'object1'},
+                {'key2': 'value_2', 'enabled': True, 'name': 'object2'}
+            ]), sorted(objs.values()))
