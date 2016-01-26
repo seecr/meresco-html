@@ -176,6 +176,23 @@ class ObjectRegistryTest(SeecrTestCase):
                 objectid: {'key1': 'value1', 'key2': '', 'enabled1': True, 'enabled2': False}
             }, registry.listObjects())
 
+    def testRedirectWithPostedRedirectPathButWithoutIdentifier(self):
+        def validate(**kwargs):
+            raise ValueError('oops')
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect', validate=validate)
+        registry.registerKeys(keys=['key1', 'key2'], booleanKeys=['enabled1', 'enabled2'])
+        data = urlencode([
+                ('key1', 'value1'),
+                ('enabled1', 'on'),
+                ('redirectPath', '/object?id={}')
+            ])
+        header, _ = asString(registry.handleRequest(Method='POST', path='/objects/add', Body=data, session={})).split(CRLF*2)
+        redirectLocation = parseHeaders(header+CRLF)['Location']
+        path, objectid = redirectLocation.split('#')
+        self.assertEquals('/redirect', path)
+        self.assertEqual('', objectid)
+        self.assertEquals({}, registry.listObjects())
+
     def testNoKeySendDoesNotChangeOldValue(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(keys=['key2', 'key1'], booleanKeys=['enabled1', 'enabled2'])

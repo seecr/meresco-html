@@ -139,7 +139,8 @@ class ObjectRegistry(PostActions):
                 error=getLabel(self._lang, 'objectRegistry', "unexpectedException").format(str(e)),
                 values=dict(identifier=[identifier], **formValues)
             )
-        redirectPath = redirectPath or (self._redirectPath + "#{}")
+        if not identifier or not redirectPath :
+            redirectPath = self._redirectPath + "#{}"
         yield redirectHttp % redirectPath.format(identifier or '')
 
     def handleAdd(self, **kwargs):
