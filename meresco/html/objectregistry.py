@@ -123,6 +123,7 @@ class ObjectRegistry(PostActions):
     def _handle(self, method, Body, session, **kwargs):
         formValues = parse_qs(Body, keep_blank_values=True)
         identifier = formValues.pop('identifier', [None])[0]
+        redirectPath = formValues.pop('redirectPath', [None])[0]
         try:
             identifier = method(
                     identifier=identifier,
@@ -138,7 +139,8 @@ class ObjectRegistry(PostActions):
                 error=getLabel(self._lang, 'objectRegistry', "unexpectedException").format(str(e)),
                 values=dict(identifier=[identifier], **formValues)
             )
-        yield redirectHttp % "{0}#{1}".format(self._redirectPath, identifier or '')
+        redirectPath = redirectPath or (self._redirectPath + "#{}")
+        yield redirectHttp % redirectPath.format(identifier or '')
 
     def handleAdd(self, **kwargs):
         yield self._handle(method=self.addObject, **kwargs)
