@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -121,9 +121,12 @@ class BasicHtmlLoginForm(PostActions):
             <dd class="rememberMe"><input type="checkbox" name="rememberMe"/>%(lblRememberMe)s</dd>""" % values
 
         yield """
-            <dd class="submit"><input type="submit" value="%(lblLogin)s"/></dd>
+            <dd class="submit"><input type="submit" id="submitLogin" value="%(lblLogin)s"/></dd>
         </dl>
     </form>
+    <script type="text/javascript">
+        document.getElementById("submitLogin").focus()
+    </script>
 </div>""" % values
         session.pop('BasicHtmlLoginForm.formValues', None)
 
