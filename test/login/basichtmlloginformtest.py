@@ -53,9 +53,12 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             <dd><input type="text" name="username" value=""/></dd>
             <dt>Password</dt>
             <dd><input type="password" name="password"/></dd>
-            <dd class="submit"><input type="submit" value="Login"/></dd>
+            <dd class="submit"><input type="submit" id="submitLogin" value="Login"/></dd>
         </dl>
     </form>
+    <script type="text/javascript">
+        document.getElementById("submitLogin").focus()
+    </script>
 </div>""", result)
 
     def testLoginFormDutch(self):
@@ -69,9 +72,12 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             <dd><input type="text" name="username" value=""/></dd>
             <dt>Wachtwoord</dt>
             <dd><input type="password" name="password"/></dd>
-            <dd class="submit"><input type="submit" value="Inloggen"/></dd>
+            <dd class="submit"><input type="submit" id="submitLogin" value="Inloggen"/></dd>
         </dl>
     </form>
+    <script type="text/javascript">
+        document.getElementById("submitLogin").focus()
+    </script>
 </div>""", result)
 
     def testNewUserFormEN(self):
@@ -238,9 +244,12 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             <dd><input type="text" name="username" value='&lt;us"er&gt;'/></dd>
             <dt>Password</dt>
             <dd><input type="password" name="password"/></dd>
-            <dd class="submit"><input type="submit" value="Login"/></dd>
+            <dd class="submit"><input type="submit" id="submitLogin" value="Login"/></dd>
         </dl>
     </form>
+    <script type="text/javascript">
+        document.getElementById("submitLogin").focus()
+    </script>
 </div>""", result)
 
     def testShowChangePasswordFormEn(self):
@@ -576,22 +585,22 @@ function deleteUser(username) {
                 'validateUser': lambda username, password: True,
                 'createCookie': lambda user: dict(
                     name='CID',
-                    value='THIS IS THE COOKIE VALUE', 
+                    value='THIS IS THE COOKIE VALUE',
                     expires=3600
                 )
             },
             onlySpecifiedMethods=True)
-       
+
         basicHtmlLoginForm = BasicHtmlLoginForm(
-            action="/action", 
-            loginPath="/", 
+            action="/action",
+            loginPath="/",
             home="/index",
             rememberMeCookie=True)
         basicHtmlLoginForm._now = lambda: 3600
 
         dna = be(
             (Observable(),
-                (basicHtmlLoginForm, 
+                (basicHtmlLoginForm,
                     (observer, )
                 )
             )
@@ -599,9 +608,9 @@ function deleteUser(username) {
 
         session = {}
         header, _ = asString(dna.all.handleRequest(
-            Method="POST", 
-            path="/", 
-            session=session, 
+            Method="POST",
+            path="/",
+            session=session,
             Body=urlencode(dict(username="test", password="ignored", rememberMe="on"))
         )).split('\r\n\r\n', 1)
 
@@ -614,8 +623,8 @@ function deleteUser(username) {
 
     def testLoginForWithRememberMe(self):
         form = BasicHtmlLoginForm(
-            action='/action', 
-            loginPath='/login', 
+            action='/action',
+            loginPath='/login',
             home='/home',
             rememberMeCookie=True)
         result = asString(form.loginForm(session={}, path='/page/login2'))
@@ -628,8 +637,10 @@ function deleteUser(username) {
             <dt>Password</dt>
             <dd><input type="password" name="password"/></dd>
             <dd class="rememberMe"><input type="checkbox" name="rememberMe"/>Remember me</dd>
-            <dd class="submit"><input type="submit" value="Login"/></dd>
+            <dd class="submit"><input type="submit" id="submitLogin" value="Login"/></dd>
         </dl>
     </form>
+    <script type="text/javascript">
+        document.getElementById("submitLogin").focus()
+    </script>
 </div>""", result)
-
