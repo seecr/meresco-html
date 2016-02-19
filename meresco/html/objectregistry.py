@@ -25,7 +25,7 @@
 ## end license ##
 
 from os.path import join, isfile, isdir
-from os import makedirs
+from os import makedirs, rename
 from simplejson import load, dump
 from cgi import parse_qs
 
@@ -155,7 +155,10 @@ class ObjectRegistry(PostActions):
         yield redirectHttp % self._redirectPath
 
     def _save(self, values):
-        dump(values, open(self._registryFile, "w"))
+        tmpFile = self._registryFile + '~'
+        with open(tmpFile, "w") as f:
+            dump(values, f)
+        rename(tmpFile, self._registryFile)
 
 class ObjectRegistryException(Exception):
     def __init__(self, code, **kwargs):
