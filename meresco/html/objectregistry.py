@@ -91,6 +91,8 @@ class ObjectRegistry(PostActions):
         data = dict()
         for key in self._register['keys']:
             data[key] = kwargs.get(key, [olddata.get(key, '')])[0]
+        for key in self._register['listKeys']:
+            data[key] = kwargs.get(key, olddata.get(key, []))
         for key in self._register['jsonKeys']:
             newdata = kwargs.get(key, [None])[0]
             if newdata is None and key in olddata:
@@ -112,10 +114,11 @@ class ObjectRegistry(PostActions):
     def listObjects(self):
         return load(open(self._registryFile))
 
-    def registerKeys(self, keys=None, booleanKeys=None, jsonKeys=None):
+    def registerKeys(self, keys=None, booleanKeys=None, jsonKeys=None, listKeys=None):
         self._register['keys'] = keys or []
         self._register['booleanKeys'] = booleanKeys or []
         self._register['jsonKeys'] = jsonKeys or []
+        self._register['listKeys'] = listKeys or []
 
     def registerConversion(self, **kwargs):
         self._register['json'] = kwargs.keys()

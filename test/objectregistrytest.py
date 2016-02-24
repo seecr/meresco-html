@@ -259,3 +259,16 @@ class ObjectRegistryTest(SeecrTestCase):
                 {'key2': 'value_1', 'enabled': True, 'name': 'object1'},
                 {'key2': 'value_2', 'enabled': True, 'name': 'object2'}
             ]), sorted(objs.values()))
+
+    def testListKeys(self):
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        registry.registerKeys(listKeys=['choices', 'others'])
+        id = registry.addObject(choices=['one', 'two'])
+        objs = registry.listObjects()
+        self.assertEqual(1, len(objs))
+        self.assertEqual(
+                {'choices': ['one', 'two'], 'others':[]},
+                objs[id])
+
+
+
