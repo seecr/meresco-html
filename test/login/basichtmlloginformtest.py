@@ -1,26 +1,26 @@
 ## begin license ##
 #
-# "Seecr Html" is a template engine based on generators, and a sequel to Slowfoot.
-# It is also known as "DynamicHtml".
+# "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
+# It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2014 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
-# This file is part of "Seecr Html"
+# This file is part of "Meresco Html"
 #
-# "Seecr Html" is free software; you can redistribute it and/or modify
+# "Meresco Html" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
-# "Seecr Html" is distributed in the hope that it will be useful,
+# "Meresco Html" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "Seecr Html"; if not, write to the Free Software
+# along with "Meresco Html"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
@@ -40,7 +40,8 @@ from os.path import join
 class BasicHtmlLoginFormTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
-        self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home')
+
+        self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home', mayAdministerUser=lambda user: user.name in ['admin', 'allowed', 'two'])
 
     def testLoginFormEnglish(self):
         result = asString(self.form.loginForm(session={}, path='/page/login2'))
@@ -453,7 +454,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
         Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
-        session = {'user':User('existing')}
+        session = {'user':User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
@@ -465,13 +466,33 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue(pf.validateUser('newuser', 'secret'))
         self.assertEquals('Added user "newuser"', session['BasicHtmlLoginForm.newUserFormValues']['successMessage'])
 
+    def testNewUserWithoutAnyUser(self):
+        session = {}
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
+        result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        header, body = result.split(CRLF*2)
+        self.assertEquals(['admin'], pf.listUsernames())
+        self.assertTrue('401' in header)
+
+    def testNewUserWithoutRights(self):
+        session = {'user': User('auser')}
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
+        result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        header, body = result.split(CRLF*2)
+        self.assertEquals(['admin'], pf.listUsernames())
+        self.assertTrue('401' in header)
+
     def testNewUserWithPOSTFails(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
         pf.addUser('newuser', 'oldpassword')
         Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='newpassword', formUrl='/page/newUser', returnUrl='/return'))
-        session = {'user':User('existing')}
+        session = {'user':User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
@@ -489,7 +510,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
         Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='retypedpassword', formUrl='/page/newUser', returnUrl='/return'))
-        session = {'user':User('existing')}
+        session = {'user':User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
@@ -507,7 +528,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         pf.addUser('two', 'password')
         pf.addUser('three', 'password')
 
-        session = {'user':User('two', isAdminMethod=lambda name:True)}
+        session = {'user':User('two')}
 
         result = asString(self.form.userList(session=session, path='/show/login'))
 
@@ -576,7 +597,7 @@ function deleteUser(username) {
             )
         )
 
-        asString(dna.all.handleNewUser(session={}, Body=urlencode(dict(password="password", retypedPassword="password"))))
+        asString(dna.all.handleNewUser(session={'user': User('admin')}, Body=urlencode(dict(password="password", retypedPassword="password"))))
         self.assertEquals(3, len(values))
 
     def testSetRememberMeCookie(self):

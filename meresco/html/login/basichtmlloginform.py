@@ -26,7 +26,7 @@
 #
 ## end license ##
 
-from meresco.components.http.utils import redirectHttp, CRLF
+from meresco.components.http.utils import redirectHttp, CRLF, ContentTypeHeader, ContentTypePlainText
 from cgi import parse_qs
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
@@ -43,7 +43,7 @@ from time import time
 TWO_WEEKS = 2*7*24*3600
 
 class BasicHtmlLoginForm(PostActions):
-    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None, lang='en', rememberMeCookie=False):
+    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None, lang='en', rememberMeCookie=False, mayAdministerUser=None):
         PostActions.__init__(self, name=name)
         self._action = action
         self._loginPath = loginPath
@@ -55,6 +55,7 @@ class BasicHtmlLoginForm(PostActions):
         self._userIsAdminMethod = userIsAdminMethod
         self._lang = lang
         self._rememberMeCookie = rememberMeCookie
+        self.mayAdministerUser = (lambda user: user.isAdmin()) if mayAdministerUser is None else mayAdministerUser
 
     def handleLogin(self, session=None, Body=None, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True)
@@ -171,6 +172,11 @@ class BasicHtmlLoginForm(PostActions):
         session.pop('BasicHtmlLoginForm.newUserFormValues', None)
 
     def handleNewUser(self, session, Body, **kwargs):
+        handlingUser = session.get('user')
+        if handlingUser is None or not self.mayAdministerUser(handlingUser):
+            yield "HTTP/1.0 401 Unauthorized" + CRLF + ContentTypeHeader + ContentTypePlainText + CRLF + CRLF
+            yield "Unauthorized access."
+            return
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
@@ -204,7 +210,7 @@ class BasicHtmlLoginForm(PostActions):
         if newPassword != retypedPassword:
             session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'dontMatch')}
         else:
-            if (not oldPassword and user.isAdmin() and user.name != username) or self.call.validateUser(username=username, password=oldPassword):
+            if (not oldPassword and self.mayAdministerUser(user) and user.name != username) or self.call.validateUser(username=username, password=oldPassword):
                 self.call.changePassword(username, oldPassword, newPassword)
                 targetUrl = self._home
             else:
@@ -262,7 +268,7 @@ class BasicHtmlLoginForm(PostActions):
             yield '<p class="error">Please login to show user list.</p>\n</div>'
             return
         user = session['user']
-        if user.isAdmin():
+        if self.mayAdministerUser(user):
             yield """<script type="text/javascript">
 function deleteUser(username) {
     if (confirm("Are you sure?")) {
@@ -285,7 +291,7 @@ function deleteUser(username) {
                 yield '<a href="%s?user=%s">%s</a>' % (userLink, xmlEscape(username), xmlEscape(username))
             else:
                 yield xmlEscape(username)
-            if user.isAdmin() and user.name != username:
+            if self.mayAdministerUser(user) and user.name != username:
                 yield """ <a href="javascript:deleteUser('%s');">delete</a>""" % username
             yield '</li>\n'
         yield '</ul>\n'
@@ -294,7 +300,7 @@ function deleteUser(username) {
     def handleRemove(self, session, Body, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
-        if 'user' in session and session['user'].isAdmin():
+        if 'user' in session and self.mayAdministerUser(session['user']):
             username = bodyArgs.get('username', [None])[0]
             if self.call.hasUser(username):
                 self.do.removeUser(username)
