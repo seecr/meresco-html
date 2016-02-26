@@ -86,10 +86,7 @@ class BasicHtmlLoginForm(PostActions):
             yield redirectHttp % self._loginPath
 
     def loginAsUser(self, username):
-        try:
-            return self.call.userForName(username=username)
-        except NoneOfTheObserversRespond:
-            return User(username, isAdminMethod=self._userIsAdminMethod)
+        return self._createUser(username)
 
     def loginForm(self, session, path, lang=None, **kwargs):
         lang = lang or self._lang
@@ -174,8 +171,7 @@ class BasicHtmlLoginForm(PostActions):
     def handleNewUser(self, session, Body, **kwargs):
         handlingUser = session.get('user')
         if handlingUser is None or not self.mayAdministerUser(handlingUser):
-            yield "HTTP/1.0 401 Unauthorized" + CRLF + ContentTypeHeader + ContentTypePlainText + CRLF + CRLF
-            yield "Unauthorized access."
+            yield UNAUTHORIZED
             return
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         username = bodyArgs.get('username', [None])[0]
@@ -267,8 +263,8 @@ class BasicHtmlLoginForm(PostActions):
         if not 'user' in session:
             yield '<p class="error">Please login to show user list.</p>\n</div>'
             return
-        user = session['user']
-        if self.mayAdministerUser(user):
+        sessionUser = session['user']
+        if self.mayAdministerUser(sessionUser):
             yield """<script type="text/javascript">
 function deleteUser(username) {
     if (confirm("Are you sure?")) {
@@ -285,31 +281,49 @@ function deleteUser(username) {
                 )
             yield '</form>\n'
         yield '<ul>\n'
-        for username in sorted(self.call.listUsernames()):
+        for user in sorted(self._listUsers(), key=lambda u:u.sortKey()):
             yield '<li>'
             if userLink:
-                yield '<a href="%s?user=%s">%s</a>' % (userLink, xmlEscape(username), xmlEscape(username))
+                yield '<a href="%s?user=%s">%s</a>' % (userLink, xmlEscape(user.name), xmlEscape(user.name))
             else:
-                yield xmlEscape(username)
-            if self.mayAdministerUser(user) and user.name != username:
-                yield """ <a href="javascript:deleteUser('%s');">delete</a>""" % username
+                yield xmlEscape(user.name)
+            if sessionUser.name != user.name and (
+                    sessionUser.isAdmin() or
+                    (self.mayAdministerUser(sessionUser) and not user.isAdmin())
+                ):
+                yield """ <a href="javascript:deleteUser('%s');">delete</a>""" % user.name
             yield '</li>\n'
         yield '</ul>\n'
         yield '</div>\n'
 
+    def _sessionUserMayDeleteAUser(self, sessionUser, user):
+        return user is not None and sessionUser.name != user.name and (
+                sessionUser.isAdmin() or
+                (self.mayAdministerUser(sessionUser) and not user.isAdmin())
+            )
+
     def handleRemove(self, session, Body, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
-        if 'user' in session and self.mayAdministerUser(session['user']):
-            username = bodyArgs.get('username', [None])[0]
-            if self.call.hasUser(username):
-                self.do.removeUser(username)
-            else:
-                session['BasicHtmlLoginForm.formValues'] = {
-                    'errorMessage': getLabel(self._lang, 'removeUserForm', 'notExists') % username
-                }
+        sessionUser = session.get('user')
+        user = self._createUser(bodyArgs.get('username', [None])[0])
+        if not self._sessionUserMayDeleteAUser(sessionUser, user):
+            yield UNAUTHORIZED
+            return
+        self.do.removeUser(user.name)
 
         yield redirectHttp % formUrl
+
+    def _listUsers(self):
+        return [self._createUser(username) for username in self.call.listUsernames()]
+
+    def _createUser(self, username):
+        if not self.call.hasUser(username):
+            return None
+        try:
+            return self.call.userForName(username=username)
+        except NoneOfTheObserversRespond:
+            return User(username, isAdminMethod=self._userIsAdminMethod)
 
     def _now(self):
         return time()
@@ -319,7 +333,10 @@ class User(object):
         self.name = name
         self._isAdmin = (lambda name: name == 'admin') if isAdminMethod is None else isAdminMethod
 
+    def sortKey(self):
+        return self.name
+
     def isAdmin(self):
         return self._isAdmin(self.name)
 
-
+UNAUTHORIZED = "HTTP/1.0 401 Unauthorized" + CRLF + ContentTypeHeader + ContentTypePlainText + CRLF + CRLF + "Unauthorized access."
