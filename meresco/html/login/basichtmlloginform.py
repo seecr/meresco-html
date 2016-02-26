@@ -86,7 +86,7 @@ class BasicHtmlLoginForm(PostActions):
             yield redirectHttp % self._loginPath
 
     def loginAsUser(self, username):
-        return self._createUser(username)
+        return self._checkAndCreateUser(username)
 
     def loginForm(self, session, path, lang=None, **kwargs):
         lang = lang or self._lang
@@ -281,12 +281,12 @@ function deleteUser(username) {
                 )
             yield '</form>\n'
         yield '<ul>\n'
-        for user in sorted(self._listUsers(), key=lambda u:u.sortKey()):
+        for user in sorted(self._listUsers(), key=lambda u:u.title()):
             yield '<li>'
             if userLink:
-                yield '<a href="%s?user=%s">%s</a>' % (userLink, xmlEscape(user.name), xmlEscape(user.name))
+                yield '<a href="%s?user=%s">%s</a>' % (userLink, xmlEscape(user.name), xmlEscape(user.title()))
             else:
-                yield xmlEscape(user.name)
+                yield xmlEscape(user.title())
             if sessionUser.name != user.name and (
                     sessionUser.isAdmin() or
                     (self.mayAdministerUser(sessionUser) and not user.isAdmin())
@@ -297,7 +297,9 @@ function deleteUser(username) {
         yield '</div>\n'
 
     def _sessionUserMayDeleteAUser(self, sessionUser, user):
-        return user is not None and sessionUser.name != user.name and (
+        return user is not None and \
+            sessionUser is not None and \
+            sessionUser.name != user.name and (
                 sessionUser.isAdmin() or
                 (self.mayAdministerUser(sessionUser) and not user.isAdmin())
             )
@@ -306,7 +308,7 @@ function deleteUser(username) {
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
         sessionUser = session.get('user')
-        user = self._createUser(bodyArgs.get('username', [None])[0])
+        user = self._checkAndCreateUser(bodyArgs.get('username', [None])[0])
         if not self._sessionUserMayDeleteAUser(sessionUser, user):
             yield UNAUTHORIZED
             return
@@ -317,13 +319,15 @@ function deleteUser(username) {
     def _listUsers(self):
         return [self._createUser(username) for username in self.call.listUsernames()]
 
-    def _createUser(self, username):
+    def _checkAndCreateUser(self, username):
         if not self.call.hasUser(username):
             return None
-        try:
-            return self.call.userForName(username=username)
-        except NoneOfTheObserversRespond:
-            return User(username, isAdminMethod=self._userIsAdminMethod)
+        return self._createUser(username)
+
+    def _createUser(self, username):
+        user = User(username, isAdminMethod=self._userIsAdminMethod)
+        self.do.enrichUser(user)
+        return user
 
     def _now(self):
         return time()
@@ -333,7 +337,7 @@ class User(object):
         self.name = name
         self._isAdmin = (lambda name: name == 'admin') if isAdminMethod is None else isAdminMethod
 
-    def sortKey(self):
+    def title(self):
         return self.name
 
     def isAdmin(self):
