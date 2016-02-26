@@ -85,8 +85,9 @@ class BasicHtmlLoginForm(PostActions):
             }
             yield redirectHttp % self._loginPath
 
-    def loginAsUser(self, username):
+    def getUser(self, username):
         return self._checkAndCreateUser(username)
+    loginAsUser = getUser
 
     def loginForm(self, session, path, lang=None, **kwargs):
         lang = lang or self._lang
