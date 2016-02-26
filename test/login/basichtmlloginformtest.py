@@ -33,7 +33,6 @@ from meresco.components.http.utils import CRLF
 from urllib import urlencode
 
 from meresco.html.login import BasicHtmlLoginForm, PasswordFile
-from meresco.html.login.basichtmlloginform import User
 from meresco.html.login.securezone import ORIGINAL_PATH
 from os.path import join
 
@@ -83,7 +82,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
     def testNewUserFormEN(self):
         session = {
-            'user': User('username'),
+            'user': BasicHtmlLoginForm.User('username'),
             'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
         }
         result = asString(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return'))
@@ -106,7 +105,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
     def testNewUserFormNL(self):
         session = {
-            'user': User('username'),
+            'user': BasicHtmlLoginForm.User('username'),
             'BasicHtmlLoginForm.newUserFormValues': {'errorMessage': 'BAD BOY'},
         }
         result = asString(self.form.newUserForm(session=session, path='/page/login2', returnUrl='/return', lang="nl"))
@@ -256,7 +255,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
     def testShowChangePasswordFormEn(self):
         session = {
-            'user': User('username'),
+            'user': BasicHtmlLoginForm.User('username'),
             'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
         }
         result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', arguments={}))
@@ -280,7 +279,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
     def testShowChangePasswordFormNl(self):
         session = {
-            'user': User('username'),
+            'user': BasicHtmlLoginForm.User('username'),
             'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
         }
         result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl", arguments={}))
@@ -304,7 +303,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
     def testShowChangePasswordFormForSpecifiedUser(self):
         session = {
-            'user': User('username'),
+            'user': BasicHtmlLoginForm.User('username'),
             'BasicHtmlLoginForm.formValues': {'errorMessage': 'BAD BOY'},
         }
         result = asString(self.form.changePasswordForm(session=session, path='/show/changepasswordform', lang="nl", arguments=dict(user=['myuser']), user='myuser', onlyNewPassword=True))
@@ -334,7 +333,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
     def testChangePasswordMismatch(self):
         Body = urlencode(dict(username='user', oldPassword='correct', newPassword="good", retypedPassword="mismatch", formUrl='/show/changepasswordform'))
-        session = {'user': User('user')}
+        session = {'user': BasicHtmlLoginForm.User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals({'username':'user', 'errorMessage': 'New passwords do not match'}, session['BasicHtmlLoginForm.formValues'])
@@ -346,7 +345,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer.returnValues['validateUser'] = False
 
         Body = urlencode(dict(username='user', oldPassword='wrong', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
-        session = {'user': User('user')}
+        session = {'user': BasicHtmlLoginForm.User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals({'username':'user', 'errorMessage': 'Username and password do not match'}, session['BasicHtmlLoginForm.formValues'])
@@ -359,7 +358,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         Body = urlencode(dict(username='username', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
         session = {
-            'user': User('username'),
+            'user': BasicHtmlLoginForm.User('username'),
             'BasicHtmlLoginForm.formValues': {}
         }
 
@@ -374,7 +373,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         Body = urlencode(dict(username='user', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
         session = {
-            'user': User('admin'),
+            'user': BasicHtmlLoginForm.User('admin'),
             'BasicHtmlLoginForm.formValues': {}
         }
 
@@ -389,7 +388,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         Body = urlencode(dict(username='admin', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
         session = {
-            'user': User('admin'),
+            'user': BasicHtmlLoginForm.User('admin'),
             'BasicHtmlLoginForm.formValues': {}
         }
 
@@ -403,7 +402,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer.returnValues['validateUser'] = True
 
         Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
-        session = {'user': User('user')}
+        session = {'user': BasicHtmlLoginForm.User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         self.assertEquals(['validateUser', 'changePassword'], [m.name for m in observer.calledMethods])
@@ -430,7 +429,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             Client=('127.0.0.1', 3451),
             Method='POST',
             Body=urlencode(dict(username='user', formUrl='/show/userlist')),
-            session={'user': User('admin')}))
+            session={'user': BasicHtmlLoginForm.User('admin')}))
 
         self.assertEquals(['hasUser', 'enrichUser', 'removeUser'], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/userlist\r\n\r\n", result)
@@ -438,7 +437,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def testDeleteNonExistingUser(self):
         observer = CallTrace(returnValues={'hasUser': False}, )
         self.form.addObserver(observer)
-        session = {'user': User('admin')}
+        session = {'user': BasicHtmlLoginForm.User('admin')}
         result = asString(self.form.handleRequest(
             path='/login/remove',
             Client=('127.0.0.1', 3451),
@@ -474,7 +473,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
         Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
-        session = {'user':User('admin')}
+        session = {'user': BasicHtmlLoginForm.User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
@@ -497,7 +496,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue('401' in header)
 
     def testNewUserWithoutRights(self):
-        session = {'user': User('auser')}
+        session = {'user': BasicHtmlLoginForm.User('auser')}
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
         Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
@@ -512,7 +511,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         pf.addUser('existing', 'password')
         pf.addUser('newuser', 'oldpassword')
         Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='newpassword', formUrl='/page/newUser', returnUrl='/return'))
-        session = {'user':User('admin')}
+        session = {'user': BasicHtmlLoginForm.User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
@@ -530,7 +529,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
         Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='retypedpassword', formUrl='/page/newUser', returnUrl='/return'))
-        session = {'user':User('admin')}
+        session = {'user': BasicHtmlLoginForm.User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
@@ -581,8 +580,12 @@ function deleteUser(username) {
         pf.addUser('one', 'password')
         pf.addUser('two', 'password')
         pf.addUser('three', 'password')
+        def enrichUser(user):
+            user.title = lambda: user.name.title()
+        enrich = CallTrace(onlySpecifiedMethods=True, methods=dict(enrichUser=enrichUser))
+        self.form.addObserver(enrich)
 
-        session = {'user':User('two', isAdminMethod=lambda name:True)}
+        session = {'user':BasicHtmlLoginForm.User('two', isAdminMethod=lambda name:True)}
 
         result = asString(self.form.userList(session=session, path='/show/login', userLink='/user'))
 
@@ -600,10 +603,10 @@ function deleteUser(username) {
     <input type="hidden" name="username"/>
 </form>
     <ul>
-        <li><a href="/user?user=admin">admin</a> <a href="javascript:deleteUser('admin');">delete</a></li>
-        <li><a href="/user?user=one">one</a> <a href="javascript:deleteUser('one');">delete</a></li>
-        <li><a href="/user?user=three">three</a> <a href="javascript:deleteUser('three');">delete</a></li>
-        <li><a href="/user?user=two">two</a></li>
+        <li><a href="/user?user=admin">Admin</a> <a href="javascript:deleteUser('admin');">delete</a></li>
+        <li><a href="/user?user=one">One</a> <a href="javascript:deleteUser('one');">delete</a></li>
+        <li><a href="/user?user=three">Three</a> <a href="javascript:deleteUser('three');">delete</a></li>
+        <li><a href="/user?user=two">Two</a></li>
     </ul>
 </div>""", result)
 
@@ -619,7 +622,7 @@ function deleteUser(username) {
             )
         )
 
-        asString(dna.all.handleNewUser(session={'user': User('admin')}, Body=urlencode(dict(password="password", retypedPassword="password"))))
+        asString(dna.all.handleNewUser(session={'user': BasicHtmlLoginForm.User('admin')}, Body=urlencode(dict(password="password", retypedPassword="password"))))
         self.assertEquals(3, len(values))
 
     def testSetRememberMeCookie(self):

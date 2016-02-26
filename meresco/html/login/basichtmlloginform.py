@@ -325,22 +325,22 @@ function deleteUser(username) {
         return self._createUser(username)
 
     def _createUser(self, username):
-        user = User(username, isAdminMethod=self._userIsAdminMethod)
+        user = self.User(username, isAdminMethod=self._userIsAdminMethod)
         self.do.enrichUser(user)
         return user
 
     def _now(self):
         return time()
 
-class User(object):
-    def __init__(self, name, isAdminMethod=None):
-        self.name = name
-        self._isAdmin = (lambda name: name == 'admin') if isAdminMethod is None else isAdminMethod
+    class User(object):
+        def __init__(inner, name, isAdminMethod=None):
+            inner.name = name
+            inner._isAdmin = (lambda name: name == 'admin') if isAdminMethod is None else isAdminMethod
 
-    def title(self):
-        return self.name
+        def title(inner):
+            return inner.name
 
-    def isAdmin(self):
-        return self._isAdmin(self.name)
+        def isAdmin(inner):
+            return inner._isAdmin(inner.name)
 
 UNAUTHORIZED = "HTTP/1.0 401 Unauthorized" + CRLF + ContentTypeHeader + ContentTypePlainText + CRLF + CRLF + "Unauthorized access."

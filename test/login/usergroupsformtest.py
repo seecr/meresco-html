@@ -3,7 +3,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2014-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2014-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Html"
@@ -26,7 +26,7 @@
 
 from seecr.test import SeecrTestCase
 from weightless.core import asString
-from meresco.html.login import GroupsFile, UserGroupsForm
+from meresco.html.login import GroupsFile, UserGroupsForm, BasicHtmlLoginForm
 from os.path import join
 from urllib import urlencode
 
@@ -38,8 +38,10 @@ class UserGroupsFormTest(SeecrTestCase):
         self.userGroups.addObserver(self.groupsFile)
         self.groupsFile.setGroupsForUser(username='normal', groupnames=['users'])
         self.groupsFile.setGroupsForUser(username='bob', groupnames=['admin', 'users'])
-        self.normalUser = self.groupsFile.userForName(username='normal')
-        self.adminUser = self.groupsFile.userForName(username='bob')
+        self.normalUser = BasicHtmlLoginForm.User('normal')
+        self.adminUser = BasicHtmlLoginForm.User('bob')
+        self.groupsFile.enrichUser(self.normalUser)
+        self.groupsFile.enrichUser(self.adminUser)
 
     def testSetup(self):
         self.assertEquals(set(['admin', 'users']), self.adminUser.groups())

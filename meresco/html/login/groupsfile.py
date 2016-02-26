@@ -52,8 +52,9 @@ class GroupsFile(object):
             self._groups = list(groups)
             self._makePersistent()
 
-    def userForName(self, username):
-        return self.User(username=username, db=self)
+    def enrichUser(self, user):
+        user.groups = lambda: self.groupsForUser(username=user.name)
+        user.isAdmin = lambda: 'admin' in user.groups()
 
     def groupsForUser(self, username):
         return set(self._users.get(username, []))
@@ -87,16 +88,4 @@ class GroupsFile(object):
         self._users.update(result['data']['users'])
 
 
-    class User(object):
-        def __init__(inner, username, db):
-            inner.name = username
-            inner._db = db
 
-        def sortKey(inner):
-            return inner.name
-
-        def groups(inner):
-            return inner._db.groupsForUser(username=inner.name)
-
-        def isAdmin(inner):
-            return 'admin' in inner.groups()
