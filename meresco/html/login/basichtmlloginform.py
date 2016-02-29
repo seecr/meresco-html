@@ -191,7 +191,7 @@ class BasicHtmlLoginForm(PostActions):
             except ValueError, e:
                 session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': str(e)}
 
-        yield redirectHttp % targetUrl
+        yield redirectHttp % targetUrl.format(username=username)
 
     def handleChangePassword(self, session, Body, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
