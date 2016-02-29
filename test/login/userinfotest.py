@@ -50,3 +50,7 @@ class UserInfoTest(SeecrTestCase):
         self.userinfo.enrichUser(user)
         self.assertEquals('', user.fullname)
         self.assertEquals('Username', user.title())
+
+    def testPersistent(self):
+        self.userinfo.addUserInfo('username', fullname='Full Username')
+        self.assertEquals('Full Username', UserInfo(join(self.tempdir, 'userinfo')).userInfo('username')['fullname'])
