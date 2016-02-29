@@ -99,6 +99,14 @@ class UserGroupsForm(PostActions):
         yield '<input type="submit" value="Aanpassen"/>'
         yield '</form></div>'
 
+    def canEditGroups(self, user, forUsername):
+        forUsername = user.name if forUsername is None else forUsername
+        if not self.mayAdministerUser(user):
+            return False
+        groupsForUser = self.call.groupsForUser(username=forUsername)
+        return GroupsFile.ADMIN in user.groups() or GroupsFile.ADMIN not in groupsForUser
+
+
     def _groupsForForm(self, user, forUsername):
         result = []
         groupsForUser = self.call.groupsForUser(username=forUsername)

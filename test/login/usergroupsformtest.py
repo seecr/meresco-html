@@ -147,6 +147,7 @@ class UserGroupsFormTest(SeecrTestCase):
             dict(checked=False, description='', disabled=False, groupname='special'),
             dict(checked=True,  description='', disabled=False, groupname='users'),
             ], self.userGroups._groupsForForm(user=self.adminUser, forUsername=self.adminUser.name))
+        self.assertTrue(self.userGroups.canEditGroups(user=self.adminUser, forUsername=self.adminUser.name))
 
     def testGroupsUserFormManagementSelf(self):
         self.assertEquals([
@@ -155,6 +156,7 @@ class UserGroupsFormTest(SeecrTestCase):
             dict(checked=False, description='', disabled=False, groupname='special'),
             dict(checked=False, description='', disabled=False, groupname='users'),
             ], self.userGroups._groupsForForm(user=self.managementUser, forUsername=self.managementUser.name))
+        self.assertTrue(self.userGroups.canEditGroups(user=self.managementUser, forUsername=self.managementUser.name))
 
     def testGroupsUserFormManagementOtherManager(self):
         self.assertEquals([
@@ -163,14 +165,16 @@ class UserGroupsFormTest(SeecrTestCase):
             dict(checked=False, description='', disabled=False, groupname='special'),
             dict(checked=False, description='', disabled=False, groupname='users'),
             ], self.userGroups._groupsForForm(user=self.managementUser, forUsername=self.otherManagerName))
+        self.assertTrue(self.userGroups.canEditGroups(user=self.managementUser, forUsername=self.otherManagerName))
 
-
-    def testGroupsUserFormManagementOtherUser(self): self.assertEquals([
+    def testGroupsUserFormManagementOtherUser(self):
+        self.assertEquals([
             dict(checked=False, description='', disabled=True,  groupname='admin'),
             dict(checked=False, description='', disabled=False, groupname='management'),
             dict(checked=False, description='', disabled=False, groupname='special'),
             dict(checked=True,  description='', disabled=False, groupname='users'),
             ], self.userGroups._groupsForForm(user=self.managementUser, forUsername=self.normalUser.name))
+        self.assertTrue(self.userGroups.canEditGroups(user=self.managementUser, forUsername=self.normalUser.name))
 
     def testGroupsUserFormManagementAdmin(self):
         kwargs = {
@@ -178,6 +182,7 @@ class UserGroupsFormTest(SeecrTestCase):
             'arguments': {'key': ['value']},
         }
         self.assertEquals('', asString(self.userGroups.groupsUserForm(user=self.managementUser, forUsername=self.adminUser.name, **kwargs)))
+        self.assertFalse(self.userGroups.canEditGroups(user=self.managementUser, forUsername=self.adminUser.name))
         self.assertEquals([], self.userGroups._groupsForForm(user=self.managementUser, forUsername=self.adminUser.name))
 
     def testGroupsUserFormUser(self):
@@ -186,6 +191,7 @@ class UserGroupsFormTest(SeecrTestCase):
             'arguments': {'key': ['value']},
         }
         self.assertEquals('', asString(self.userGroups.groupsUserForm(user=self.normalUser, **kwargs)))
+        self.assertFalse(self.userGroups.canEditGroups(user=self.normalUser, forUsername=self.normalUser.name))
 
     def testGroupsUserFormAdminOtherAdmin(self):
         self.assertEquals([
@@ -194,6 +200,7 @@ class UserGroupsFormTest(SeecrTestCase):
             dict(checked=False, description='', disabled=False, groupname='special'),
             dict(checked=False, description='', disabled=False, groupname='users'),
             ], self.userGroups._groupsForForm(user=self.adminUser, forUsername=self.otherAdminName))
+        self.assertTrue(self.userGroups.canEditGroups(user=self.adminUser, forUsername=self.otherAdminName))
 
     def testGroupsUserFormAdminManager(self):
         self.assertEquals([
@@ -202,5 +209,4 @@ class UserGroupsFormTest(SeecrTestCase):
             dict(checked=False, description='', disabled=False, groupname='special'),
             dict(checked=False, description='', disabled=False, groupname='users'),
             ], self.userGroups._groupsForForm(user=self.adminUser, forUsername=self.otherManagerName))
-
-
+        self.assertTrue(self.userGroups.canEditGroups(user=self.adminUser, forUsername=self.otherManagerName))
