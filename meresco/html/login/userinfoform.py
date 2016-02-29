@@ -27,33 +27,34 @@
 #
 ## end license ##
 
-from meresco.components.http.utils import notFoundHtml, redirectHttp
+from meresco.components.http.utils import redirectHttp
 from meresco.html import PostActions
 from meresco.html.dynamichtml import escapeHtml
 from urllib import urlencode
 from urlparse import parse_qs
+from ._constants import UNAUTHORIZED
 
 class UserInfoForm(PostActions):
-    def __init__(self, action, name=None, mayAdministerUser=None):
+    def __init__(self, action, name=None):
         PostActions.__init__(self, name=name)
         self.registerAction('updateInfoForUser', self.handleUpdateInfoForUser)
         self._action = action
-        self.mayAdministerUser = (lambda user: user.isAdmin()) if mayAdministerUser is None else mayAdministerUser
 
     def handleUpdateInfoForUser(self, session, Body, **kwargs):
         handlingUser = session['user']
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         formUrl = bodyArgs['formUrl'][0]
         username = bodyArgs['username'][0]
-        if not self.mayAdministerUser(handlingUser):# or username != user.name:
-            yield notFoundHtml
-            yield '<pre>Please go to the homepage and try again.</pre>'
+        if not handlingUser.canEdit(username):
+            yield UNAUTHORIZED
             return
         fullname = bodyArgs.get('fullname', [''])[0]
         self.do.addUserInfo(username=username, fullname=fullname)
         yield redirectHttp % formUrl
 
     def userInfoForm(self, user, forUsername, path, arguments, **kwargs):
+        if not user.canEdit(forUsername):
+            return
         formUrl = path
         if arguments:
             formUrl += "?" + urlencode(arguments, doseq=True)

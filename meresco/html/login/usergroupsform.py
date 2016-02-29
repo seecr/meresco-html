@@ -34,20 +34,15 @@ from .groupsfile import GroupsFile
 from ._constants import UNAUTHORIZED
 
 class UserGroupsForm(PostActions):
-    def __init__(self, action, name=None, groupDescriptions=None, groupsForUserManagement=None):
+    def __init__(self, action, name=None, groupDescriptions=None):
         PostActions.__init__(self, name=name)
         self.registerAction('updateGroupsForUser', self.handleUpdateGroupsForUser)
         self._action = action
         self._groupDescriptions = groupDescriptions or {}
-        self._groupsForUserManagement = set([]) if groupsForUserManagement is None else set(groupsForUserManagement)
-        self._groupsForUserManagement.add(GroupsFile.ADMIN)
-
-    def mayAdministerUser(self, user):
-        return self._groupsForUserManagement.intersection(set(user.groups()))
 
     def handleUpdateGroupsForUser(self, session=None, Body=None, **kwargs):
         handlingUser = session['user']
-        if not self.mayAdministerUser(handlingUser):
+        if not handlingUser.canEdit():
             yield UNAUTHORIZED
             return
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
@@ -56,8 +51,7 @@ class UserGroupsForm(PostActions):
         groupnames = set(bodyArgs.get('groupname', []))
 
         if username == handlingUser.name:
-            oldManagingGroups = self._groupsForUserManagement.intersection(handlingUser.groups())
-            groupnames.update(oldManagingGroups)
+            groupnames.update(handlingUser.managementGroups())
         else:
             oldGroupnames = self.groupsForUser(username)
             if GroupsFile.ADMIN in oldGroupnames and GroupsFile.ADMIN not in handlingUser.groups():
@@ -74,7 +68,7 @@ class UserGroupsForm(PostActions):
         return self.call.groupsForUser(username=username)
 
     def groupsUserForm(self, user, arguments, path, forUsername=None, **kwargs):
-        if not self.mayAdministerUser(user):
+        if not user.canEdit():
             return
         forUsername = user.name if forUsername is None else forUsername
         groupsInfo = self._groupsForForm(user=user, forUsername=forUsername)
@@ -101,7 +95,7 @@ class UserGroupsForm(PostActions):
 
     def canEditGroups(self, user, forUsername):
         forUsername = user.name if forUsername is None else forUsername
-        if not self.mayAdministerUser(user):
+        if not user.canEdit():
             return False
         groupsForUser = self.call.groupsForUser(username=forUsername)
         return GroupsFile.ADMIN in user.groups() or GroupsFile.ADMIN not in groupsForUser
@@ -112,7 +106,7 @@ class UserGroupsForm(PostActions):
         groupsForUser = self.call.groupsForUser(username=forUsername)
         if GroupsFile.ADMIN in groupsForUser and not GroupsFile.ADMIN in user.groups():
             return result
-        managingGroups = self._groupsForUserManagement.intersection(groupsForUser)
+        managingGroups = self.call.managingGroupsForUser(username=forUsername)
         for groupname in sorted(self.call.listGroups()):
             if user.name == forUsername:
                 disabled = groupname == GroupsFile.ADMIN or groupname in managingGroups

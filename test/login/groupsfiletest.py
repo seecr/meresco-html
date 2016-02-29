@@ -31,8 +31,8 @@ from os.path import join
 
 class GroupsFileTest(SeecrTestCase):
     def setUp(self):
-        super(GroupsFileTest, self).setUp()
-        self.groups = GroupsFile(join(self.tempdir, 'groups'), availableGroups=['users'])
+        SeecrTestCase.setUp(self)
+        self.groups = GroupsFile(join(self.tempdir, 'groups'), availableGroups=['users'], groupsForUserManagement=['management'])
 
     def testUserNoGroups(self):
         user = BasicHtmlLoginForm.User('username')
@@ -40,7 +40,7 @@ class GroupsFileTest(SeecrTestCase):
         self.assertEquals(set(), user.groups())
 
     def testListGroups(self):
-        self.assertEquals(set(['admin', 'users']), self.groups.listGroups())
+        self.assertEquals(set(['admin', 'management', 'users']), self.groups.listGroups())
 
     def testAddUserToGroup(self):
         user = BasicHtmlLoginForm.User('username')
@@ -62,6 +62,19 @@ class GroupsFileTest(SeecrTestCase):
         self.assertTrue(user.isAdmin())
         self.groups.setGroupsForUser(username='username', groupnames=['users'])
         self.assertFalse(user.isAdmin())
+        self.groups.setGroupsForUser(username='username', groupnames=['users', 'management'])
+        self.assertFalse(user.isAdmin())
+
+    def testManagementGroups(self):
+        user = BasicHtmlLoginForm.User('username')
+        self.groups.enrichUser(user)
+        self.assertEquals(set(), user.managementGroups())
+        self.groups.setGroupsForUser(username='username', groupnames=['admin', 'users'])
+        self.assertEquals(set(['admin']), user.managementGroups())
+        self.groups.setGroupsForUser(username='username', groupnames=['management', 'users'])
+        self.assertEquals(set(['management']), user.managementGroups())
+        self.groups.setGroupsForUser(username='username', groupnames=['management', 'admin', 'users'])
+        self.assertEquals(set(['admin', 'management']), user.managementGroups())
 
     def testRemoveOldGroups(self):
         gf = GroupsFile(join(self.tempdir, 'groups1'), availableGroups=['users', 'toberemoved'])
@@ -75,7 +88,7 @@ class GroupsFileTest(SeecrTestCase):
         self.assertEquals(set(['users', 'toberemoved']), usertest.groups())
         self.assertEquals(set(['users', 'toberemoved', 'admin']), userroot.groups())
         self.assertEquals(set(['users', 'toberemoved', 'admin']), gf.listGroups())
-        gf = GroupsFile(join(self.tempdir, 'groups1'), availableGroups=['users'], onlySpecifiedGroups=True)
+        gf.convert(keepOnlyTheseGroups=set(['users']))
         usertest = BasicHtmlLoginForm.User('test')
         userroot = BasicHtmlLoginForm.User('root')
         gf.enrichUser(usertest)
@@ -84,8 +97,64 @@ class GroupsFileTest(SeecrTestCase):
         self.assertEquals(set(['users', 'admin']), userroot.groups())
         self.assertEquals(set(['users', 'admin']), gf.listGroups())
 
+    def testCanEdit(self):
+        self.groups.setGroupsForUser('admin1', ['admin'])
+        self.groups.setGroupsForUser('admin2', ['admin'])
+        self.groups.setGroupsForUser('manager1', ['management'])
+        self.groups.setGroupsForUser('manager2', ['management'])
+        self.groups.setGroupsForUser('user1', ['users'])
+        self.groups.setGroupsForUser('user2', ['users'])
+        admin = BasicHtmlLoginForm.User('admin1')
+        manager = BasicHtmlLoginForm.User('manager1')
+        user = BasicHtmlLoginForm.User('user1')
+        self.groups.enrichUser(admin)
+        self.groups.enrichUser(manager)
+        self.groups.enrichUser(user)
+        self.assertTrue(admin.canEdit()) #any user
+        self.assertTrue(admin.canEdit('admin1'))
+        self.assertTrue(admin.canEdit('manager1'))
+        self.assertTrue(admin.canEdit('admin2'))
+        self.assertTrue(admin.canEdit('user1'))
+        self.assertTrue(admin.canEdit('unexisting'))
+        self.assertTrue(manager.canEdit())
+        self.assertTrue(manager.canEdit('manager1'))
+        self.assertTrue(manager.canEdit('manager2'))
+        self.assertFalse(manager.canEdit('admin1'))
+        self.assertTrue(manager.canEdit('user1'))
+        self.assertTrue(manager.canEdit('unexisting'))
+        self.assertFalse(user.canEdit())
+        self.assertTrue(user.canEdit('user1'))
+        self.assertFalse(user.canEdit('manager1'))
+        self.assertFalse(user.canEdit('admin1'))
+        self.assertFalse(user.canEdit('user2'))
+        self.assertFalse(user.canEdit('unexisting'))
 
-    # def test
-
-
+    # def testCanEditGroup(self):
+    #     self.groups.setGroupsForUser('admin1', ['admin'])
+    #     self.groups.setGroupsForUser('admin2', ['admin'])
+    #     self.groups.setGroupsForUser('manager1', ['management'])
+    #     self.groups.setGroupsForUser('manager2', ['management'])
+    #     self.groups.setGroupsForUser('user1', ['users'])
+    #     self.groups.setGroupsForUser('user2', ['users'])
+    #     admin = BasicHtmlLoginForm.User('admin1')
+    #     manager = BasicHtmlLoginForm.User('manager1')
+    #     user = BasicHtmlLoginForm.User('user1')
+    #     self.groups.enrichUser(admin)
+    #     self.groups.enrichUser(manager)
+    #     self.groups.enrichUser(user)
+    #     self.assertTrue(admin.canEditGroup())
+    #     self.assertTrue(admin.canEditGroup('admin1'))
+    #     self.assertTrue(admin.canEditGroup('manager1'))
+    #     self.assertTrue(admin.canEditGroup('admin2'))
+    #     self.assertTrue(admin.canEditGroup('user1'))
+    #     self.assertTrue(manager.canEditGroup())
+    #     self.assertTrue(manager.canEditGroup('manager1'))
+    #     self.assertTrue(manager.canEditGroup('manager2'))
+    #     self.assertFalse(manager.canEditGroup('admin1'))
+    #     self.assertTrue(manager.canEditGroup('user1'))
+    #     self.assertFalse(user.canEditGroup())
+    #     self.assertFalse(user.canEditGroup('user1'))
+    #     self.assertFalse(user.canEditGroup('manager1'))
+    #     self.assertFalse(user.canEditGroup('admin1'))
+    #     self.assertFalse(user.canEditGroup('user2'))
 

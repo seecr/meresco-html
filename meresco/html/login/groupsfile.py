@@ -26,18 +26,21 @@
 ## end license ##
 
 from os.path import isfile
-from simplejson import load as jsonRead, dump as jsonWrite
-from os import rename, chmod
+from os import chmod
 from stat import S_IRUSR, S_IWUSR
+from meresco.components.json import JsonDict
+
 USER_RW = S_IRUSR | S_IWUSR
 
 class GroupsFile(object):
     version=1
     ADMIN = 'admin'
-    def __init__(self, filename, availableGroups=None, onlySpecifiedGroups=False):
+    def __init__(self, filename, availableGroups=None, groupsForUserManagement=None):
         self._filename = filename
+        self._groupsForUserManagement = set([]) if groupsForUserManagement is None else set(groupsForUserManagement)
+        self._groupsForUserManagement.add(self.ADMIN)
         groups = set([] if availableGroups is None else availableGroups)
-        groups.update([self.ADMIN])
+        groups.update(self._groupsForUserManagement)
         self._groups = list(groups)
         self._users = {}
         if not isfile(filename):
@@ -45,20 +48,24 @@ class GroupsFile(object):
             self._setGroupsForUser(username='admin', groupnames=[self.ADMIN])
         else:
             self._read()
-        if onlySpecifiedGroups:
-            for removedGroup in set(self._groups) - groups:
-                for username, userGroups in self._users.items():
-                    if removedGroup in userGroups:
-                        self._setGroupsForUser(username=username, groupnames=(n for n in userGroups if n != removedGroup))
-            self._groups = list(groups)
-            self._makePersistent()
 
     def enrichUser(self, user):
         user.groups = lambda: self.groupsForUser(username=user.name)
         user.isAdmin = lambda: self.ADMIN in user.groups()
+        user.canEdit = lambda username=None: self._canEdit(user, username)
+        user.managementGroups = lambda: self.managingGroupsForUser(user.name)
+
+    def _canEdit(self, user, forUsername=None):
+        return user.isAdmin() or \
+                user.name == forUsername or \
+                self._groupsForUserManagement.intersection(user.groups()) and \
+                self.ADMIN not in self.groupsForUser(forUsername)
 
     def groupsForUser(self, username):
         return set(self._users.get(username, []))
+
+    def managingGroupsForUser(self, username):
+        return self.groupsForUser(username).intersection(self._groupsForUserManagement)
 
     def listGroups(self, used=False):
         if used:
@@ -75,18 +82,25 @@ class GroupsFile(object):
         self._makePersistent()
 
     def _makePersistent(self):
-        tmpFilename = self._filename + ".tmp"
-        jsonWrite(dict(data=dict(users=self._users, groups=self._groups), version=self.version), open(tmpFilename, 'w'))
-        rename(tmpFilename, self._filename)
+        JsonDict(data=dict(users=self._users, groups=self._groups), version=self.version).dump(self._filename)
         chmod(self._filename, USER_RW)
 
     def _read(self):
-        result = jsonRead(open(self._filename))
+        result = JsonDict.load(self._filename)
         assert result['version'] == self.version, 'Expected database version %s' % self.version
         groups = set(self._groups)
         groups.update(set(result['data']['groups']))
         self._groups = list(groups)
         self._users.update(result['data']['users'])
 
+    def convert(self, keepOnlyTheseGroups):
+        keepOnlyTheseGroups = set(keepOnlyTheseGroups)
+        keepOnlyTheseGroups.update(self._groupsForUserManagement)
+        for removedGroup in set(self._groups) - keepOnlyTheseGroups:
+            for username, userGroups in self._users.items():
+                if removedGroup in userGroups:
+                    self._setGroupsForUser(username=username, groupnames=(n for n in userGroups if n != removedGroup))
+        self._groups = list(keepOnlyTheseGroups)
+        self._makePersistent()
 
 

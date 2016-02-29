@@ -43,7 +43,7 @@ from ._constants import UNAUTHORIZED
 TWO_WEEKS = 2*7*24*3600
 
 class BasicHtmlLoginForm(PostActions):
-    def __init__(self, action, loginPath, home="/", name=None, userIsAdminMethod=None, lang='en', rememberMeCookie=False, mayAdministerUser=None):
+    def __init__(self, action, loginPath, home="/", name=None, lang='en', rememberMeCookie=False):
         PostActions.__init__(self, name=name)
         self._action = action
         self._loginPath = loginPath
@@ -52,10 +52,8 @@ class BasicHtmlLoginForm(PostActions):
         self.registerAction('remove', self.handleRemove)
         self.registerAction('newUser', self.handleNewUser)
         self.defaultAction(self.handleLogin)
-        self._userIsAdminMethod = userIsAdminMethod
         self._lang = lang
         self._rememberMeCookie = rememberMeCookie
-        self.mayAdministerUser = (lambda user: user.isAdmin()) if mayAdministerUser is None else mayAdministerUser
 
     def handleLogin(self, session=None, Body=None, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True)
@@ -171,7 +169,7 @@ class BasicHtmlLoginForm(PostActions):
 
     def handleNewUser(self, session, Body, **kwargs):
         handlingUser = session.get('user')
-        if handlingUser is None or not self.mayAdministerUser(handlingUser):
+        if handlingUser is None or not handlingUser.canEdit():
             yield UNAUTHORIZED
             return
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
@@ -201,13 +199,13 @@ class BasicHtmlLoginForm(PostActions):
         retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
 
-        user = session['user']
+        handlingUser = session['user']
 
         targetUrl = formUrl
         if newPassword != retypedPassword:
             session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'dontMatch')}
         else:
-            if (not oldPassword and self.mayAdministerUser(user) and user.name != username) or self.call.validateUser(username=username, password=oldPassword):
+            if (not oldPassword and handlingUser.canEdit(username) and handlingUser.name != username) or self.call.validateUser(username=username, password=oldPassword):
                 self.call.changePassword(username, oldPassword, newPassword)
                 targetUrl = self._home
             else:
@@ -265,7 +263,7 @@ class BasicHtmlLoginForm(PostActions):
             yield '<p class="error">Please login to show user list.</p>\n</div>'
             return
         sessionUser = session['user']
-        if self.mayAdministerUser(sessionUser):
+        if sessionUser.canEdit():
             yield """<script type="text/javascript">
 function deleteUser(username) {
     if (confirm("Are you sure?")) {
@@ -289,8 +287,7 @@ function deleteUser(username) {
             else:
                 yield xmlEscape(user.title())
             if sessionUser.name != user.name and (
-                    sessionUser.isAdmin() or
-                    (self.mayAdministerUser(sessionUser) and not user.isAdmin())
+                    sessionUser.canEdit(user.name)
                 ):
                 yield """ <a href="javascript:deleteUser('%s');">delete</a>""" % user.name
             yield '</li>\n'
@@ -300,10 +297,8 @@ function deleteUser(username) {
     def _sessionUserMayDeleteAUser(self, sessionUser, user):
         return user is not None and \
             sessionUser is not None and \
-            sessionUser.name != user.name and (
-                sessionUser.isAdmin() or
-                (self.mayAdministerUser(sessionUser) and not user.isAdmin())
-            )
+            sessionUser.name != user.name and \
+            sessionUser.canEdit(user.name)
 
     def handleRemove(self, session, Body, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
@@ -326,7 +321,7 @@ function deleteUser(username) {
         return self._createUser(username)
 
     def _createUser(self, username):
-        user = self.User(username, isAdminMethod=self._userIsAdminMethod)
+        user = self.User(username)
         self.do.enrichUser(user)
         return user
 
@@ -334,12 +329,14 @@ function deleteUser(username) {
         return time()
 
     class User(object):
-        def __init__(inner, name, isAdminMethod=None):
+        def __init__(inner, name):
             inner.name = name
-            inner._isAdmin = (lambda name: name == 'admin') if isAdminMethod is None else isAdminMethod
 
         def title(inner):
             return inner.name
 
         def isAdmin(inner):
-            return inner._isAdmin(inner.name)
+            return inner.name == 'admin'
+
+        def canEdit(inner, username=None):
+            return inner.isAdmin() or inner.name == username

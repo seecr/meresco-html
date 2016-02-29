@@ -33,8 +33,8 @@ from urllib import urlencode
 class UserGroupsFormTest(SeecrTestCase):
     def setUp(self):
         super(UserGroupsFormTest, self).setUp()
-        self.groupsFile = GroupsFile(filename=join(self.tempdir, 'groups'), availableGroups=['admin', 'users', 'special', 'management'])
-        self.userGroups = UserGroupsForm(action='/action', groupsForUserManagement=['management'])
+        self.groupsFile = GroupsFile(filename=join(self.tempdir, 'groups'), availableGroups=['admin', 'users', 'special', 'management'], groupsForUserManagement=['management'])
+        self.userGroups = UserGroupsForm(action='/action')
         self.userGroups.addObserver(self.groupsFile)
         self.groupsFile.setGroupsForUser(username='normal', groupnames=['users'])
         self.groupsFile.setGroupsForUser(username='bob', groupnames=['admin', 'users'])
@@ -52,9 +52,9 @@ class UserGroupsFormTest(SeecrTestCase):
 
     def testSetup(self):
         self.assertEquals(set(['admin', 'users']), self.adminUser.groups())
-        self.assertFalse(self.userGroups.mayAdministerUser(self.normalUser))
-        self.assertTrue(self.userGroups.mayAdministerUser(self.adminUser))
-        self.assertTrue(self.userGroups.mayAdministerUser(self.managementUser))
+        self.assertFalse(self.normalUser.canEdit())
+        self.assertTrue(self.adminUser.canEdit())
+        self.assertTrue(self.managementUser.canEdit())
 
     def testHandleUpdateGroupsForUser(self):
         Body = urlencode({'username': [self.adminUser.name], 'groupname': ['special'], 'formUrl': ['/useraccount']}, doseq=True)

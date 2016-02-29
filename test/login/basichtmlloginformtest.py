@@ -40,7 +40,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
 
-        self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home', mayAdministerUser=lambda user: user.name in ['admin', 'allowed', 'two'])
+        self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home')
 
     def testLoginFormEnglish(self):
         result = asString(self.form.loginForm(session={}, path='/page/login2'))
@@ -175,26 +175,22 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
     def testLoginWithPOSTsucceeds(self):
         observer = CallTrace(onlySpecifiedMethods=True, returnValues={'hasUser': True})
-        def userIsAdmin(name):
-            return True
-        observer.methods['userIsAdmin'] = userIsAdmin
-        self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home', userIsAdminMethod=observer.userIsAdmin)
+        self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home')
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
-        Body = urlencode(dict(username='user', password='secret'))
+        Body = urlencode(dict(username='admin', password='secret'))
         session = {}
 
         result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
 
-        self.assertEquals('user', session['user'].name)
+        self.assertEquals('admin', session['user'].name)
         self.assertEquals(True, session['user'].isAdmin())
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
         self.assertTrue('Location: /home' in header)
 
-        self.assertEquals(['validateUser', 'hasUser', 'userIsAdmin'], [m.name for m in observer.calledMethods])
-        self.assertEquals({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
-        self.assertEquals(('user',), observer.calledMethods[-1].args)
+        self.assertEquals(['validateUser', 'hasUser'], [m.name for m in observer.calledMethods])
+        self.assertEquals({'username': 'admin', 'password':'secret'}, observer.calledMethods[0].kwargs)
 
     def testLoginWithPOSTfails(self):
         observer = CallTrace()
@@ -451,19 +447,26 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def testDeleteByAdministriveUser(self):
         observer = CallTrace(returnValues={'hasUser': True, 'removeUser': None}, onlySpecifiedMethods=True)
         self.form.addObserver(observer)
-        session = {'user': self.form.loginAsUser('allowed')}
+        session = {'user': self.form.loginAsUser('admin')}
         observer.calledMethods.reset()
-        self.assertTrue(self.form.mayAdministerUser(session['user']))
         result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='user'))))
         self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /home\r\n\r\n", result)
         self.assertEquals(['hasUser', 'removeUser'], [m.name for m in observer.calledMethods])
 
-    def testDeleteByAdministriveUserOfAdminNotAllowed(self):
+    def testDeleteByUserOfAdminNotAllowed(self):
         observer = CallTrace(returnValues={'hasUser': True, 'removeUser': None}, onlySpecifiedMethods=True)
         self.form.addObserver(observer)
-        session = {'user': self.form.loginAsUser('allowed')}
+        session = {'user': self.form.loginAsUser('user')}
         observer.calledMethods.reset()
-        self.assertTrue(self.form.mayAdministerUser(session['user']))
+        result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='admin'))))
+        self.assertEquals('HTTP/1.0 401 Unauthorized\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUnauthorized access.', result)
+        self.assertEquals(['hasUser'], [m.name for m in observer.calledMethods])
+
+    def testDeleteSelfNotAllowed(self):
+        observer = CallTrace(returnValues={'hasUser': True, 'removeUser': None}, onlySpecifiedMethods=True)
+        self.form.addObserver(observer)
+        session = {'user': self.form.loginAsUser('admin')}
+        observer.calledMethods.reset()
         result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='admin'))))
         self.assertEquals('HTTP/1.0 401 Unauthorized\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUnauthorized access.', result)
         self.assertEquals(['hasUser'], [m.name for m in observer.calledMethods])
@@ -546,10 +549,13 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         pf.addUser('one', 'password')
         pf.addUser('two', 'password')
         pf.addUser('three', 'password')
+        def enrichUser(user):
+            user.title = lambda: user.name.title()
+        o = CallTrace(onlySpecifiedMethods=True, methods=dict(enrichUser=enrichUser))
+        self.form.addObserver(o)
 
         session = {'user': self.form.loginAsUser('two')}
-        self.assertTrue(self.form.mayAdministerUser(session['user']))
-        self.assertFalse(session['user'].isAdmin())
+        session['user'].canEdit = lambda username=None: username not in ['two', 'admin']
 
         result = asString(self.form.userList(session=session, path='/show/login'))
 
@@ -567,25 +573,12 @@ function deleteUser(username) {
     <input type="hidden" name="username"/>
 </form>
     <ul>
-        <li>admin</li>
-        <li>one <a href="javascript:deleteUser('one');">delete</a></li>
-        <li>three <a href="javascript:deleteUser('three');">delete</a></li>
-        <li>two</li>
+        <li>Admin</li>
+        <li>One <a href="javascript:deleteUser('one');">delete</a></li>
+        <li>Three <a href="javascript:deleteUser('three');">delete</a></li>
+        <li>Two</li>
     </ul>
 </div>""", result)
-
-    def testShowUserListWithUserLink(self):
-        pf = PasswordFile(join(self.tempdir, 'passwd'))
-        self.form.addObserver(pf)
-        pf.addUser('one', 'password')
-        pf.addUser('two', 'password')
-        pf.addUser('three', 'password')
-        def enrichUser(user):
-            user.title = lambda: user.name.title()
-        enrich = CallTrace(onlySpecifiedMethods=True, methods=dict(enrichUser=enrichUser))
-        self.form.addObserver(enrich)
-
-        session = {'user':BasicHtmlLoginForm.User('two', isAdminMethod=lambda name:True)}
 
         result = asString(self.form.userList(session=session, path='/show/login', userLink='/user'))
 
@@ -603,7 +596,7 @@ function deleteUser(username) {
     <input type="hidden" name="username"/>
 </form>
     <ul>
-        <li><a href="/user?user=admin">Admin</a> <a href="javascript:deleteUser('admin');">delete</a></li>
+        <li><a href="/user?user=admin">Admin</a></li>
         <li><a href="/user?user=one">One</a> <a href="javascript:deleteUser('one');">delete</a></li>
         <li><a href="/user?user=three">Three</a> <a href="javascript:deleteUser('three');">delete</a></li>
         <li><a href="/user?user=two">Two</a></li>
@@ -622,7 +615,7 @@ function deleteUser(username) {
             )
         )
 
-        asString(dna.all.handleNewUser(session={'user': BasicHtmlLoginForm.User('admin')}, Body=urlencode(dict(password="password", retypedPassword="password"))))
+        asString(dna.all.handleNewUser(session={'user': BasicHtmlLoginForm.User('admin')}, Body=urlencode(dict(password="password", retypedPassword="password", username='nieuw'))))
         self.assertEquals(3, len(values))
 
     def testSetRememberMeCookie(self):
