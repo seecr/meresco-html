@@ -33,15 +33,16 @@ USER_RW = S_IRUSR | S_IWUSR
 
 class GroupsFile(object):
     version=1
+    ADMIN = 'admin'
     def __init__(self, filename, availableGroups=None, onlySpecifiedGroups=False):
         self._filename = filename
         groups = set([] if availableGroups is None else availableGroups)
-        groups.update(['admin'])
+        groups.update([self.ADMIN])
         self._groups = list(groups)
         self._users = {}
         if not isfile(filename):
             self._makePersistent()
-            self._setGroupsForUser(username='admin', groupnames=['admin'])
+            self._setGroupsForUser(username='admin', groupnames=[self.ADMIN])
         else:
             self._read()
         if onlySpecifiedGroups:
@@ -54,7 +55,7 @@ class GroupsFile(object):
 
     def enrichUser(self, user):
         user.groups = lambda: self.groupsForUser(username=user.name)
-        user.isAdmin = lambda: 'admin' in user.groups()
+        user.isAdmin = lambda: self.ADMIN in user.groups()
 
     def groupsForUser(self, username):
         return set(self._users.get(username, []))

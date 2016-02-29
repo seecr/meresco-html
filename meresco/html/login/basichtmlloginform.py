@@ -26,7 +26,7 @@
 #
 ## end license ##
 
-from meresco.components.http.utils import redirectHttp, CRLF, ContentTypeHeader, ContentTypePlainText
+from meresco.components.http.utils import redirectHttp, CRLF
 from cgi import parse_qs
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
@@ -36,9 +36,9 @@ from meresco.html import PostActions
 
 from labels import getLabel
 from urllib import urlencode
-from weightless.core import NoneOfTheObserversRespond
 from rfc822 import formatdate
 from time import time
+from ._constants import UNAUTHORIZED
 
 TWO_WEEKS = 2*7*24*3600
 
@@ -343,5 +343,3 @@ function deleteUser(username) {
 
         def isAdmin(inner):
             return inner._isAdmin(inner.name)
-
-UNAUTHORIZED = "HTTP/1.0 401 Unauthorized" + CRLF + ContentTypeHeader + ContentTypePlainText + CRLF + CRLF + "Unauthorized access."
