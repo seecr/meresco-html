@@ -33,18 +33,28 @@ from urllib import urlencode
 class UserGroupsFormTest(SeecrTestCase):
     def setUp(self):
         super(UserGroupsFormTest, self).setUp()
-        self.groupsFile = GroupsFile(filename=join(self.tempdir, 'groups'), availableGroups=['admin', 'users', 'special'])
-        self.userGroups = UserGroupsForm(action='/action')
+        self.groupsFile = GroupsFile(filename=join(self.tempdir, 'groups'), availableGroups=['admin', 'users', 'special', 'management'])
+        self.userGroups = UserGroupsForm(action='/action', groupsForUserManagement=['management'])
         self.userGroups.addObserver(self.groupsFile)
         self.groupsFile.setGroupsForUser(username='normal', groupnames=['users'])
         self.groupsFile.setGroupsForUser(username='bob', groupnames=['admin', 'users'])
+        self.groupsFile.setGroupsForUser(username='bill', groupnames=['management'])
+        self.otherManagerName = 'tim'
+        self.otherAdminName = 'johan'
+        self.groupsFile.setGroupsForUser(username=self.otherManagerName, groupnames=['management'])
+        self.groupsFile.setGroupsForUser(username=self.otherAdminName, groupnames=['admin'])
         self.normalUser = BasicHtmlLoginForm.User('normal')
         self.adminUser = BasicHtmlLoginForm.User('bob')
+        self.managementUser = BasicHtmlLoginForm.User('bill')
         self.groupsFile.enrichUser(self.normalUser)
         self.groupsFile.enrichUser(self.adminUser)
+        self.groupsFile.enrichUser(self.managementUser)
 
     def testSetup(self):
         self.assertEquals(set(['admin', 'users']), self.adminUser.groups())
+        self.assertFalse(self.userGroups.mayAdministerUser(self.normalUser))
+        self.assertTrue(self.userGroups.mayAdministerUser(self.adminUser))
+        self.assertTrue(self.userGroups.mayAdministerUser(self.managementUser))
 
     def testHandleUpdateGroupsForUser(self):
         Body = urlencode({'username': [self.adminUser.name], 'groupname': ['special'], 'formUrl': ['/useraccount']}, doseq=True)
@@ -53,14 +63,67 @@ class UserGroupsFormTest(SeecrTestCase):
         self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /useraccount\r\n\r\n', result)
         self.assertEquals(set(['admin', 'special']), self.adminUser.groups())
 
+    def testHandleUpdateGroupsForManagementUser(self):
+        Body = urlencode({'username': [self.managementUser.name], 'groupname': ['special'], 'formUrl': ['/useraccount']}, doseq=True)
+        session = {'user':self.managementUser}
+        result = asString(self.userGroups.handleRequest(Method='POST', path='/action/updateGroupsForUser', session=session, Body=Body))
+        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /useraccount\r\n\r\n', result)
+        self.assertEquals(set(['management', 'special']), self.managementUser.groups())
+
     def testHandleUpdateGroupsForUser_if_not_admin(self):
         Body = urlencode({'username': [self.adminUser.name], 'groupname': ['special'], 'formUrl': ['/useraccount']}, doseq=True)
         session = {'user':self.normalUser}
         result = asString(self.userGroups.handleRequest(Method='POST', path='/action/updateGroupsForUser', session=session, Body=Body))
-        self.assertEquals('HTTP/1.0 404 Not Found', result.split('\r\n')[0])
+        self.assertEquals('HTTP/1.0 401 Unauthorized', result.split('\r\n')[0])
 
+    def testAdminChangesManagement(self):
+        self.assertEquals(set(['management']), self.managementUser.groups())
+        self.assertEquals(set(['admin', 'users']), self.adminUser.groups())
 
-    def testGroupsUserForm(self):
+        Body = urlencode({'username': [self.managementUser.name], 'groupname': ['special', 'users'], 'formUrl': ['/useraccount']}, doseq=True)
+        session = {'user':self.adminUser}
+        result = asString(self.userGroups.handleRequest(Method='POST', path='/action/updateGroupsForUser', session=session, Body=Body))
+        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /useraccount\r\n\r\n', result)
+
+        self.assertEquals(set(['special', 'users']), self.managementUser.groups())
+        self.assertEquals(set(['admin', 'users']), self.adminUser.groups())
+
+    def testManagementChangesNormalUserGroups(self):
+        self.assertEquals(set(['users']), self.normalUser.groups())
+        self.assertEquals(set(['management']), self.managementUser.groups())
+
+        Body = urlencode({'username': [self.normalUser.name], 'groupname': ['special'], 'formUrl': ['/useraccount']}, doseq=True)
+        session = {'user':self.managementUser}
+        result = asString(self.userGroups.handleRequest(Method='POST', path='/action/updateGroupsForUser', session=session, Body=Body))
+        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /useraccount\r\n\r\n', result)
+
+        self.assertEquals(set(['special']), self.normalUser.groups())
+        self.assertEquals(set(['management']), self.managementUser.groups())
+
+    def testManagementCannotChangeAdminUser(self):
+        self.assertEquals(set(['admin', 'users']), self.adminUser.groups())
+        self.assertEquals(set(['management']), self.managementUser.groups())
+
+        Body = urlencode({'username': [self.adminUser.name], 'groupname': ['special', 'users'], 'formUrl': ['/useraccount']}, doseq=True)
+        session = {'user':self.managementUser}
+        result = asString(self.userGroups.handleRequest(Method='POST', path='/action/updateGroupsForUser', session=session, Body=Body))
+        self.assertEquals('HTTP/1.0 401 Unauthorized', result.split('\r\n')[0])
+
+        self.assertEquals(set(['management']), self.managementUser.groups())
+        self.assertEquals(set(['admin', 'users']), self.adminUser.groups())
+
+    def testAdminCanChangeOtherAdmins(self):
+        otherAdminUser = BasicHtmlLoginForm.User('johan')
+        self.groupsFile.enrichUser(otherAdminUser)
+
+        Body = urlencode({'username': [otherAdminUser.name], 'groupname': ['special'], 'formUrl': ['/useraccount']}, doseq=True)
+        session = {'user':self.adminUser}
+        result = asString(self.userGroups.handleRequest(Method='POST', path='/action/updateGroupsForUser', session=session, Body=Body))
+        self.assertEquals('HTTP/1.0 302 Found\r\nLocation: /useraccount\r\n\r\n', result)
+
+        self.assertEquals(set(['special']), otherAdminUser.groups())
+
+    def testGroupsUserFormAdminSelf(self):
         kwargs = {
             'path': '/path/to/form',
             'arguments': {'key': ['value']},
@@ -71,9 +134,73 @@ class UserGroupsFormTest(SeecrTestCase):
         <input type="hidden" name="formUrl" value="/path/to/form?key=value"/>
         <ul>
             <li><label><input type="checkbox" name="groupname" value="admin" checked="checked" disabled="disabled"/>admin</label></li>
-            <li><label><input type="checkbox" name="groupname" value="special" />special</label></li>
-            <li><label><input type="checkbox" name="groupname" value="users" checked="checked"/>users</label></li>
+            <li><label><input type="checkbox" name="groupname" value="management"  />management</label></li>
+            <li><label><input type="checkbox" name="groupname" value="special"  />special</label></li>
+            <li><label><input type="checkbox" name="groupname" value="users" checked="checked" />users</label></li>
         </ul>
         <input type="submit" value="Aanpassen"/>
     </form>
 </div>""", asString(self.userGroups.groupsUserForm(user=self.adminUser, **kwargs)))
+        self.assertEquals([
+            dict(checked=True,  description='', disabled=True,  groupname='admin'),
+            dict(checked=False, description='', disabled=False, groupname='management'),
+            dict(checked=False, description='', disabled=False, groupname='special'),
+            dict(checked=True,  description='', disabled=False, groupname='users'),
+            ], self.userGroups._groupsForForm(user=self.adminUser, forUsername=self.adminUser.name))
+
+    def testGroupsUserFormManagementSelf(self):
+        self.assertEquals([
+            dict(checked=False, description='', disabled=True,  groupname='admin'),
+            dict(checked=True,  description='', disabled=True,  groupname='management'),
+            dict(checked=False, description='', disabled=False, groupname='special'),
+            dict(checked=False, description='', disabled=False, groupname='users'),
+            ], self.userGroups._groupsForForm(user=self.managementUser, forUsername=self.managementUser.name))
+
+    def testGroupsUserFormManagementOtherManager(self):
+        self.assertEquals([
+            dict(checked=False, description='', disabled=True,  groupname='admin'),
+            dict(checked=True,  description='', disabled=False, groupname='management'),
+            dict(checked=False, description='', disabled=False, groupname='special'),
+            dict(checked=False, description='', disabled=False, groupname='users'),
+            ], self.userGroups._groupsForForm(user=self.managementUser, forUsername=self.otherManagerName))
+
+
+    def testGroupsUserFormManagementOtherUser(self): self.assertEquals([
+            dict(checked=False, description='', disabled=True,  groupname='admin'),
+            dict(checked=False, description='', disabled=False, groupname='management'),
+            dict(checked=False, description='', disabled=False, groupname='special'),
+            dict(checked=True,  description='', disabled=False, groupname='users'),
+            ], self.userGroups._groupsForForm(user=self.managementUser, forUsername=self.normalUser.name))
+
+    def testGroupsUserFormManagementAdmin(self):
+        kwargs = {
+            'path': '/path/to/form',
+            'arguments': {'key': ['value']},
+        }
+        self.assertEquals('', asString(self.userGroups.groupsUserForm(user=self.managementUser, forUsername=self.adminUser.name, **kwargs)))
+        self.assertEquals([], self.userGroups._groupsForForm(user=self.managementUser, forUsername=self.adminUser.name))
+
+    def testGroupsUserFormUser(self):
+        kwargs = {
+            'path': '/path/to/form',
+            'arguments': {'key': ['value']},
+        }
+        self.assertEquals('', asString(self.userGroups.groupsUserForm(user=self.normalUser, **kwargs)))
+
+    def testGroupsUserFormAdminOtherAdmin(self):
+        self.assertEquals([
+            dict(checked=True,  description='', disabled=False, groupname='admin'),
+            dict(checked=False, description='', disabled=False, groupname='management'),
+            dict(checked=False, description='', disabled=False, groupname='special'),
+            dict(checked=False, description='', disabled=False, groupname='users'),
+            ], self.userGroups._groupsForForm(user=self.adminUser, forUsername=self.otherAdminName))
+
+    def testGroupsUserFormAdminManager(self):
+        self.assertEquals([
+            dict(checked=False, description='', disabled=False, groupname='admin'),
+            dict(checked=True,  description='', disabled=False, groupname='management'),
+            dict(checked=False, description='', disabled=False, groupname='special'),
+            dict(checked=False, description='', disabled=False, groupname='users'),
+            ], self.userGroups._groupsForForm(user=self.adminUser, forUsername=self.otherManagerName))
+
+
