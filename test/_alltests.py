@@ -36,6 +36,7 @@ from postactionstest import PostActionsTest
 from urlencodetest import UrlencodeTest
 
 from login.basichtmlloginformtest import BasicHtmlLoginFormTest
+from login.cookiememorystoretest import CookieMemoryStoreTest
 from login.groupsfiletest import GroupsFileTest
 from login.passwordfiletest import PasswordFileTest
 from login.remembermecookietest import RememberMeCookieTest
@@ -43,7 +44,6 @@ from login.securezonetest import SecureZoneTest
 from login.usergroupsformtest import UserGroupsFormTest
 from login.userinfotest import UserInfoTest
 from login.userinfoformtest import UserInfoFormTest
-
 
 if __name__ == '__main__':
     main()
