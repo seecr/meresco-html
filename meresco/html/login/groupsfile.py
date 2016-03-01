@@ -54,12 +54,25 @@ class GroupsFile(object):
         user.isAdmin = lambda: self.ADMIN in user.groups()
         user.canEdit = lambda username=None: self._canEdit(user, username)
         user.managementGroups = lambda: self.managingGroupsForUser(user.name)
+        user.isMemberOf = lambda *groups: self._userMemberOf(user, *groups, memberOfAll=True)
+        user.isMemberOfAny = lambda *groups: self._userMemberOf(user, *groups, memberOfAll=False)
 
-    def _canEdit(self, user, forUsername=None):
+    def _canEdit(self, user, username=None):
+        username = username.name if hasattr(username, 'name') else username
         return user.isAdmin() or \
-                user.name == forUsername or \
+                user.name == username or \
                 self._groupsForUserManagement.intersection(user.groups()) and \
-                self.ADMIN not in self.groupsForUser(forUsername)
+                self.ADMIN not in self.groupsForUser(username)
+
+    def _userMemberOf(self, user, *groups, **kwargs):
+        if not groups:
+            raise ValueError('No groups specified')
+        memberOfAll = kwargs.get('memberOfAll', True)
+        groups = set(g.name if hasattr(g, 'name') else g for g in groups)
+        both = self.groupsForUser(user.name).intersection(groups)
+        if memberOfAll:
+            return len(both) == len(groups)
+        return bool(both)
 
     def groupsForUser(self, username):
         return set(self._users.get(username, []))

@@ -685,5 +685,13 @@ function deleteUser(username) {
     </script>
 </div>""", result)
 
-
+    def testCanEdit(self):
+        admin = BasicHtmlLoginForm.User('admin')
+        other = BasicHtmlLoginForm.User('other')
+        self.assertTrue(admin.canEdit('other'))
+        self.assertTrue(admin.canEdit(other))
+        self.assertTrue(other.canEdit('other'))
+        self.assertTrue(other.canEdit(other))
+        self.assertFalse(other.canEdit('admin'))
+        self.assertFalse(other.canEdit(admin))
 

@@ -339,4 +339,5 @@ function deleteUser(username) {
             return inner.name == 'admin'
 
         def canEdit(inner, username=None):
+            username = username.name if hasattr(username, 'name') else username
             return inner.isAdmin() or inner.name == username
