@@ -5,7 +5,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2008-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -39,6 +39,7 @@ from urllib import urlencode as _urlencode
 from math import ceil
 from functools import partial, reduce
 
+from meresco.components.json import JsonList, JsonDict
 from meresco.core import Observable, decorate
 
 from weightless.core import compose, Yield
@@ -341,6 +342,8 @@ class DynamicHtml(Observable):
             'http': Http(),
             'dumps': dumps,
             'loads': loads,
+            'JsonDict': JsonDict,
+            'JsonList': JsonList,
             'urlsplit': urlsplit,
             'urlunsplit': urlunsplit,
             'DynamicHtmlException': DynamicHtmlException,

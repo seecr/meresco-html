@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -24,14 +24,15 @@
 #
 ## end license ##
 
-from simplejson import load as jsonRead, dump as jsonWrite
 from os.path import isfile
-from os import rename, chmod
+from os import chmod
 from hashlib import md5
 from stat import S_IRUSR, S_IWUSR
 from re import compile as reCompile
 from random import choice
 from string import digits as _SALT_1, ascii_letters as _SALT_2
+from meresco.components.json import JsonDict
+
 USER_RW = S_IRUSR | S_IWUSR
 
 def md5Hash(data):
@@ -105,18 +106,15 @@ class PasswordFile(object):
         with open(src) as i:
             for user, pwhash in (l.strip().split(':') for l in i if ':' in l.strip()):
                 users[user]=dict(salt='', password=pwhash)
-        with open(dst, 'w') as f:
-            jsonWrite(dict(users=users, version=cls.version), f)
+        JsonDict(users=users, version=cls.version).dump(dst)
         return cls(dst)
 
     def _makePersistent(self):
-        tmpFilename = self._filename + ".tmp"
-        jsonWrite(dict(users=self._users, version=self.version), open(tmpFilename, 'w'))
-        rename(tmpFilename, self._filename)
+        JsonDict(users=self._users, version=self.version).dump(self._filename)
         chmod(self._filename, USER_RW)
 
     def _read(self):
-        result = jsonRead(open(self._filename))
+        result = JsonDict.load(self._filename)
         assert result['version'] == self.version, 'Expected database version %s' % self.version
         return result['users']
 
