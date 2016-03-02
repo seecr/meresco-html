@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -161,7 +161,8 @@ class PasswordFileTest(SeecrTestCase):
             dump(dict(users=dict(username=dict(salt='', password=md5Hash('secret'))), version=PasswordFile.version), f)
         pwd = PasswordFile(tmpfile)
         self.assertTrue(pwd.validateUser('username', 'secret'))
-        d = load(open(tmpfile))
+        with open(tmpfile) as fp:
+            d = load(fp)
         self.assertTrue(5, len(d['users']['username']['salt']))
         pwd = PasswordFile(tmpfile)
         self.assertTrue(pwd.validateUser('username', 'secret'))

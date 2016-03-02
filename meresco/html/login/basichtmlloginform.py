@@ -35,7 +35,7 @@ from meresco.html import PostActions
 
 from .labels import getLabel
 from urllib.parse import urlencode, parse_qs
-from rfc822 import formatdate
+from email.utils import formatdate
 from time import time
 from ._constants import UNAUTHORIZED
 
@@ -72,7 +72,7 @@ class BasicHtmlLoginForm(PostActions):
                 cookie = 'Set-Cookie: %s=%s; path=/; expires=%s' % (
                     cookieValues['name'],
                     cookieValues['value'],
-                    formatdate(self._now() + cookieValues.get('expires', TWO_WEEKS)))
+                    formatdate(self._now() + cookieValues.get('expires', TWO_WEEKS), usegmt=True))
                 status, headers = response.split(CRLF, 1)
                 response = CRLF.join([status, cookie, headers])
 
@@ -232,7 +232,7 @@ class BasicHtmlLoginForm(PostActions):
         if arguments:
             formUrl += "?" + urlencode(arguments, doseq=True)
 
-        username = session[USER].name if user is None else (user if isinstance(user, basestring) else user.name)
+        username = session[USER].name if user is None else (user if isinstance(user, str) else user.name)
         values = dict(
             action=quoteattr(join(self._action, 'changepassword')),
             formUrl=quoteattr(formUrl),

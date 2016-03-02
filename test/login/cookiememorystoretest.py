@@ -35,30 +35,30 @@ class CookieMemoryStoreTest(SeecrTestCase):
     def testCookieName(self):
         name = self.d.cookieName()
         self.assertTrue(name.startswith('remember-'))
-        self.assertEquals(name, self.d.cookieName())
+        self.assertEqual(name, self.d.cookieName())
         self.assertNotEqual(name, CookieMemoryStore().cookieName())
 
     def testCreateCookie(self):
         result = self.d.createCookie('username')
-        self.assertEquals('username', self.d.validateCookie(result['value']))
+        self.assertEqual('username', self.d.validateCookie(result['value']))
         self.assertNotEqual(result, self.d.createCookie('username'))
-        self.assertEquals(self.d.cookieName(), result['name'])
-        self.assertEquals(0.1, result['expires'])
+        self.assertEqual(self.d.cookieName(), result['name'])
+        self.assertEqual(0.1, result['expires'])
         sleep(0.06)
-        self.assertEquals('username', self.d.validateCookie(result['value']))
+        self.assertEqual('username', self.d.validateCookie(result['value']))
         sleep(0.06)
-        self.assertEquals('username', self.d.validateCookie(result['value']))
+        self.assertEqual('username', self.d.validateCookie(result['value']))
         sleep(0.12)
-        self.assertEquals(None, self.d.validateCookie(result['value']))
+        self.assertEqual(None, self.d.validateCookie(result['value']))
 
     def testCreateCookieForAnyObject(self):
         o = object()
         result = self.d.createCookie(o)
-        self.assertEquals(o, self.d.validateCookie(result['value']))
+        self.assertEqual(o, self.d.validateCookie(result['value']))
 
     def testRemoveCookie(self):
         result = self.d.createCookie('username')
-        self.assertEquals('username', self.d.validateCookie(result['value']))
+        self.assertEqual('username', self.d.validateCookie(result['value']))
         self.d.removeCookie(result['value'])
-        self.assertEquals(None, self.d.validateCookie(result['value']))
+        self.assertEqual(None, self.d.validateCookie(result['value']))
         self.d.removeCookie(result['value'])

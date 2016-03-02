@@ -1,7 +1,7 @@
 python3-lxml
 seecr-core (>= 1.0.1)
 seecr-core (<< 1.1)
-python3-meresco-components (>= 4.10.18)
+python3-meresco-components (>= 4.10.19)
 python3-meresco-components (<< 4.11)
 python3-meresco-core (>= 4.0.6)
 python3-meresco-core (<< 4.1)
