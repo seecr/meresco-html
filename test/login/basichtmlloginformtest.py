@@ -676,7 +676,7 @@ function deleteUser(username) {
             <dd><input type="text" name="username" value=""/></dd>
             <dt>Password</dt>
             <dd><input type="password" name="password"/></dd>
-            <dd class="rememberMe"><input type="checkbox" name="rememberMe"/>Remember me</dd>
+            <dt>&nbsp;</dt><dd class="rememberMe"><input type="checkbox" name="rememberMe" id="rememberMe" /><label for="rememberMe">Remember me</label></dd>
             <dd class="submit"><input type="submit" id="submitLogin" value="Login"/></dd>
         </dl>
     </form>
