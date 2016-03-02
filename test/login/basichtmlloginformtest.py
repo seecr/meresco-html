@@ -29,7 +29,7 @@ from weightless.core import asString, be, Observable, consume
 
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.utils import headerToDict
-from meresco.components.http.utils import CRLF
+from meresco.components.http.utils import CRLF, redirectHttp
 from urllib import urlencode
 
 from meresco.html.login import BasicHtmlLoginForm, PasswordFile
@@ -684,6 +684,25 @@ function deleteUser(username) {
         document.getElementById("submitLogin").focus()
     </script>
 </div>""", result)
+
+    def testLogout(self):
+        session = {'user': 'A user', 'someother': 'value'}
+        result = asString(self.form.logout(session=session, ignored='kwarg', Headers={}))
+        self.assertEquals(redirectHttp % '/home', result)
+        self.assertEqual({'someother': 'value'}, session)
+
+    def testLogoutWithRememberMe(self):
+        form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home', rememberMeCookie=True)
+        observer = CallTrace(onlySpecifiedMethods=True)
+        observer.returnValues['cookieName'] = 'remember-cookie'
+        observer.returnValues['removeCookie'] = None
+        form.addObserver(observer)
+        session = {'user': 'A user', 'someother': 'value'}
+        result = asString(form.logout(session=session, ignored='kwarg', Headers={'Cookie':'remember-cookie=cookieId;othercookie=value'}))
+        self.assertEquals('HTTP/1.0 302 Found\r\nSet-Cookie: remember-cookie=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/\r\nLocation: /home\r\n\r\n', result)
+        self.assertEqual({'someother': 'value'}, session)
+        self.assertEqual(['cookieName', 'removeCookie'], observer.calledMethodNames())
+        self.assertEquals(('cookieId',), observer.calledMethods[1].args)
 
     def testCanEdit(self):
         admin = BasicHtmlLoginForm.User('admin')

@@ -39,6 +39,12 @@ class CookieMemoryStore(object):
         self._store[cookie] = anObject
         return dict(name=self._name, value=cookie, expires=self._timeout)
 
+    def removeCookie(self, cookie):
+        try:
+            del self._store[cookie]
+        except KeyError:
+            pass
+
     def validateCookie(self, cookieValue):
         result = self._store.get(cookieValue)
         if result is not None:

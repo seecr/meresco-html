@@ -26,7 +26,7 @@
 #
 ## end license ##
 
-from meresco.components.http.utils import redirectHttp, CRLF
+from meresco.components.http.utils import redirectHttp, CRLF, insertHeader, findCookies
 from cgi import parse_qs
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
@@ -63,7 +63,7 @@ class BasicHtmlLoginForm(PostActions):
 
         if self.call.validateUser(username=username, password=password):
             user = self.loginAsUser(username)
-            session['user'] = user
+            session[USER] = user
             url = session.pop(ORIGINAL_PATH, self._home)
             response = redirectHttp
             if rememberMe and self._rememberMeCookie:
@@ -131,7 +131,7 @@ class BasicHtmlLoginForm(PostActions):
         lang = lang or self._lang
         formValues = session.get('BasicHtmlLoginForm.newUserFormValues', {}) if session else {}
         yield """<div id="login-new-user-form">\n"""
-        if not 'user' in session:
+        if not USER in session:
             yield '<p class="error">Please login to add new users.</p>\n</div>'
             return
         if 'errorMessage' in formValues:
@@ -168,7 +168,7 @@ class BasicHtmlLoginForm(PostActions):
         session.pop('BasicHtmlLoginForm.newUserFormValues', None)
 
     def handleNewUser(self, session, Body, **kwargs):
-        handlingUser = session.get('user')
+        handlingUser = session.get(USER)
         if handlingUser is None or not handlingUser.canEdit():
             yield UNAUTHORIZED
             return
@@ -199,7 +199,7 @@ class BasicHtmlLoginForm(PostActions):
         retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
 
-        handlingUser = session['user']
+        handlingUser = session[USER]
 
         targetUrl = formUrl
         if newPassword != retypedPassword:
@@ -217,7 +217,7 @@ class BasicHtmlLoginForm(PostActions):
         lang = lang or self._lang
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
         yield """<div id="login-change-password-form">\n"""
-        if not 'user' in session:
+        if not USER in session:
             yield '<p class="error">Please login to change password.</p>\n</div>'
             return
         if 'errorMessage' in formValues:
@@ -227,7 +227,7 @@ class BasicHtmlLoginForm(PostActions):
         if arguments:
             formUrl += "?" + urlencode(arguments, doseq=True)
 
-        username = session['user'].name if user is None else (user if isinstance(user, basestring) else user.name)
+        username = session[USER].name if user is None else (user if isinstance(user, basestring) else user.name)
         values = dict(
             action=quoteattr(join(self._action, 'changepassword')),
             formUrl=quoteattr(formUrl),
@@ -259,10 +259,10 @@ class BasicHtmlLoginForm(PostActions):
 
     def userList(self, session, path, userLink=None, **kwargs):
         yield """<div id="login-user-list">\n"""
-        if not 'user' in session:
+        if not USER in session:
             yield '<p class="error">Please login to show user list.</p>\n</div>'
             return
-        sessionUser = session['user']
+        sessionUser = session[USER]
         if sessionUser.canEdit():
             yield """<script type="text/javascript">
 function deleteUser(username) {
@@ -303,7 +303,7 @@ function deleteUser(username) {
     def handleRemove(self, session, Body, **kwargs):
         bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
-        sessionUser = session.get('user')
+        sessionUser = session.get(USER)
         user = self._checkAndCreateUser(bodyArgs.get('username', [None])[0])
         if not self._sessionUserMayDeleteAUser(sessionUser, user):
             yield UNAUTHORIZED
@@ -311,6 +311,18 @@ function deleteUser(username) {
         self.do.removeUser(user.name)
 
         yield redirectHttp % formUrl
+
+    def logout(self, session, Headers, **ignored):
+        session.pop(USER, None)
+        redirectUrl = self._home
+        response = redirectHttp % redirectUrl
+        if not self._rememberMeCookie:
+            yield response
+            return
+        cookieName = self.call.cookieName()
+        for cookie in findCookies(Headers=Headers, name=cookieName):
+            self.call.removeCookie(cookie)
+        yield insertHeader([response], 'Set-Cookie: {}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'.format(cookieName))
 
     def _listUsers(self):
         return [self._createUser(username) for username in self.call.listUsernames()]
@@ -341,3 +353,5 @@ function deleteUser(username) {
         def canEdit(inner, username=None):
             username = username.name if hasattr(username, 'name') else username
             return inner.isAdmin() or inner.name == username
+
+USER = 'user'

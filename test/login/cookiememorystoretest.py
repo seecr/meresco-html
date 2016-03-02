@@ -55,3 +55,10 @@ class CookieMemoryStoreTest(SeecrTestCase):
         o = object()
         result = self.d.createCookie(o)
         self.assertEquals(o, self.d.validateCookie(result['value']))
+
+    def testRemoveCookie(self):
+        result = self.d.createCookie('username')
+        self.assertEquals('username', self.d.validateCookie(result['value']))
+        self.d.removeCookie(result['value'])
+        self.assertEquals(None, self.d.validateCookie(result['value']))
+        self.d.removeCookie(result['value'])
