@@ -38,4 +38,4 @@ class RememberMeCookie(Observable):
                     session['user'] = user
                     break
 
-        yield self.all.handleRequest(session=session, **kwargs)
+        yield self.all.handleRequest(session=session, Headers=Headers, **kwargs)

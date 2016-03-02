@@ -41,14 +41,14 @@ class RememberMeCookieTest(SeecrTestCase):
             yield "RESPONSE"
         def validateMethod(cookie):
             return "USER" if cookie == "THIS IS THE REMEMBER ME COOKIE" else None
-        observer = CallTrace(methods={
+        self.observer = CallTrace(methods={
             'handleRequest': handleRequest,
             'validateCookie': validateMethod,
             'cookieName': lambda: "CID"})
         self.dna = be(
             (Observable(),
                 (RememberMeCookie(),
-                    (observer, )
+                    (self.observer, )
                 )
             ))
 
@@ -58,17 +58,22 @@ class RememberMeCookieTest(SeecrTestCase):
             path='/some_page',
             Headers={},
             session=session))
-        self.assertEquals("RESPONSE", response)
-        self.assertEquals(['/some_page'], self.paths)
+        self.assertEqual("RESPONSE", response)
+        self.assertEqual(['/some_page'], self.paths)
         self.assertFalse('user' in session, session)
+        self.assertEqual(['cookieName', 'handleRequest'], self.observer.calledMethodNames())
+        self.assertEquals({'path': '/some_page', 'session': {}, 'Headers':{}}, self.observer.calledMethods[-1].kwargs)
 
     def testCookie(self):
         session = {}
+        Headers=dict(Cookie="CID=THIS IS THE REMEMBER ME COOKIE")
         response = asString(self.dna.all.handleRequest(
             path='/some_page',
-            Headers=dict(Cookie="CID=THIS IS THE REMEMBER ME COOKIE"),
+            Headers=Headers,
             session=session))
-        self.assertEquals("RESPONSE", response)
-        self.assertEquals(['/some_page'], self.paths)
+        self.assertEqual("RESPONSE", response)
+        self.assertEqual(['/some_page'], self.paths)
         self.assertTrue('user' in session, session)
+        self.assertEqual(['cookieName', 'validateCookie', 'handleRequest'], self.observer.calledMethodNames())
+        self.assertEquals({'path': '/some_page', 'session': {'user':'USER'}, 'Headers':Headers}, self.observer.calledMethods[-1].kwargs)
 
