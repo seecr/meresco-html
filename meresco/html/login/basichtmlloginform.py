@@ -115,7 +115,7 @@ class BasicHtmlLoginForm(PostActions):
 
         if self._rememberMeCookie:
             yield """
-            <dd class="rememberMe"><input type="checkbox" name="rememberMe"/>%(lblRememberMe)s</dd>""" % values
+            <dt>&nbsp;</dt><dd class="rememberMe"><input type="checkbox" name="rememberMe" id="rememberMe" /><label for="rememberMe">%(lblRememberMe)s</label></dd>""" % values
 
         yield """
             <dd class="submit"><input type="submit" id="submitLogin" value="%(lblLogin)s"/></dd>

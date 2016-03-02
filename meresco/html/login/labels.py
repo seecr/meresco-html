@@ -3,7 +3,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2013-2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Html"
@@ -33,7 +33,7 @@ LABELS = {
         'password': dict(en='Password', nl='Wachtwoord'),
         'login': dict(en='Login', nl="Inloggen"),
         'invalid': dict(en='Invalid username or password', nl='Ongeldige gebruikersnaam of wachtwoord'),
-        'rememberMe': dict(en="Remember me", nl="Vergeet-me-niet"),
+        'rememberMe': dict(en="Remember me", nl="Blijf ingelogd"),
     },
     'changepasswordForm': {
         'old-password': dict(en="Old password", nl="Oud wachtwoord"),
