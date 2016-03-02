@@ -25,20 +25,17 @@
 ## end license ##
 
 from meresco.core import Observable
+from meresco.components.http.utils import findCookies
 
 class RememberMeCookie(Observable):
 
-    def handleRequest(self, session, **kwargs):
-        Headers = kwargs.get('Headers', {})
-
-        if Headers and 'Cookie' in Headers and 'user' not in session:
+    def handleRequest(self, session, Headers, **kwargs):
+        if 'user' not in session:
             cookieName = self.call.cookieName()
-            for cookie in Headers.get('Cookie','').split(';'):
-                name, value = cookie.strip().split("=", 1)
-                if name == cookieName:
-                    user = self.call.validateCookie(value)
-                    if user:
-                        session['user'] = user
-                        break
+            for cookie in findCookies(Headers=Headers, name=cookieName):
+                user = self.call.validateCookie(cookie)
+                if user is not None:
+                    session['user'] = user
+                    break
 
         yield self.all.handleRequest(session=session, **kwargs)
