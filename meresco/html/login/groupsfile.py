@@ -77,6 +77,10 @@ class GroupsFile(object):
     def groupsForUser(self, username):
         return set(self._users.get(username, []))
 
+    def removeUser(self, username):
+        self._users.pop(username, None)
+        self._makePersistent()
+
     def managingGroupsForUser(self, username):
         return self.groupsForUser(username).intersection(self._groupsForUserManagement)
 

@@ -164,3 +164,11 @@ class GroupsFileTest(SeecrTestCase):
         self.assertRaises(ValueError, lambda: user1.isMemberOf())
         self.assertRaises(ValueError, lambda: user1.isMemberOfAny())
 
+    def testRemoveUser(self):
+        self.groups.setGroupsForUser('username', ['users', 'admin'])
+        self.groups.removeUser('username')
+        self.assertEqual(set([]), self.groups.groupsForUser('username'))
+        self.groups = GroupsFile(join(self.tempdir, 'groups'), availableGroups=['users'], groupsForUserManagement=['management'])
+        self.assertEqual(set([]), self.groups.groupsForUser('username'))
+
+
