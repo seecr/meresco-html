@@ -68,12 +68,8 @@ class BasicHtmlLoginForm(PostActions):
             response = redirectHttp
             if rememberMe and self._rememberMeCookie:
                 cookieValues = self.call.createCookie(user)
-                cookie = 'Set-Cookie: %s=%s; path=/; expires=%s' % (
-                    cookieValues['name'],
-                    cookieValues['value'],
-                    formatdate(self._now() + cookieValues.get('expires', TWO_WEEKS)))
                 status, headers = response.split(CRLF, 1)
-                response = CRLF.join([status, cookie, headers])
+                response = CRLF.join([status, cookieValues['header'], headers])
 
             yield response % url
         else:
@@ -309,6 +305,8 @@ function deleteUser(username) {
             yield UNAUTHORIZED
             return
         self.do.removeUser(user.name)
+        self.do[.removeCookies(filter=lambda anObject: getattr(anObject, 'name', None)==user.name)
+
 
         yield redirectHttp % formUrl
 
@@ -334,6 +332,7 @@ function deleteUser(username) {
 
     def _createUser(self, username):
         user = self.User(username)
+        user.isValid = lambda: self.call.hasUser(username)
         self.do.enrichUser(user)
         return user
 

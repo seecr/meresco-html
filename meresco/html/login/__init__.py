@@ -35,4 +35,3 @@ from .groupsfile import GroupsFile
 from .usergroupsform import UserGroupsForm
 from .userinfo import UserInfo
 from .userinfoform import UserInfoForm
-from .cookiememorystore import CookieMemoryStore

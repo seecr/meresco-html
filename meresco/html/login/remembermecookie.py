@@ -25,17 +25,23 @@
 ## end license ##
 
 from meresco.core import Observable
-from meresco.components.http.utils import findCookies
+from meresco.components.http.utils import findCookies, insertHeader
+from weightless.core import compose
 
 class RememberMeCookie(Observable):
 
     def handleRequest(self, session, Headers, **kwargs):
+        extraHeader = None
         if 'user' not in session:
             cookieName = self.call.cookieName()
             for cookie in findCookies(Headers=Headers, name=cookieName):
-                user = self.call.validateCookie(cookie)
-                if user is not None:
-                    session['user'] = user
+                cookieDict = self.call.validateCookie(cookie)
+                if cookieDict is not None:
+                    session['user'] = cookieDict['value']
+                    extraHeader = cookieDict['header']
                     break
 
-        yield self.all.handleRequest(session=session, Headers=Headers, **kwargs)
+        yield insertHeader(
+            compose(self.all.handleRequest(session=session, Headers=Headers, **kwargs)),
+            extraHeader
+        )

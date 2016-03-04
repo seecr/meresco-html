@@ -40,7 +40,7 @@ class RememberMeCookieTest(SeecrTestCase):
             self.paths.append(path)
             yield "RESPONSE"
         def validateMethod(cookie):
-            return "USER" if cookie == "THIS IS THE REMEMBER ME COOKIE" else None
+            return dict(value="USER", header="COOKIE HEADER") if cookie == "THIS IS THE REMEMBER ME COOKIE" else None
         self.observer = CallTrace(methods={
             'handleRequest': handleRequest,
             'validateCookie': validateMethod,

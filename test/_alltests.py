@@ -25,8 +25,10 @@
 #
 ## end license ##
 
-from seecrdeps import includeParentAndDeps              #DO_NOT_DISTRIBUTE
-includeParentAndDeps(__file__)                          #DO_NOT_DISTRIBUTE
+from os import system                            #DO_NOT_DISTRIBUTE
+system('find .. -name "*.pyc" | xargs rm -f')    #DO_NOT_DISTRIBUTE
+from seecrdeps import includeParentAndDeps       #DO_NOT_DISTRIBUTE
+includeParentAndDeps(__file__, scanForDeps=True) #DO_NOT_DISTRIBUTE
 
 from unittest import main
 
@@ -36,7 +38,6 @@ from postactionstest import PostActionsTest
 from urlencodetest import UrlencodeTest
 
 from login.basichtmlloginformtest import BasicHtmlLoginFormTest
-from login.cookiememorystoretest import CookieMemoryStoreTest
 from login.groupsfiletest import GroupsFileTest
 from login.passwordfiletest import PasswordFileTest
 from login.remembermecookietest import RememberMeCookieTest

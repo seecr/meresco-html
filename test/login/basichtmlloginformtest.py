@@ -427,7 +427,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             Body=urlencode(dict(username='user', formUrl='/show/userlist')),
             session={'user': BasicHtmlLoginForm.User('admin')}))
 
-        self.assertEquals(['hasUser', 'enrichUser', 'removeUser'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['hasUser', 'enrichUser', 'removeUser', 'removeCookies'], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/userlist\r\n\r\n", result)
 
     def testDeleteNonExistingUser(self):
@@ -623,9 +623,8 @@ function deleteUser(username) {
             methods={
                 'validateUser': lambda username, password: True,
                 'createCookie': lambda user: dict(
-                    name='CID',
-                    value='THIS IS THE COOKIE VALUE',
-                    expires=3600
+                    cookie='THIS IS THE COOKIE VALUE',
+                    header='Set-Cookie: somevalue',
                 )
             },
             onlySpecifiedMethods=True,
@@ -659,7 +658,7 @@ function deleteUser(username) {
         self.assertEquals("/index", headers['Location'])
 
         self.assertTrue('Set-Cookie' in headers, headers)
-        self.assertEquals("CID=THIS IS THE COOKIE VALUE; path=/; expires=Thu, 01 Jan 1970 02:00:00 GMT", headers['Set-Cookie'])
+        self.assertEquals("somevalue", headers['Set-Cookie'])
 
     def testLoginForWithRememberMe(self):
         form = BasicHtmlLoginForm(
