@@ -427,7 +427,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             Body=urlencode(dict(username='user', formUrl='/show/userlist')),
             session={'user': BasicHtmlLoginForm.User('admin')}))
 
-        self.assertEquals(['hasUser', 'enrichUser', 'removeUser', 'removeCookies'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['hasUser', 'enrichUser', 'removeUser', 'removeCookies', 'removeCookies'], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /show/userlist\r\n\r\n", result)
 
     def testDeleteNonExistingUser(self):
