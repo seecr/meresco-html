@@ -305,9 +305,7 @@ function deleteUser(username) {
             yield UNAUTHORIZED
             return
         self.do.removeUser(user.name)
-        self.do[.removeCookies(filter=lambda anObject: getattr(anObject, 'name', None)==user.name)
-
-
+        self.do.removeCookies(filter=lambda anObject: getattr(anObject, 'name', None)==user.name)
         yield redirectHttp % formUrl
 
     def logout(self, session, Headers, **ignored):
