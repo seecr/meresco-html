@@ -61,5 +61,5 @@ class UserInfo(object):
         self._info = result['users']
 
     def _loadUser(self, user):
-        user.fullname = self.userInfo(user.name).get('fullname', '')
+        user.__class__.fullname = property(lambda inner: self.userInfo(inner.name).get('fullname', ''))
         user.title = lambda: user.fullname or user.name.title()

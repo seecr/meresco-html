@@ -45,6 +45,18 @@ class UserInfoTest(SeecrTestCase):
         self.assertEquals('Full Username', user.fullname)
         self.assertEquals('Full Username', user.title())
 
+    def testFullnameAfterChange(self):
+        self.userinfo.addUserInfo('username', fullname='Full Username')
+        self.userinfo.addUserInfo('username2', fullname='Full Username 2')
+        user = User('username')
+        user2 = User('username2')
+        self.userinfo.enrichUser(user)
+        self.assertEquals('Full Username', user.fullname)
+        self.userinfo.addUserInfo('username', fullname='New Fullname')
+        self.assertEquals('New Fullname', user.fullname)
+        self.assertEquals('Full Username 2', user2.fullname)
+        self.assertEquals('New Fullname', user.title())
+
     def testFullnameIfNotSet(self):
         user = User('username')
         self.userinfo.enrichUser(user)
