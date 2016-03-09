@@ -107,7 +107,7 @@ class ObjectRegistry(PostActions):
         values[identifier] = data
         self._save(values)
 
-    def getConfiguration(self):
+    def getConfiguration(self, **kwargs):
         return self.listObjects()
 
     def listObjects(self):

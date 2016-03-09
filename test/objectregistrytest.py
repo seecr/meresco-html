@@ -270,5 +270,17 @@ class ObjectRegistryTest(SeecrTestCase):
                 {'choices': ['one', 'two'], 'others':[]},
                 objs[id])
 
+    def testGetConfiguration(self):
+        defaults = [
+            {"name": "object1", "key2": "value_1", "enabled": True},
+            {"name": "object2", "key2": "value_2", "enabled": True},
+        ]
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect', defaults=defaults)
+        registry.registerKeys(keys=['name', 'key2'], booleanKeys=['enabled'])
+        objs = registry.getConfiguration(key='whatever')
+        self.assertEqual(sorted([
+                {'key2': 'value_1', 'enabled': True, 'name': 'object1'},
+                {'key2': 'value_2', 'enabled': True, 'name': 'object2'}
+            ]), sorted(objs.values()))
 
 
