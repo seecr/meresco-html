@@ -122,6 +122,13 @@ class ObjectRegistryTest(SeecrTestCase):
                 }
             }}, session)
 
+    def testAddWithExistingId(self):
+        registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
+        registry.registerKeys(keys=['key0', 'key1'])
+        object1id = registry.addObject(key0=["value0"], key1=["value1"])
+        self.assertRaises(ObjectRegistryException, lambda: registry.addObject(identifier=object1id, key0=["value0"], key1=["value1"]))
+
+
     def testAddObjectWithGivenIdentifier(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(keys=['key0', 'key1'])

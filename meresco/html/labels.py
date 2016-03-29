@@ -3,7 +3,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -29,6 +29,7 @@ def getLabel(lang, form, key):
 LABELS = {
     "objectRegistry": {
         "unexistingIdentifier": dict(en="Identifier '{identifier}' does not exist.", nl="Identifier '{identifier}' bestaat niet."),
+        "existingIdentifier": dict(en="Identifier '{identifier}' already exists.", nl="Identifier '{identifier}' bestaat al."),
         "badIdentifier": dict(en="'{identifier}' is not a valid UUID.", nl="'{identifier}' is geen geldige UUID."),
         "unexpectedException": dict(en='Something bad happened: "{0}".', nl="Er is iets misgegaan \"{0}\".")
     },

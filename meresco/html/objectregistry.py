@@ -65,6 +65,8 @@ class ObjectRegistry(PostActions):
                 raise ObjectRegistryException('badIdentifier', identifier=identifier)
         else:
             identifier = str(uuid4())
+        if identifier in values:
+            raise ObjectRegistryException('existingIdentifier', identifier=identifier)
         self._add(values, identifier=identifier, **kwargs)
         self.do.objectAdded(name=self._name, identifier=identifier)
         return identifier
@@ -125,7 +127,9 @@ class ObjectRegistry(PostActions):
     def _handle(self, method, Body, session, **kwargs):
         formValues = parse_qs(Body, keep_blank_values=True)
         identifier = formValues.pop('identifier', [None])[0]
-        redirectPath = formValues.pop('redirectPath', [None])[0]
+        redirectPath = formValues.pop('redirectPath', [self._redirectPath])[0]
+        formUrl = formValues.pop('formUrl', [self._redirectPath])[0]
+        redirectTo = redirectPath
         try:
             identifier = method(
                     identifier=identifier,
@@ -136,14 +140,16 @@ class ObjectRegistry(PostActions):
                 error=getLabel(self._lang, 'objectRegistry', e.code).format(**e.kwargs),
                 values=dict(identifier=[identifier], **formValues)
             )
+            redirectTo = formUrl
         except Exception, e:
             session['ObjectRegistry'] = dict(
                 error=getLabel(self._lang, 'objectRegistry', "unexpectedException").format(str(e)),
                 values=dict(identifier=[identifier], **formValues)
             )
-        if not identifier or not redirectPath :
-            redirectPath = self._redirectPath + "#{}"
-        yield redirectHttp % redirectPath.format(identifier or '')
+            redirectTo = formUrl
+        if '{}' not in redirectTo and "{0}" not in redirectTo:
+            redirectTo += "#{}"
+        yield redirectHttp % redirectTo.format(identifier or '')
 
     def handleAdd(self, **kwargs):
         yield self._handle(method=self.addObject, **kwargs)
