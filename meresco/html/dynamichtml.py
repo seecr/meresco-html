@@ -42,7 +42,7 @@ from functools import partial, reduce
 from meresco.components.json import JsonList, JsonDict
 from meresco.core import Observable, decorate
 
-from weightless.core import compose, Yield
+from weightless.core import compose, Yield, NoneOfTheObserversRespond
 
 from meresco.components import DirectoryWatcher
 import exceptions
@@ -326,6 +326,7 @@ class DynamicHtml(Observable):
 
             # observables proxy
             'observable': self._observableProxy,
+            'NoneOfTheObserversRespond': NoneOfTheObserversRespond,
 
             # commonly used/needed methods
             'escapeHtml': escapeHtml,
