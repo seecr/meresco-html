@@ -48,9 +48,13 @@ class UserInfoForm(PostActions):
         if not handlingUser.canEdit(username):
             yield UNAUTHORIZED
             return
+        self.handleNewUser(username, Body)
+        yield redirectHttp % formUrl
+
+    def handleNewUser(self, username, Body):
+        bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
         fullname = bodyArgs.get('fullname', [''])[0]
         self.do.addUserInfo(username=username, fullname=fullname)
-        yield redirectHttp % formUrl
 
     def userInfoForm(self, user, forUsername, path, arguments, **kwargs):
         if not user.canEdit(forUsername):

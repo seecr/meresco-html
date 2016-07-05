@@ -100,3 +100,11 @@ class UserInfoFormTest(SeecrTestCase):
     def testFormNormalUserOfOtherUser(self):
         result = asString(self.form.userInfoForm(self.normalUser, forUsername='other', path='/path/to/form', arguments={'key':['value']}))
         self.assertEquals('', result)
+
+    def testHandleNewUser(self):
+        data = {
+            'username': ['aUser'],
+            'fullname': ['THE user'],
+        }
+        self.form.handleNewUser(username='user', Body=urlencode(data, doseq=True))
+        self.assertEqual({'fullname': 'THE user'}, self.info.userInfo('user'))

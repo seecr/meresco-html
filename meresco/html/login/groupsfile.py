@@ -35,13 +35,14 @@ USER_RW = S_IRUSR | S_IWUSR
 class GroupsFile(object):
     version=1
     ADMIN = 'admin'
-    def __init__(self, filename, availableGroups=None, groupsForUserManagement=None):
+    def __init__(self, filename, availableGroups=None, groupsForUserManagement=None, defaultGroups=None):
         self._filename = filename
         self._groupsForUserManagement = set([]) if groupsForUserManagement is None else set(groupsForUserManagement)
         self._groupsForUserManagement.add(self.ADMIN)
         groups = set([] if availableGroups is None else availableGroups)
         groups.update(self._groupsForUserManagement)
         self._groups = list(groups)
+        self._defaultGroups = defaultGroups or []
         self._users = {}
         if not isfile(filename):
             self._makePersistent()
@@ -120,4 +121,5 @@ class GroupsFile(object):
         self._groups = list(keepOnlyTheseGroups)
         self._makePersistent()
 
-
+    def addUserToDefaultGroups(self, username):
+        self.setGroupsForUser(username, self._defaultGroups)

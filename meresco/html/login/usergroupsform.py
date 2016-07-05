@@ -60,6 +60,9 @@ class UserGroupsForm(PostActions):
         self.do.setGroupsForUser(username=username, groupnames=groupnames)
         yield redirectHttp % formUrl
 
+    def handleNewUser(self, username, **kwargs):
+        self.do.addUserToDefaultGroups(username)
+
     def _describe(self, groupname):
         description = self._groupDescriptions.get(groupname)
         return '' if description is None else ' <em>(%s)</em>' % description
@@ -99,7 +102,6 @@ class UserGroupsForm(PostActions):
             return False
         groupsForUser = self.call.groupsForUser(username=forUsername)
         return GroupsFile.ADMIN in user.groups() or GroupsFile.ADMIN not in groupsForUser
-
 
     def _groupsForForm(self, user, forUsername):
         result = []

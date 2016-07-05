@@ -474,6 +474,8 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     def testNewUserWithPOSTsucceeds(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
+        observer = CallTrace()
+        self.form.addObserver(observer)
         pf.addUser('existing', 'password')
         Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
         session = {'user': BasicHtmlLoginForm.User('admin')}
@@ -487,6 +489,10 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEquals(set(['existing', 'newuser', 'admin']), set(pf.listUsernames()))
         self.assertTrue(pf.validateUser('newuser', 'secret'))
         self.assertEquals('Added user "newuser"', session['BasicHtmlLoginForm.newUserFormValues']['successMessage'])
+        self.assertEqual(['addUser', 'handleNewUser'], observer.calledMethodNames())
+        self.assertEqual({'username': 'newuser', 'password': 'secret'}, observer.calledMethods[0].kwargs)
+        self.assertEqual({'Body': 'username=newuser&formUrl=%2Fpage%2FnewUser&password=secret&returnUrl=%2Freturn&retypedPassword=secret', 'username': 'newuser'}, observer.calledMethods[1].kwargs)
+
 
     def testNewUserWithoutAnyUser(self):
         session = {}

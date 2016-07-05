@@ -123,7 +123,7 @@ class BasicHtmlLoginForm(PostActions):
 </div>""" % values
         session.pop('BasicHtmlLoginForm.formValues', None)
 
-    def newUserForm(self, session, path, lang=None, **kwargs):
+    def newUserForm(self, session, path, lang=None, extraFields="", **kwargs):
         lang = lang or self._lang
         formValues = session.get('BasicHtmlLoginForm.newUserFormValues', {}) if session else {}
         yield """<div id="login-new-user-form">\n"""
@@ -143,7 +143,8 @@ class BasicHtmlLoginForm(PostActions):
             lblUsername=getLabel(lang, 'newuserForm', 'username'),
             lblPassword=getLabel(lang, 'newuserForm', 'password'),
             lblPasswordRepeat=getLabel(lang, 'newuserForm', 'password-repeat'),
-            lblCreate=getLabel(lang, 'newuserForm', 'create')
+            lblCreate=getLabel(lang, 'newuserForm', 'create'),
+            extraFields=extraFields
         )
 
         yield """
@@ -157,6 +158,7 @@ class BasicHtmlLoginForm(PostActions):
             <dd><input type="password" name="password"/></dd>
             <dt>%(lblPasswordRepeat)s</dt>
             <dd><input type="password" name="retypedPassword"/></dd>
+            %(extraFields)s
             <dd class="submit"><input type="submit" value="%(lblCreate)s"/></dd>
         </dl>
     </form>
@@ -180,11 +182,11 @@ class BasicHtmlLoginForm(PostActions):
         else:
             try:
                 self.do.addUser(username=username, password=password)
+                self.do.handleNewUser(username=username, Body=Body)
                 session['BasicHtmlLoginForm.newUserFormValues']={'successMessage': '%s "%s"' % (getLabel(self._lang, 'newuserForm', 'added'), username)}
                 targetUrl = returnUrl
             except ValueError, e:
                 session['BasicHtmlLoginForm.newUserFormValues']={'username': username, 'errorMessage': str(e)}
-
         yield redirectHttp % targetUrl.format(username=username)
 
     def handleChangePassword(self, session, Body, **kwargs):

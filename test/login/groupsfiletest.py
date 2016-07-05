@@ -32,7 +32,7 @@ from os.path import join
 class GroupsFileTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
-        self.groups = GroupsFile(join(self.tempdir, 'groups'), availableGroups=['users'], groupsForUserManagement=['management'])
+        self.groups = GroupsFile(join(self.tempdir, 'groups'), availableGroups=['users'], groupsForUserManagement=['management'], defaultGroups=["users"])
 
     def testUserNoGroups(self):
         user = BasicHtmlLoginForm.User('username')
@@ -171,4 +171,6 @@ class GroupsFileTest(SeecrTestCase):
         self.groups = GroupsFile(join(self.tempdir, 'groups'), availableGroups=['users'], groupsForUserManagement=['management'])
         self.assertEqual(set([]), self.groups.groupsForUser('username'))
 
-
+    def testAddUserToDefaultGroups(self):
+        self.groups.addUserToDefaultGroups('username')
+        self.assertEqual(set(["users"]), self.groups.groupsForUser('username'))

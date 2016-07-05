@@ -33,7 +33,7 @@ from urllib import urlencode
 class UserGroupsFormTest(SeecrTestCase):
     def setUp(self):
         super(UserGroupsFormTest, self).setUp()
-        self.groupsFile = GroupsFile(filename=join(self.tempdir, 'groups'), availableGroups=['admin', 'users', 'special', 'management'], groupsForUserManagement=['management'])
+        self.groupsFile = GroupsFile(filename=join(self.tempdir, 'groups'), availableGroups=['admin', 'users', 'special', 'management'], groupsForUserManagement=['management'], defaultGroups=['users'])
         self.userGroups = UserGroupsForm(action='/action')
         self.userGroups.addObserver(self.groupsFile)
         self.groupsFile.setGroupsForUser(username='normal', groupnames=['users'])
@@ -210,3 +210,7 @@ class UserGroupsFormTest(SeecrTestCase):
             dict(checked=False, description='', disabled=False, groupname='users'),
             ], self.userGroups._groupsForForm(user=self.adminUser, forUsername=self.otherManagerName))
         self.assertTrue(self.userGroups.canEditGroups(user=self.adminUser, forUsername=self.otherManagerName))
+
+    def testHandleNewUser(self):
+        self.userGroups.handleNewUser(username='johan', Body="ignored")
+        self.assertEqual(set(['users']), self.groupsFile.groupsForUser('johan'))
