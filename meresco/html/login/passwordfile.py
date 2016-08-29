@@ -55,7 +55,8 @@ class PasswordFile(object):
             filename,
             hashMethod=md5Hash,
             passwordTest=simplePasswordTest,
-            usernameTest=usernameTest):
+            usernameTest=usernameTest,
+            createAdminUserIfEmpty=True):
         self._hashMethod = hashMethod
         self._passwordTest = passwordTest
         self._usernameTest = usernameTest
@@ -63,7 +64,8 @@ class PasswordFile(object):
         self._users = {}
         if not isfile(filename):
             self._makePersistent()
-            self._setUser('admin', 'admin')
+            if createAdminUserIfEmpty:
+                self._setUser('admin', 'admin')
         else:
             self._users.update(self._read())
 
