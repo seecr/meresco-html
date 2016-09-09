@@ -145,12 +145,16 @@ class DynamicHtml(Observable):
         self._observableProxy = ObservableProxy(self)
         self._initialize(reactor, watch=watch)
 
-    def _initialize(self, reactor, watch):
+    def _loadAllTemplates(self):
         for directory in self._directories:
             for path in glob(directory + '/*.sf'):
                 templateName = basename(path)[:-len('.sf')]
                 self.loadTemplateModule(templateName)
-            if watch:
+
+    def _initialize(self, reactor, watch):
+        self._loadAllTemplates()
+        if watch:
+            for directory in self._directories:
                 directoryWatcher = DirectoryWatcher(
                     directory,
                     self._notifyHandler,
@@ -160,8 +164,7 @@ class DynamicHtml(Observable):
     def _notifyHandler(self, event):
         if not event.name.endswith('.sf'):
             return
-        templateName = basename(event.name)[:-len('.sf')]
-        self.loadTemplateModule(templateName)
+        self._loadAllTemplates()
 
     def _pathForTemplateName(self, name):
         for directory in self._directories:
