@@ -146,6 +146,7 @@ class DynamicHtml(Observable):
         self._initialize(reactor, watch=watch)
 
     def _loadAllTemplates(self):
+        self._templates.clear()
         for directory in self._directories:
             for path in glob(directory + '/*.sf'):
                 templateName = basename(path)[:-len('.sf')]
@@ -174,20 +175,20 @@ class DynamicHtml(Observable):
 
     def loadTemplateModule(self, templateName):
         if templateName in self._templates:
-            self._templates[templateName]._mustReload()
-        else:
-            def load():
-                moduleGlobals = self.createGlobals()
-                createdLocals = {}
-                try:
-                    path = self._pathForTemplateName(templateName)
-                    execfile(path, moduleGlobals, createdLocals)
-                except Exception:
-                    s = escapeHtml(format_exc())
-                    createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
-                moduleGlobals.update(createdLocals)
-                return moduleGlobals
-            self._templates[templateName] = TemplateModule(load)
+            return
+
+        def load():
+            moduleGlobals = self.createGlobals()
+            createdLocals = {}
+            try:
+                path = self._pathForTemplateName(templateName)
+                execfile(path, moduleGlobals, createdLocals)
+            except Exception:
+                s = escapeHtml(format_exc())
+                createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
+            moduleGlobals.update(createdLocals)
+            return moduleGlobals
+        self._templates[templateName] = TemplateModule(load)
 
     def __import__(self, moduleName, globals=None, locals=None, fromlist=None, level=None):
         if moduleName in self._allowedModules:
@@ -354,4 +355,3 @@ class DynamicHtml(Observable):
         }
         result['__builtins__'].update((excName, excType) for excName, excType in vars(exceptions).items() if not excName.startswith('_'))
         return result
-

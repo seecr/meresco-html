@@ -27,13 +27,14 @@
 
 from StringIO import StringIO
 import sys
-from os import makedirs, rename
+from os import makedirs, rename, remove
 from os.path import join
 
 from seecr.test import SeecrTestCase, CallTrace
 
 from weightless.core import compose, Yield, asString
-from weightless.io import Reactor
+from weightless.io import Reactor, reactor
+from weightless.io.utils import asProcess, sleep as zleep
 
 from meresco.html import DynamicHtml
 
@@ -316,6 +317,110 @@ def main(value, *args, **kwargs):
         reactor.step()
         result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/file2'))
         self.assertTrue('changed template word!' in result, result)
+
+    def testReloadEverythingOnAnyChangeWhenWatching(self):
+        def howOften(name):
+            _anIdState = [0]
+            def anId():
+                _anIdState[0] += 1
+                return '{0}:{1}'.format(name, _anIdState[0])
+            return anId
+
+        fp_util = join(self.tempdir, 'util.sf')
+        util_contents = '''
+reloaded = util_reloaded_id()
+
+def f():
+    return reloaded
+'''
+        with open(fp_util, 'w') as f:
+            f.write(util_contents)
+
+        fp_orphan = join(self.tempdir, 'orphan.sf')
+        with open(fp_orphan, 'w') as f:
+            f.write('''
+reloaded = orphan_reloaded_id()
+
+def orphan():
+    return reloaded
+''')
+
+        fp_using_util = join(self.tempdir, 'using-util.sf')
+        with open(fp_using_util, 'w') as f:
+            f.write('''
+import util
+
+reloaded = using_util_reloaded_id()
+
+def using():
+    return reloaded + ' - ' + util.f()
+''')
+        def test():
+            additionalGlobals = {
+                'util_reloaded_id': howOften("util-reloaded"),
+                'using_util_reloaded_id': howOften("using-util-reloaded"),
+                'orphan_reloaded_id': howOften("orphan-reloaded"),
+            }
+            d = DynamicHtml([self.tempdir], reactor=reactor(), additionalGlobals=additionalGlobals)
+
+            # Allow cleanup of directoryWatcherReadFD (whitebox)
+            _reactorFdsKeys = reactor()._fds.keys()
+            self.assertEquals(1, len(_reactorFdsKeys))
+            directoryWatcherReadFD = _reactorFdsKeys[0]
+
+            yield zleep(0.01)   # Allow DirectoryWatcher some reactor time
+
+            # Initialized once
+            util, orphan, using_util = d.getModule('util'), d.getModule('orphan'), d.getModule('using-util')
+            self.assertEquals(
+                ['util-reloaded:1',
+                 'orphan-reloaded:1',
+                 'using-util-reloaded:1'],
+                [util.reloaded, orphan.reloaded, using_util.reloaded])
+            self.assertEquals('using-util-reloaded:1 - util-reloaded:1', using_util.using())
+
+            # Touch & **all** reloaded
+            with open(fp_util, 'w') as f:
+                f.write(util_contents)
+            yield zleep(0.02)   # Allow DirectoryWatcher some reactor time
+
+            util, orphan, using_util = d.getModule('util'), d.getModule('orphan'), d.getModule('using-util')
+            self.assertEquals(
+                ['util-reloaded:2',
+                 'orphan-reloaded:2',
+                 'using-util-reloaded:2'],
+                [util.reloaded, orphan.reloaded, using_util.reloaded])
+            self.assertEquals('using-util-reloaded:2 - util-reloaded:2', using_util.using())
+
+            # Remove file - nothing happens
+            remove(fp_orphan)
+            yield zleep(0.02)   # Allow DirectoryWatcher some reactor time
+
+            util, orphan, using_util = d.getModule('util'), d.getModule('orphan'), d.getModule('using-util')
+            self.assertNotEqual(None, orphan)
+            self.assertEquals(
+                ['util-reloaded:2',
+                 'orphan-reloaded:2',
+                 'using-util-reloaded:2'],
+                [util.reloaded, orphan.reloaded, using_util.reloaded])
+
+            # Modify util - reload **and** remove of deleted happens
+            with open(fp_util, 'w') as f:
+                f.write(util_contents)
+            yield zleep(0.02)   # Allow DirectoryWatcher some reactor time
+
+            util, orphan, using_util = d.getModule('util'), d.getModule('orphan'), d.getModule('using-util')
+            self.assertEquals(None, orphan)
+            self.assertEquals(
+                ['util-reloaded:3',
+                 'using-util-reloaded:3'],
+                [util.reloaded, using_util.reloaded])
+            self.assertEquals('using-util-reloaded:3 - util-reloaded:3', using_util.using())
+
+            # cleanup
+            reactor().removeReader(sok=directoryWatcherReadFD)
+
+        asProcess(test())
 
     def testBuiltins(self):
         reactor = Reactor()
@@ -792,4 +897,3 @@ def main(*args, **kwargs):
         self.assertEquals(['something'], t2.calledMethodNames())
         self.assertEquals(('arg',), t2.calledMethods[0].args)
         self.assertEquals({'kw': 'kw'}, t2.calledMethods[0].kwargs)
-
