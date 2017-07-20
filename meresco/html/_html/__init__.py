@@ -3,7 +3,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2012-2014, 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -23,7 +23,8 @@
 #
 ## end license ##
 
-from dynamichtml import DynamicHtml, urlencode
-from postactions import PostActions
-from objectregistry import ObjectRegistry
-from _html import *
+from ._html import Html
+from ._table import HtmlTable, Column
+from ._form import HtmlForm
+
+__all__ = ['Html', 'HtmlTable', 'HtmlForm', 'Column']
