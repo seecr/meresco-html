@@ -150,4 +150,16 @@ class HtmlTest(SeecrTestCase):
         group = ''.join(form.render(hiddenData={'identifier':'my_id'})) # rewrite formgroup
         self.assertEqual('<form action="/action/a.b" method="POST" role="form"><input name="identifier" type="hidden" value="my_id"></input><textarea name="input_name">&lt;contents&gt;</textarea></form>', group)
 
-
+    def testSpecialTags(self):
+        class Test(Html):
+            def main(self, **kwargs):
+                with self.tag('p'):
+                    yield 'tekst'
+                    with self.tag('br'):
+                        yield ''
+                    yield 'regel twee'
+                with self.tag('hr'):
+                    yield ''
+                with self.tag('p'):
+                    yield 'slot'
+        self.assertEqual('<p>tekst<br/>regel twee</p><hr/><p>slot</p>', Test().render())

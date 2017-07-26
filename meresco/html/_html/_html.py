@@ -78,6 +78,9 @@ class Html(object):
                 write(k)
                 write('=')
                 write(quoteattr(' '.join(v) if hasattr(v, '__iter__') else v))
+            if self.tag in ['br', 'hr']:
+                write('/')
+                self.tag = None
             write('>')
 
         def __exit__(self, *a, **kw):
