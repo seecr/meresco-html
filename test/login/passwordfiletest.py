@@ -169,4 +169,18 @@ class PasswordFileTest(SeecrTestCase):
         pwd = PasswordFile(join(self.tempdir, 'empty'), createAdminUserIfEmpty=False)
         self.assertEqual([], pwd.listUsernames())
 
-
+    def testParameterizedStorage(self):
+        args = []
+        class Storage(object):
+            def store(self, id_, data):
+                args.append((id_, data))
+            def retrieve(self, id_):
+                if len(args) < 1 or args[-1][0] != id_:
+                    raise KeyError
+                data = args[-1][1]
+                return data
+        pwd = PasswordFile('a name', storage=Storage())
+        pwd.addUser(username='erik', password='insect')
+        id_, data = args[-1]
+        self.assertEquals('a name', id_)
+        self.assertTrue('erik' in data) # I believe. More elaborate tests above.

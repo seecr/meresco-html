@@ -48,11 +48,23 @@ def usernameTest(username):
 def randomString(length=5):
     return ''.join(choice(_SALT_1 + _SALT_2) for i in xrange(length))
 
+class FileStorage(object):
+    def store(self, id_, data):
+        with open(id_, 'w') as f:
+            f.write(data)
+        chmod(id_, USER_RW)
+    def retrieve(self, id_):
+        try:
+            return open(id_).read()
+        except IOError:
+            raise KeyError
+
 class PasswordFile(object):
     version=2
 
     def __init__(self,
             filename,
+            storage=None,
             hashMethod=md5Hash,
             passwordTest=simplePasswordTest,
             usernameTest=usernameTest,
@@ -60,9 +72,12 @@ class PasswordFile(object):
         self._hashMethod = hashMethod
         self._passwordTest = passwordTest
         self._usernameTest = usernameTest
-        self._filename = filename
+        self._name = filename
         self._users = {}
-        if not isfile(filename):
+        self._storage = storage if storage else FileStorage()
+        try:
+            self._storage.retrieve(self._name)
+        except KeyError:
             self._makePersistent()
             if createAdminUserIfEmpty:
                 self._setUser('admin', 'admin')
@@ -104,6 +119,7 @@ class PasswordFile(object):
 
     @classmethod
     def convert(cls, src, dst):
+        #TODO make this work with abstract storage
         users = dict()
         with open(src) as i:
             for user, pwhash in (l.strip().split(':') for l in i if ':' in l.strip()):
@@ -112,11 +128,11 @@ class PasswordFile(object):
         return cls(dst)
 
     def _makePersistent(self):
-        JsonDict(users=self._users, version=self.version).dump(self._filename)
-        chmod(self._filename, USER_RW)
+        data = JsonDict(users=self._users, version=self.version).dumps()
+        self._storage.store(self._name, data)
 
     def _read(self):
-        result = JsonDict.load(self._filename)
+        result = JsonDict.loads(self._storage.retrieve(self._name))
         assert result['version'] == self.version, 'Expected database version %s' % self.version
         return result['users']
 
