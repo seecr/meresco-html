@@ -36,7 +36,7 @@ from weightless.core import compose, Yield, asString
 from weightless.io import Reactor, reactor
 from weightless.io.utils import asProcess, sleep as zleep
 
-from meresco.html import DynamicHtml
+from meresco.html import DynamicHtml, Tag
 
 
 class DynamicHtmlTest(SeecrTestCase):
@@ -654,11 +654,20 @@ def main(*args, **kwargs):
         self.assertEquals('HTTP/1.0 302 Found\r\nExpires: 0\r\nLocation: /here\r\nPragma: no-cache\r\n\r\n', result)
 
     def testKeywordArgumentsArePassed(self):
-        open(self.tempdir+'/afile.sf', 'w').write('def main(pipe, *args, **kwargs): \n  yield str(kwargs)')
+        open(self.tempdir+'/afile.sf', 'w').write('def main(pipe, tag, *args, **kwargs): \n  yield str(kwargs)')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = ''.join(d.handleRequest(path='/afile', netloc='localhost', key='value', key2='value2'))
         header, body = result.split('\r\n\r\n')
-        self.assertEquals({'Headers':{}, 'arguments':{}, 'path':'/afile', 'netloc':'localhost', 'key':'value', 'key2':'value2', 'scheme':'', 'query': ''}, eval(body))
+        arguments = eval(body)
+        self.assertEquals({
+            'Headers':{},
+            'arguments':{},
+            'path':'/afile',
+            'netloc':'localhost',
+            'key':'value',
+            'key2':'value2',
+            'scheme':'',
+            'query': ''}, eval(body))
 
     def createTwoPaths(self):
         path1 = join(self.tempdir, '1')
@@ -777,7 +786,7 @@ def main(*args,**kwargs):
         reactor.step()
         r = list(d.handleRequest(path='/withcallable'))
         self.assertEquals("HTTP/1.0 200 OK\r\n\r\n", r[0])
-        self.assertTrue(callable(r[1]))
+        self.assertTrue(callable(r[1]), r[1])
         self.assertEquals("text2", r[2])
 
     def testPassYield(self):

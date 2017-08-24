@@ -34,6 +34,7 @@ from unittest import main
 
 from dynamichtmltest import DynamicHtmlTest
 from htmltest import HtmlTest
+from htmltabletest import HtmlTableTest
 from objectregistrytest import ObjectRegistryTest
 from postactionstest import PostActionsTest
 from urlencodetest import UrlencodeTest

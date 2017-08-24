@@ -24,6 +24,8 @@
 ## end license ##
 
 from dynamichtml import DynamicHtml, urlencode
+from tag import Tag, TagFactory
+from htmltable import Html, HtmlTable, Column
 from postactions import PostActions
 from objectregistry import ObjectRegistry
 from _html import *

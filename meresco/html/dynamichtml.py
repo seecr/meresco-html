@@ -30,6 +30,8 @@ from os.path import join, isfile, dirname, basename
 from traceback import format_exc
 from cgi import parse_qs
 from itertools import groupby, islice
+from cStringIO import StringIO
+from contextlib import contextmanager
 
 from cgi import escape as _escapeHtml
 from xml.sax.saxutils import escape as escapeXml, quoteattr
@@ -48,6 +50,8 @@ from meresco.components import DirectoryWatcher
 import exceptions
 from simplejson import dumps, loads
 from urlparse import urlsplit, urlunsplit
+
+from .tag import TagFactory
 
 CRLF = '\r\n'
 
@@ -235,15 +239,18 @@ class DynamicHtml(Observable):
             yield redirectTo(newLocation)
             return
 
+        parallel_stream = StringIO()
+        tag = TagFactory(parallel_stream)
+
         try:
-            generators = self._createGenerators(path, **kwargs)
+            generators = self._createGenerators(path, tag=tag, **kwargs)
         except DynamicHtmlException, e:
             if self._notFoundPage is None:
                 yield e.httpHeader()
                 yield str(e)
                 return
             try:
-                generators = self._createGenerators(self._notFoundPage, **kwargs)
+                generators = self._createGenerators(self._notFoundPage, tag=tag, **kwargs)
             except DynamicHtmlException, innerException:
                 yield innerException.httpHeader()
                 yield str(innerException)
@@ -276,7 +283,15 @@ class DynamicHtml(Observable):
 
         try:
             for line in generators:
+                parallel_stream.seek(0)
+                for line2 in parallel_stream:
+                    yield line2
+                parallel_stream.truncate(0)
                 yield line if line is Yield or callable(line) else str(line)
+                #parallel_stream.seek(0)
+                #for line in parallel_stream:
+                #    yield line
+                #parallel_stream.truncate(0)
         except Exception:
             s = format_exc() #cannot be inlined
             yield "<pre>"
