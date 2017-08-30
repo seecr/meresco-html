@@ -134,7 +134,7 @@ class HtmlTest(SeecrTestCase):
         html = ''.join(form.render())
         self.assertEqual('<form action="/action/some.thing" method="POST" role="form"></form>', html)
         html = ''.join(form.render(hiddenData={"a":"b"}))
-        self.assertEqual('<form action="/action/some.thing" method="POST" role="form"><input name="a" type="hidden" value="b"></input></form>', html)
+        self.assertEqual('<form action="/action/some.thing" method="POST" role="form"><input name="a" type="hidden" value="b"></form>', html)
 
     def testFromGroup(self):
         form = HtmlForm('/action/a.b')
@@ -148,7 +148,7 @@ class HtmlTest(SeecrTestCase):
         formGroup = FormGroup()
         form.addFormGroup(formGroup)
         group = ''.join(form.render(hiddenData={'identifier':'my_id'})) # rewrite formgroup
-        self.assertEqual('<form action="/action/a.b" method="POST" role="form"><input name="identifier" type="hidden" value="my_id"></input><textarea name="input_name">&lt;contents&gt;</textarea></form>', group)
+        self.assertEqual('<form action="/action/a.b" method="POST" role="form"><input name="identifier" type="hidden" value="my_id"><textarea name="input_name">&lt;contents&gt;</textarea></form>', group)
 
     def testSpecialTags(self):
         class Test(Html):
