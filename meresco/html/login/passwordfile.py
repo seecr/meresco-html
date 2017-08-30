@@ -26,7 +26,7 @@
 ## end license ##
 
 from os.path import isfile
-from os import chmod
+from os import chmod, rename
 from hashlib import md5
 from stat import S_IRUSR, S_IWUSR
 from re import compile as reCompile
@@ -51,8 +51,9 @@ def randomString(length=5):
 
 class FileStorage(object):
     def store(self, id_, data):
-        with open(id_, 'w') as f:
+        with open(id_+'~', 'w') as f:
             f.write(data)
+        rename(id_+'~', id_)
         chmod(id_, USER_RW)
     def retrieve(self, id_):
         try:
