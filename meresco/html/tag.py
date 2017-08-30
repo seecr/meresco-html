@@ -33,6 +33,8 @@ class Tag(object):
         if self.tag in ['br', 'hr']:
             write('/')
             self.tag = None
+        if self.tag in ['input']:
+            self.tag = None
         write('>')
 
     def __exit__(self, *a, **kw):
