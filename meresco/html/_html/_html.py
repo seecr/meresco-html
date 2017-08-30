@@ -5,6 +5,7 @@
 #
 # Copyright (C) 2017 SURFmarket https://surf.nl
 # Copyright (C) 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -26,9 +27,12 @@
 
 from weightless.core import compose
 from cStringIO import StringIO
-from meresco.html.dynamichtml import escapeHtml
+from cgi import escape as _escapeHtml
 
-from ..tag import Tag
+from ._tag import Tag
+
+def escapeHtml(aString):
+    return _escapeHtml(aString).replace('"','&quot;')
 
 class Html(object):
 

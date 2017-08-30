@@ -5,7 +5,8 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2008-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -33,7 +34,6 @@ from itertools import groupby, islice
 from cStringIO import StringIO
 from contextlib import contextmanager
 
-from cgi import escape as _escapeHtml
 from xml.sax.saxutils import escape as escapeXml, quoteattr
 from lxml.etree import parse, tostring
 from time import time
@@ -51,7 +51,7 @@ import exceptions
 from simplejson import dumps, loads
 from urlparse import urlsplit, urlunsplit
 
-from .tag import TagFactory
+from ._html import TagFactory, escapeHtml
 
 CRLF = '\r\n'
 
@@ -104,9 +104,6 @@ def redirectTo(location, additionalHeaders=None, permanent=False):
 class Http(object):
     def redirect(self, location, additionalHeaders=None, permanent=False):
         return redirectTo(location, additionalHeaders=additionalHeaders, permanent=permanent)
-
-def escapeHtml(aString):
-    return _escapeHtml(aString).replace('"','&quot;')
 
 def _stringify(values):
     if isinstance(values, basestring):
