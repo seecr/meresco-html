@@ -27,6 +27,7 @@
 from cStringIO import StringIO
 from xml.sax.saxutils import quoteattr
 import re
+from ._utils import escapeHtml
 
 class Tag(object):
     def __init__(self, stream, tagname, _enter_callback=lambda: None, _exit_callback=lambda: None, **attrs):
@@ -94,9 +95,20 @@ class TagFactory(object):
             yield self.stream.getvalue()
             self.stream.truncate(0)
 
-    def in_tag(self):
-        return self._count
+    def escape(self, obj):
+        if self._count:
+            return escapeHtml(str(obj))
+        return str(obj)
 
+    def as_is(self, obj):
+        return AsIs(obj)
+
+
+class AsIs(str):
+    def replace(self, *args):
+        return self
+    def __str__(self):
+        return self
 
 _CLEAR_RE = re.compile(r'^([^_].*[^_])_$')
 def _clearname(name):

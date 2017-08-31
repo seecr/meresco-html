@@ -106,6 +106,18 @@ class TagTest(SeecrTestCase):
             yield "&d"
         '''))
 
+    def testEscapeOtherStuff(self):
+        self.assertEqual("<p>['&amp;', 'noot']</p>", self.processTemplate('''
+            with tag('p'):
+                yield ['&', 'noot']
+        '''))
+
+    def testAsIs(self):
+        self.assertEqual('<p><i>dit</i></p>', self.processTemplate('''
+            with tag('p'):
+                yield tag.as_is('<i>dit</i>')
+        '''))
+
    # with escape firstline
 
     def processTemplate(self, template):

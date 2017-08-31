@@ -24,10 +24,7 @@
 #
 ## end license ##
 
-from ._utils import escapeHtml
-from ._html import Html
-from ._table import HtmlTable, Column
-from ._form import HtmlForm
-from ._tag import Tag, TagFactory
+from cgi import escape as _escapeHtml
+def escapeHtml(aString):
+    return _escapeHtml(aString).replace('"','&quot;')
 
-__all__ = ['Html', 'HtmlTable', 'HtmlForm', 'Column', 'Tag', 'TagFactory', 'escapeHtml']

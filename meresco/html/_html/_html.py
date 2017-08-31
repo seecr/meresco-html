@@ -27,12 +27,9 @@
 
 from weightless.core import compose
 from cStringIO import StringIO
-from cgi import escape as _escapeHtml
 
 from ._tag import Tag
-
-def escapeHtml(aString):
-    return _escapeHtml(aString).replace('"','&quot;')
+from ._utils import escapeHtml
 
 class Html(object):
 
