@@ -226,6 +226,7 @@ class DynamicHtml(Observable):
             raise DynamicHtmlException.notFound(head)
         return compose(self._createMainGenerator(head, tail, path=path, **kwargs))
 
+    @compose
     def handleRequest(self, path='', **kwargs):
         path = path[len(self._prefix):]
         if path == '/' and self._indexPage:
@@ -236,8 +237,7 @@ class DynamicHtml(Observable):
             yield redirectTo(newLocation)
             return
 
-        parallel_stream = StringIO()
-        tag = TagFactory(parallel_stream)
+        tag = TagFactory()
 
         try:
             generators = self._createGenerators(path, tag=tag, **kwargs)
@@ -265,6 +265,7 @@ class DynamicHtml(Observable):
                     if path.endswith('.xml'):
                         contentType = 'text/xml'
                     yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
+                yield tag.lines()
                 yield firstLine
                 break
             except DynamicHtmlException, dhe:
@@ -280,15 +281,10 @@ class DynamicHtml(Observable):
 
         try:
             for line in generators:
-                parallel_stream.seek(0)
-                for line2 in parallel_stream:
-                    yield line2
-                parallel_stream.truncate(0)
-                yield line if line is Yield or callable(line) else str(line)
-                #parallel_stream.seek(0)
-                #for line in parallel_stream:
-                #    yield line
-                #parallel_stream.truncate(0)
+                in_tag = False # future featury of tag.lines
+                yield tag.lines()
+                yield line if line is Yield or callable(line) else (escapeHtml(line) if in_tag else str(line))
+            yield tag.lines()
         except Exception:
             s = format_exc() #cannot be inlined
             yield "<pre>"

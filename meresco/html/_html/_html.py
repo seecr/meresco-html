@@ -51,5 +51,5 @@ class Html(object):
 
     def tag(self, *args, **kwargs):
         kwargs.setdefault('class', [])
-        return Tag(self._buf.write, *args, **kwargs)
+        return Tag(self._buf, *args, **kwargs)
 

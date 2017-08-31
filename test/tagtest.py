@@ -24,15 +24,17 @@
 #
 ## end license ##
 
-from seecr.test import SeecrTestCase
-from meresco.html import Tag
+from seecr.test import SeecrTestCase, CallTrace
+from meresco.html import Tag, DynamicHtml
 from meresco.html._html._tag import _clearname as clear
+from meresco.components.http.utils import parseResponse
+from weightless.core import asString
 from StringIO import StringIO
 
 class TagTest(SeecrTestCase):
     def testAttrs(self):
         s = StringIO()
-        with Tag(s.write, 'a', **{'key': 'value'}):
+        with Tag(s, 'a', **{'key': 'value'}):
             s.write('data')
         self.assertEqual('<a key="value">data</a>', s.getvalue())
 
@@ -45,7 +47,33 @@ class TagTest(SeecrTestCase):
 
     def testReservedWordAttrs(self):
         s = StringIO()
-        with Tag(s.write, 'a', class_=['class'], if_='if'):
+        with Tag(s, 'a', class_=['class'], if_='if'):
             s.write('data')
         self.assertEqual('<a class="class" if="if">data</a>', s.getvalue())
+
+    def testTagInTemplate(self):
+        def processTemplate(t):
+            open(self.tempdir+'/afile.sf', 'w').write(t)
+            d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
+            header, body = parseResponse(asString(d.handleRequest(path='/afile')))
+            self.assertEqual('200', header['StatusCode'])
+            return body
+        self.assertEqual('voorwoord<p>paragraph</p>nawoord', processTemplate('''def main(pipe, tag, *args, **kwargs):
+                yield 'voorwoord'
+                with tag('p'):
+                    yield 'paragraph'
+                yield 'nawoord'
+            '''))
+        self.assertEqual('voorwoord<p><i>italic</i></p>', processTemplate('''def main(pipe, tag, *args, **kwargs):
+                yield 'voorwoord'
+                with tag('p'):
+                    with tag('i'):
+                        yield 'italic'
+            '''))
+        self.assertEqual('<p><i>italic</i></p>', processTemplate('''def main(pipe, tag, *args, **kwargs):
+                with tag('p'):
+                    with tag('i'):
+                        yield 'italic'
+            '''))
+
 

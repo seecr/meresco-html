@@ -24,13 +24,14 @@
 #
 ## end license ##
 
+from cStringIO import StringIO
 from xml.sax.saxutils import quoteattr
 import re
 
 class Tag(object):
-    def __init__(self, write, tagname, **attrs):
+    def __init__(self, stream, tagname, **attrs):
         self.attrs = {_clearname(k):v for k,v in attrs.items()}
-        self.write = write
+        self.stream = stream
         self.attrs['tag'] = tagname
 
     def set(self, name, value):
@@ -49,7 +50,7 @@ class Tag(object):
         self.tag = self.attrs.pop('tag', None)
         if not self.tag:
             return
-        write = self.write
+        write = self.stream.write
         write('<')
         write(self.tag)
         for k, v in sorted((k,v) for k,v in self.attrs.iteritems() if v):
@@ -66,16 +67,24 @@ class Tag(object):
 
     def __exit__(self, *a, **kw):
         if self.tag:
-            write = self.write
+            write = self.stream.write
             write('</')
             write(self.tag)
             write('>')
 
 class TagFactory(object):
-    def __init__(self, stream):
-        self.stream = stream
+
+    def __init__(self):
+        self.stream = StringIO()
+
     def __call__(self, *args, **kwargs):
-        return Tag(self.stream.write, *args, **kwargs)
+        return Tag(self.stream, *args, **kwargs)
+
+    def lines(self):
+        if self.stream.tell():
+            yield self.stream.getvalue()
+            self.stream.truncate(0)
+
 
 _CLEAR_RE = re.compile(r'^([^_].*[^_])_$')
 def _clearname(name):
