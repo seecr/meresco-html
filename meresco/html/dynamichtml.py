@@ -266,7 +266,7 @@ class DynamicHtml(Observable):
                         contentType = 'text/xml'
                     yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
                 yield tag.lines()
-                yield firstLine
+                yield escapeHtml(firstLine) if tag.in_tag() else str(firstLine)
                 break
             except DynamicHtmlException, dhe:
                 s = format_exc() #cannot be inlined
@@ -281,9 +281,8 @@ class DynamicHtml(Observable):
 
         try:
             for line in generators:
-                in_tag = False # future featury of tag.lines
                 yield tag.lines()
-                yield line if line is Yield or callable(line) else (escapeHtml(line) if in_tag else str(line))
+                yield line if line is Yield or callable(line) else (escapeHtml(line) if tag.in_tag() else str(line))
             yield tag.lines()
         except Exception:
             s = format_exc() #cannot be inlined

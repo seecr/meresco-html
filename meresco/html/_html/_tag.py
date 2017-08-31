@@ -29,9 +29,11 @@ from xml.sax.saxutils import quoteattr
 import re
 
 class Tag(object):
-    def __init__(self, stream, tagname, **attrs):
+    def __init__(self, stream, tagname, _enter_callback=lambda: None, _exit_callback=lambda: None, **attrs):
         self.attrs = {_clearname(k):v for k,v in attrs.items()}
         self.stream = stream
+        self._enter_callback = _enter_callback
+        self._exit_callback = _exit_callback
         self.attrs['tag'] = tagname
 
     def set(self, name, value):
@@ -47,6 +49,7 @@ class Tag(object):
         return self
 
     def __enter__(self):
+        self._enter_callback()
         self.tag = self.attrs.pop('tag', None)
         if not self.tag:
             return
@@ -66,6 +69,7 @@ class Tag(object):
         write('>')
 
     def __exit__(self, *a, **kw):
+        self._exit_callback()
         if self.tag:
             write = self.stream.write
             write('</')
@@ -76,14 +80,22 @@ class TagFactory(object):
 
     def __init__(self):
         self.stream = StringIO()
+        self._count = 0
 
     def __call__(self, *args, **kwargs):
-        return Tag(self.stream, *args, **kwargs)
+        def _enter():
+            self._count += 1
+        def _exit():
+            self._count -= 1
+        return Tag(self.stream, _enter_callback=_enter, _exit_callback=_exit, *args, **kwargs)
 
     def lines(self):
         if self.stream.tell():
             yield self.stream.getvalue()
             self.stream.truncate(0)
+
+    def in_tag(self):
+        return self._count
 
 
 _CLEAR_RE = re.compile(r'^([^_].*[^_])_$')

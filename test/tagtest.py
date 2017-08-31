@@ -52,28 +52,66 @@ class TagTest(SeecrTestCase):
         self.assertEqual('<a class="class" if="if">data</a>', s.getvalue())
 
     def testTagInTemplate(self):
-        def processTemplate(t):
-            open(self.tempdir+'/afile.sf', 'w').write(t)
-            d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
-            header, body = parseResponse(asString(d.handleRequest(path='/afile')))
-            self.assertEqual('200', header['StatusCode'])
-            return body
-        self.assertEqual('voorwoord<p>paragraph</p>nawoord', processTemplate('''def main(pipe, tag, *args, **kwargs):
+        self.assertEqual('voorwoord<p>paragraph</p>nawoord', self.processTemplate('''
                 yield 'voorwoord'
                 with tag('p'):
                     yield 'paragraph'
                 yield 'nawoord'
             '''))
-        self.assertEqual('voorwoord<p><i>italic</i></p>', processTemplate('''def main(pipe, tag, *args, **kwargs):
+        self.assertEqual('voorwoord<p><i>italic</i></p>', self.processTemplate('''
                 yield 'voorwoord'
                 with tag('p'):
                     with tag('i'):
                         yield 'italic'
             '''))
-        self.assertEqual('<p><i>italic</i></p>', processTemplate('''def main(pipe, tag, *args, **kwargs):
+        self.assertEqual('<p><i>italic</i></p>', self.processTemplate('''
                 with tag('p'):
                     with tag('i'):
                         yield 'italic'
             '''))
 
+    def testEscapeTextWithinTags(self):
+        self.assertEqual('&', self.processTemplate('  yield "&"'))
+        self.assertEqual('&<p>&amp;</p>', self.processTemplate('''
+            yield "&"
+            with tag('p'):
+                yield "&"
+        '''))
+        self.assertEqual('&a<p>&amp;b &amp;c</p>&d', self.processTemplate('''
+            yield "&a"
+            with tag('p'):
+                yield "&b"
+                yield " &c"
+            yield "&d"
+        '''))
+        self.assertEqual('<p>&amp;a &amp;b</p>', self.processTemplate('''
+            with tag('p'):
+                yield "&a"
+                yield " &b"
+        '''))
+        self.assertEqual('<p>&amp;a<i>&amp;b</i>&amp;c</p>&d', self.processTemplate('''
+            with tag('p'):
+                yield "&a"
+                with tag('i'):
+                    yield "&b"
+                yield "&c"
+            yield "&d"
+        '''))
+        self.assertEqual('<p>&amp;a</p>&b<p>&amp;c</p>&d', self.processTemplate('''
+            with tag('p'):
+                yield "&a"
+            yield "&b"
+            with tag('p'):
+                yield "&c"
+            yield "&d"
+        '''))
+
+   # with escape firstline
+
+    def processTemplate(self, template):
+        open(self.tempdir+'/afile.sf', 'w').write('def main(tag, **kwargs):\n'+template)
+        d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
+        header, body = parseResponse(asString(d.handleRequest(path='/afile')))
+        self.assertEqual('200', header['StatusCode'])
+        return body
 
