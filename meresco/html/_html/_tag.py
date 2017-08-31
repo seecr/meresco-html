@@ -25,23 +25,24 @@
 ## end license ##
 
 from xml.sax.saxutils import quoteattr
+import re
 
 class Tag(object):
     def __init__(self, write, tagname, **attrs):
-        self.attrs = attrs
+        self.attrs = {_clearname(k):v for k,v in attrs.items()}
         self.write = write
         self.attrs['tag'] = tagname
 
     def set(self, name, value):
-        self.attrs[name] = value
+        self.attrs[_clearname(name)] = value
         return self
 
     def append(self, name, value):
-        self.attrs[name].append(value)
+        self.attrs[_clearname(name)].append(value)
         return self
 
     def delete(self, key):
-        self.attrs.pop(key, None)
+        self.attrs.pop(_clearname(key), None)
         return self
 
     def __enter__(self):
@@ -75,3 +76,10 @@ class TagFactory(object):
         self.stream = stream
     def __call__(self, *args, **kwargs):
         return Tag(self.stream.write, *args, **kwargs)
+
+_CLEAR_RE = re.compile(r'^([^_].*[^_])_$')
+def _clearname(name):
+    m = _CLEAR_RE.match(name)
+    if m:
+        return m.group(1)
+    return name
