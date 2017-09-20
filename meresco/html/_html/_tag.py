@@ -37,6 +37,7 @@ class Tag(object):
         self._enter_callback = _enter_callback
         self._exit_callback = _exit_callback
         self.attrs['tag'] = tagname
+        self.as_is = AsIs
 
     def set(self, name, value):
         self.attrs[_clearname(name)] = value
