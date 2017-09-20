@@ -3,6 +3,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
+# Copyright (C) 2017 SURFmarket https://surf.nl
 # Copyright (C) 2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 #
@@ -117,6 +118,13 @@ class TagTest(SeecrTestCase):
             with tag('p'):
                 yield tag.as_is('<i>dit</i>')
         '''))
+
+    def testAttributesConvertedToString(self):
+        self.assertEqual('<div value="3">42</div>', self.processTemplate('''
+            with tag('div', value=3):
+                yield 42
+        '''))
+
 
    # with escape firstline
 
