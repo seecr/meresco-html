@@ -33,6 +33,7 @@ from re import compile as reCompile
 from random import choice
 from string import digits as _SALT_1, ascii_letters as _SALT_2
 from meresco.components.json import JsonDict
+from warnings import warn
 
 USER_RW = S_IRUSR | S_IWUSR
 
@@ -109,9 +110,15 @@ class PasswordFile(object):
         return valid
 
     def changePassword(self, username, oldPassword, newPassword):
+        warn('Please use validateUser and setPassword', DeprecationWarning)
         if oldPassword and not self.validateUser(username=username, password=oldPassword):
             raise ValueError('Username and password do not match, password NOT changed.')
         self._setUser(username=username, password=newPassword)
+
+    def setPassword(self, username, password):
+        if not self.hasUser(username):
+            raise ValueError('User does not exist.')
+        self._setUser(username=username, password=password)
 
     def listUsernames(self):
         return self._users.keys()

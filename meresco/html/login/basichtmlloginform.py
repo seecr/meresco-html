@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -204,7 +204,7 @@ class BasicHtmlLoginForm(PostActions):
             session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'dontMatch')}
         else:
             if (not oldPassword and handlingUser.canEdit(username) and handlingUser.name != username) or self.call.validateUser(username=username, password=oldPassword):
-                self.call.changePassword(username, oldPassword, newPassword)
+                self.call.setPassword(username, newPassword)
                 targetUrl = self._home
             else:
                 session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'usernamePasswordDontMatch')}

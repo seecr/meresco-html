@@ -65,20 +65,13 @@ class PasswordFileTest(SeecrTestCase):
         self.assertFalse(self.pwd.validateUser(username='', password=''))
         self.assertFalse(self.pwd.validateUser(username='Piet', password=''))
 
-    def testChangePassword(self):
+    def testSetPassword(self):
         self.pwd.addUser(username='John', password='password')
-        self.pwd.changePassword(username='John', oldPassword='password', newPassword='newpasswd')
+        self.pwd.setPassword(username='John', password='newpasswd')
         self.assertTrue(self.pwd.validateUser(username='John', password='newpasswd'))
 
-    def testChangePasswordWithBadOldpassword(self):
-        self.pwd.addUser(username='John', password='password')
-        self.assertRaises(ValueError, self.pwd.changePassword, username='John', oldPassword='wrong', newPassword='newpasswd')
-        self.assertTrue(self.pwd.validateUser(username='John', password='password'))
-        self.assertFalse(self.pwd.validateUser(username='John', password='newpasswd'))
-
-    def testChangePasswordWithBadUsername(self):
-        self.pwd.addUser(username='John', password='password')
-        self.assertRaises(ValueError, self.pwd.changePassword, username='Harry', oldPassword='wrong', newPassword='newpasswd')
+    def testSetPasswordWithBadUsername(self):
+        self.assertRaises(ValueError, self.pwd.setPassword, username='Harry', password='newpasswd')
 
     def testPasswordTest(self):
         self.assertTrue(self.pwd._passwordTest('something'))

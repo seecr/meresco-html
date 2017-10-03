@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2014, 2016-2017 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Html"
@@ -374,7 +374,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         }
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
-        self.assertEquals(['changePassword'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['setPassword'], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /home\r\n\r\n", result)
 
     def testChangePasswordNoOldForAdminNotAllowed(self):
@@ -401,7 +401,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         session = {'user': BasicHtmlLoginForm.User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
-        self.assertEquals(['validateUser', 'changePassword'], [m.name for m in observer.calledMethods])
+        self.assertEquals(['validateUser', 'setPassword'], [m.name for m in observer.calledMethods])
         self.assertEquals("HTTP/1.0 302 Found\r\nLocation: /home\r\n\r\n", result)
 
 
