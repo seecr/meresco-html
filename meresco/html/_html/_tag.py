@@ -47,6 +47,10 @@ class Tag(object):
         self.attrs[_clearname(name)].append(value)
         return self
 
+    def delete_from_key(self, name, value):
+        self.attrs[_clearname(name)] = [item for item in self.attrs[_clearname(name)] if item is not value]
+        return self
+
     def delete(self, key):
         self.attrs.pop(_clearname(key), None)
         return self

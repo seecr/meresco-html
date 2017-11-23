@@ -39,6 +39,14 @@ class TagTest(SeecrTestCase):
             s.write('data')
         self.assertEqual('<a key="value">data</a>', s.getvalue())
 
+    def testDeleteKey(self):
+        s = StringIO()
+        t = Tag(s, 'a', class_=['value', 'value2'])
+        t.delete_from_key('class', 'value2')
+        with t:
+            s.write('data')
+        self.assertEqual('<a class="value">data</a>', s.getvalue())
+
     def testClearName(self):
         self.assertEquals('class', clear('class'))
         self.assertEquals('class', clear('class_'))
