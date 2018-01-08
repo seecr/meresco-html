@@ -4,7 +4,8 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2017 SURFmarket https://surf.nl
-# Copyright (C) 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017-2018 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2018 SURF https://surf.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -25,6 +26,7 @@
 ## end license ##
 
 from ._html import Html
+from .nextpreviterator import nextpreviterator
 
 class HtmlTable(Html):
 
@@ -68,9 +70,9 @@ class HtmlTable(Html):
         return self.tag('tbody')
 
     def body_content(self, items, **kwargs):
-        for item in items:
-            with self.row_tag(item=item, **kwargs):
-                yield self.row_content(item=item, **kwargs)
+        for prevItem, item, nextItem in nextpreviterator(items):
+            with self.row_tag(item=item, prevItem=prevItem, nextItem=nextItem, **kwargs):
+                yield self.row_content(item=item, prevItem=prevItem, nextItem=nextItem, **kwargs)
 
     def foot_tag(self, **kwargs):
         return self.tag('tfoot')

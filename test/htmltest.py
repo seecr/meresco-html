@@ -3,8 +3,8 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2017 SURF https://surf.nl
-# Copyright (C) 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017-2018 SURF https://surf.nl
+# Copyright (C) 2017-2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 #
 # This file is part of "Meresco Html"
@@ -85,7 +85,7 @@ class HtmlTest(SeecrTestCase):
 
     def testMyOwnRendering(self):
         class CustomColumn(Column):
-           def cell_content(self, item, parent):
+           def cell_content(self, item, parent, **kwargs):
                yield str(item).swapcase() + parent
         t = HtmlTable()
         t.addColumn(CustomColumn(label='c1'))
@@ -173,3 +173,19 @@ class HtmlTest(SeecrTestCase):
                     yield 'text'
         self.assertEqual('<p class="a b">text</p>', Test().render())
 
+    def testPrevCurNext(self):
+        class PrevCurNextColumn(Column):
+            def cell_content(self, item, prevItem, nextItem, **kwargs):
+                yield '{} {} {}'.format(prevItem or '-', item, nextItem or '-')
+        t = HtmlTable()
+        t.addColumn(PrevCurNextColumn(label="label"))
+        html = t.render([1,2,3])
+        self.assertEqualsWS('<table>'
+            '<thead><tr><th>label</th></tr></thead>'
+            '<tfoot></tfoot>'
+            '<tbody>'
+            '<tr><td>- 1 2</td></tr>'
+            '<tr><td>1 2 3</td></tr>'
+            '<tr><td>2 3 -</td></tr>'
+            '</tbody>'
+            '</table>', html)
