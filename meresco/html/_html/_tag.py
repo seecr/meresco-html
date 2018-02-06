@@ -44,7 +44,11 @@ class Tag(object):
         return self
 
     def append(self, name, value):
-        self.attrs[_clearname(name)].append(value)
+        k = _clearname(name)
+        v = self.attrs.get(k)
+        if v is None:
+            self.attrs[k] = v = []
+        v.append(value)
         return self
 
     def remove(self, name, value):

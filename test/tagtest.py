@@ -39,7 +39,38 @@ class TagTest(SeecrTestCase):
             s.write('data')
         self.assertEqual('<a key="value">data</a>', s.getvalue())
 
-    def testDeleteKey(self):
+    def testAppendToListAttr(self):
+        s = StringIO()
+        t = Tag(s, 'a', class_=['value'])
+        t.append('class', 'value2')
+        with t:
+            s.write('data')
+        self.assertEqual('<a class="value value2">data</a>', s.getvalue())
+
+    def testAppendToEmptyListAttr(self):
+        s = StringIO()
+        t = Tag(s, 'a', class_=[])
+        t.append('class', 'value')
+        t.append('class', 'value2')
+        t.append('class', 'value3')
+        with t:
+            s.write('data')
+        self.assertEqual('<a class="value value2 value3">data</a>', s.getvalue())
+
+    def testAppendToNothingCreatesListAttr(self):
+        s = StringIO()
+        t = Tag(s, 'a')
+        t.append('class', 'value')
+        with t:
+            s.write('data')
+        self.assertEqual('<a class="value">data</a>', s.getvalue())
+
+    def testAppendToNonListAttr(self):
+        s = StringIO()
+        t = Tag(s, 'a', some_attr='not-a-list')
+        self.assertRaises(AttributeError, lambda: t.append('some_attr', 'value'))
+
+    def testRemoveFromListAttr(self):
         s = StringIO()
         t = Tag(s, 'a', class_=['value', 'value2'])
         t.remove('class', 'value2')
@@ -142,4 +173,3 @@ class TagTest(SeecrTestCase):
         header, body = parseResponse(asString(d.handleRequest(path='/afile')))
         self.assertEqual('200', header['StatusCode'])
         return body
-
