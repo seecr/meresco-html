@@ -197,9 +197,14 @@ class BasicHtmlLoginForm(PostActions):
         retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
 
-        handlingUser = session[USER]
-
         targetUrl = formUrl
+
+        handlingUser = session.get(USER)
+        if not handlingUser:
+            session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'loginRequired')}
+            yield redirectHttp % targetUrl
+            return
+
         if newPassword != retypedPassword:
             session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'dontMatch')}
         else:

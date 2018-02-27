@@ -550,6 +550,27 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue(pf.validateUser('existing', 'password'))
         self.assertEquals({'errorMessage':'New password is invalid.', 'username':'existing'}, session['BasicHtmlLoginForm.formValues'])
 
+    def testChangePassword_withEmptySession(self):
+        # A.k.a. not logged-in.
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        pf.addUser('existing', 'password')
+        Body = urlencode(dict(username='existing', oldPassword='password', newPassword='new_pass', retypedPassword='new_pass', formUrl='/page/newUser', returnUrl='/return'))
+        session = {}
+
+        result = asString(self.form.handleRequest(path='/action/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+
+        header, body = result.split(CRLF*2)
+        self.assertTrue('302' in header)
+        self.assertTrue('Location: /page/newUser' in header)
+
+        self.assertEquals(set(['existing', 'admin']), set(pf.listUsernames()))
+        self.assertTrue(pf.validateUser('existing', 'password'))
+        self.assertEquals(
+            {'errorMessage': 'Login required for "change password".',
+             'username': 'existing'},
+            session['BasicHtmlLoginForm.formValues'])
+
     def testNewUserWithPOSTFailsDifferentPasswords(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
@@ -735,4 +756,3 @@ function deleteUser(username) {
         self.assertTrue(other.canEdit(other))
         self.assertFalse(other.canEdit('admin'))
         self.assertFalse(other.canEdit(admin))
-
