@@ -204,8 +204,12 @@ class BasicHtmlLoginForm(PostActions):
             session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'dontMatch')}
         else:
             if (not oldPassword and handlingUser.canEdit(username) and handlingUser.name != username) or self.call.validateUser(username=username, password=oldPassword):
-                self.call.setPassword(username, newPassword)
-                targetUrl = self._home
+                try:
+                    self.call.setPassword(username, newPassword)
+                    targetUrl = self._home
+                except ValueError:
+                    session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'passwordInvalid')}
+
             else:
                 session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'usernamePasswordDontMatch')}
 

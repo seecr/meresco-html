@@ -41,7 +41,8 @@ LABELS = {
         'new-password-repeat': dict(en="Retype new password", nl="Herhaal nieuw wachtwoord"),
         'change': dict(en="Change", nl="Aanpassen"),
         'dontMatch': dict(en="New passwords do not match", nl="Nieuwe wachtwoorden komen niet overeen"),
-        'usernamePasswordDontMatch': dict(en="Username and password do not match", nl="Gebruikersnaam en wachtwoord komen niet overeen")
+        'usernamePasswordDontMatch': dict(en="Username and password do not match", nl="Gebruikersnaam en wachtwoord komen niet overeen"),
+        'passwordInvalid': dict(en='New password is invalid.', nl='Het nieuwe wachtwoord is ongeldig.'),
     },
     'newuserForm': {
         'username': dict(en='Username', nl='Gebruikersnaam'),

@@ -533,6 +533,23 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertFalse(pf.validateUser('newuser', 'newpassword'))
         self.assertEquals({'errorMessage':'User already exists.', 'username':'newuser'}, session['BasicHtmlLoginForm.newUserFormValues'])
 
+    def testNewEmptyPassword(self):
+        pf = PasswordFile(join(self.tempdir, 'passwd'))
+        self.form.addObserver(pf)
+        pf.addUser('existing', 'password')
+        Body = urlencode(dict(username='existing', oldPassword='password', newPassword='', retypedPassword='', formUrl='/page/newUser', returnUrl='/return'))
+        session = {'user': BasicHtmlLoginForm.User('admin')}
+
+        result = asString(self.form.handleRequest(path='/action/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+
+        header, body = result.split(CRLF*2)
+        self.assertTrue('302' in header)
+        self.assertTrue('Location: /page/newUser' in header)
+
+        self.assertEquals(set(['existing', 'admin']), set(pf.listUsernames()))
+        self.assertTrue(pf.validateUser('existing', 'password'))
+        self.assertEquals({'errorMessage':'New password is invalid.', 'username':'existing'}, session['BasicHtmlLoginForm.formValues'])
+
     def testNewUserWithPOSTFailsDifferentPasswords(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
