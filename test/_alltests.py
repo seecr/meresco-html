@@ -51,5 +51,7 @@ from login.usergroupsformtest import UserGroupsFormTest
 from login.userinfotest import UserInfoTest
 from login.userinfoformtest import UserInfoFormTest
 
+from tools.htmltotagtest import HtmlToTagTest
+
 if __name__ == '__main__':
     main()
