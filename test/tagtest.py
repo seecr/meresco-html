@@ -33,6 +33,25 @@ from weightless.core import asString
 from StringIO import StringIO
 
 class TagTest(SeecrTestCase):
+
+    def testComposition(self):
+        s = '''
+            def my_gen():
+                yield "hello"
+            @tag.compose
+            def my_tag(start, stop=None):
+                yield start
+                with tag('div'):
+                  with tag('h1'):
+                    yield           # here goes the stuff within 'with'
+                yield stop
+            with tag('head'):
+                with my_tag('forword', stop='afterword'):
+                    with tag('p'):
+                        yield my_gen()
+                '''
+        self.assertEquals('<head>forword<div><h1><p>hello</p></h1></div>afterword</head>', self.processTemplate(s))
+
     def testAttrs(self):
         s = StringIO()
         with Tag(s, 'a', **{'key': 'value'}):
@@ -171,5 +190,5 @@ class TagTest(SeecrTestCase):
         open(self.tempdir+'/afile.sf', 'w').write('def main(tag, **kwargs):\n'+template)
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         header, body = parseResponse(asString(d.handleRequest(path='/afile')))
-        self.assertEqual('200', header['StatusCode'])
+        self.assertEqual('200', header['StatusCode'], body)
         return body

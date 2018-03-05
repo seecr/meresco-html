@@ -28,7 +28,9 @@
 from cStringIO import StringIO
 from xml.sax.saxutils import quoteattr
 import re
+from contextlib import contextmanager
 from ._utils import escapeHtml
+from weightless.core import compose
 
 class Tag(object):
     def __init__(self, stream, tagname, _enter_callback=lambda: None, _exit_callback=lambda: None, **attrs):
@@ -112,6 +114,20 @@ class TagFactory(object):
 
     def as_is(self, obj):
         return AsIs(obj)
+
+    def compose(self, f):
+        @contextmanager
+        @compose
+        def ctx_man(*args, **kwargs):
+            g = f(*args, **kwargs)
+            for line in g:
+                if line == None:
+                    break
+                self.stream.write(line)
+            yield
+            for line in g:
+                self.stream.write(line)
+        return ctx_man
 
 
 class AsIs(str):
