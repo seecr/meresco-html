@@ -207,12 +207,19 @@ class DynamicHtml(Observable):
             nextGenerator =  (i for i in [])
         else:
             nextHead, nextTail = self._splitPath(tail)
-            nextGenerator = self._createMainGenerator(nextHead, nextTail, scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, **kwargs)
+            def _():
+                yield self._createMainGenerator(nextHead, nextTail, scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, **kwargs)
+            nextGenerator = _()
+
         try:
             main = self._templates[head].main
-        except:
+        except Exception:
             raise DynamicHtmlException.notFound(head)
-        yield main(scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
+
+        def _():
+            yield main(scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
+
+        return _()
 
     def _splitPath(self, aPath):
         normalizedPath = '/'.join(p for p in aPath.split('/') if p)

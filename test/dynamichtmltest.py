@@ -65,6 +65,25 @@ def main(**kwargs):
         self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8', headers)
         self.assertEquals('404 Handler', body)
 
+    def testNotFound_HeadExistButHasNoMain(self):
+        open(self.tempdir + '/page.sf', 'w').write("""""")
+        open(self.tempdir + '/_missing.sf', 'w').write("""
+def main(**kw):
+    yield 'not-found'
+""")
+        reactor = Reactor()
+        # /page
+        d = DynamicHtml([self.tempdir], reactor=reactor, notFoundPage='/_missing')
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/page')
+        headers, message = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('not-found', message)
+
+        # /page/does-not-exist
+        d = DynamicHtml([self.tempdir], reactor=reactor, notFoundPage='/_missing')
+        result = d.handleRequest(scheme='http', netloc='host.nl', path='/page/does-not-exist')
+        headers, message = ''.join(result).split('\r\n\r\n')
+        self.assertEquals('not-found', message)
+
     def testCustomFileNotFoundToFileThatDoesExist(self):
         d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", reactor=CallTrace('Reactor'))
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
