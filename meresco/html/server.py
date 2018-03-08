@@ -24,7 +24,8 @@
 ## end license ##
 
 from meresco.core import Observable
-from meresco.components.http import ObservableHttpServer, ApacheLogger, PathFilter, FileServer, PathRename
+from meresco.components.http import ObservableHttpServer, PathFilter, FileServer, PathRename, BasicHttpHandler
+from meresco.components.log import ApacheLogWriter, LogCollector, HandleRequestLog
 from weightless.io import Reactor
 from weightless.core import compose, be
 from sys import stdout
@@ -32,17 +33,21 @@ from sys import stdout
 from dynamichtml import DynamicHtml
 
 def dna(reactor, port, dynamic, static, verbose=True):
-    apacheLogger = ApacheLogger(stdout) if verbose else ApacheLogger()
     return (Observable(),
         (ObservableHttpServer(reactor, port=port),
-            (apacheLogger,
-                (PathFilter('/static'),
-                    (PathRename(lambda path: path[len('/static'):]),
-                        (FileServer(static),)
+            (LogCollector(),
+                (ApacheLogWriter(stdout if verbose else None), ),
+                (HandleRequestLog(),
+                    (BasicHttpHandler(),
+                        (PathFilter('/static'),
+                            (PathRename(lambda path: path[len('/static'):]),
+                                (FileServer(static),)
+                            )
+                        ),
+                        (PathFilter('/', excluding=['/static']),
+                            (DynamicHtml([dynamic], reactor=reactor, indexPage='/index'),)
+                        )
                     )
-                ),
-                (PathFilter('/', excluding=['/static']),
-                    (DynamicHtml([dynamic], reactor=reactor, indexPage='/index'),)
                 )
             )
         )
