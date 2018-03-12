@@ -1,3 +1,4 @@
+import re
 from lxml.etree import Element
 from lxml.html.html5parser import document_fromstring, fragments_fromstring, fromstring, HTMLParser
 
@@ -41,36 +42,135 @@ def html_to_etree(in_str):
 
     return fromstring(in_str, parser=_html5Parser)
 
-def _ident_ln(ident, a_str):
-    return (' ' * ident) + a_str + '\n'
+def _ident_ln(ident, a_str, newline=True):
+    return (' ' * ident) + a_str + ('\n' if newline else '')
 
-def data_to_tag(d):      # TODO: use trampoline i.s.o. recusive calls (deep nesting support?)
+def _simple_str_literal(text):
+    return '"{}"'.format(text.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n'))
+
+def _text_as_string_literal(ident, text):
+    # ident all lines except the first accoring to ident
+    # returns a string-literal or an expression resulting in a string.
+    if not text:
+        return '""'
+
+    _end = ')'
+    if '\n' in text:
+        v = '"\n".join(\n'
+        lines = text.split('\n')
+        numLines = len(lines)
+        for i, l in enumerate(lines):
+            v += _ident_ln(ident, _simple_str_literal(l), newline=False)
+            if not ((i + 1) == numLines): # not at end
+                v += ',\n'
+
+        v += ')'
+
+    else:
+        v = _simple_str_literal(text)
+
+    return v
+
+VALID_NON_UNICODE_IDENTIFIER_RE = re.compile(r'^[_a-zA-Z][_a-zA-Z0-9]*$')
+PY_KEYWORDS = { # from: https://docs.python.org/3.3/reference/lexical_analysis.html#keywords
+    'False',      'class',      'finally',    'is',         'return',
+    'None',       'continue',   'for',        'lambda',     'try',
+    'True',       'def',        'from',       'nonlocal',   'while',
+    'and',        'del',        'global',     'not',        'with',
+    'as',         'elif',       'if',         'or',         'yield',
+    'assert',     'else',       'import',     'pass',
+    'break',      'except',     'in',         'raise',
+}
+def _attribs_f(attribs):
+    if not attribs:
+        return ''
+
+    # special cases:
+    new_class = None
+    if 'class' in attribs:
+        new_class = attribs['class'].strip().split()
+
+    # no reserved words as keyword-argument & remove special cases:
+    attribs = {(k+'_' if k in PY_KEYWORDS else k): v for (k, v) in attribs.iteritems() if k not in {'class'}}
+
+    # partition into kw_args and kw_dict values:
+    def f(acc, kv):
+        kw_args, kw_dict = acc
+        k, v = kv
+        if VALID_NON_UNICODE_IDENTIFIER_RE.match(k):
+            kw_args.append((k, v))
+        else:
+            kw_dict.append((k, v))
+
+        return acc              # in-place updated
+
+    kw_args, kw_dict = reduce(
+        f,
+        attribs.iteritems(),
+        [([('class_', new_class)] if new_class else []), []])
+    kw_args.sort()
+    kw_dict.sort()
+
+    def list_to_list_lit_with_str_lit(l):
+        return '[' + ', '.join(map(_simple_str_literal, l)) + ']'
+
+    val = ''
+    for k, v in kw_args:
+        val += ', '
+        val += '{}={}'.format(k, _simple_str_literal(v) if isinstance(v, str) else list_to_list_lit_with_str_lit(v))
+
+    if kw_dict:
+        val += ', **{'
+
+        for i, (k, v) in enumerate(kw_dict):
+            if i:
+                val += ', '
+
+            val += _simple_str_literal(k)
+            val += '='
+            val += _simple_str_literal(v) if isinstance(v, str) else list_to_list_lit_with_str_lit(v)
+
+        val += '}'
+
+    return val
+
+def data_to_tag(d):
     _pre = 'def main(tag, **kw):\n'
     ident = 4
     _post = _ident_ln(ident, 'return') + _ident_ln(ident, 'yield')
-    def dtt(v, ident, d):
-        def step(acc, ident_d):
-            # Unpack & save originals
-            ident, d = ident_d
-            orig_ident = ident
-            ident = ident + 4
+    def dtt(acc, ident, d):
+        # Unpack & save originals
+        orig_ident = ident
+        ident = ident + 4
 
-            # Unpack element-data
-            tag = d['tag']
-            ch = d.get('children')
+        # hellpers
+        def yield_str(ident, text):
+            return _ident_ln(ident, 'yield ' + _text_as_string_literal(ident+6, text))  # 'yield ' -> 6 chars
 
-            # write `with tag'
-            acc += _ident_ln(orig_ident, "with tag('{}'):".format(tag))
+        # Unpack element-data
+        tag = d['tag']
+        attribs = d.get('attribs')
+        text = d.get('text')
+        tail = d.get('tail')
+        ch = d.get('children')
 
-            # write `inside "with tag"'
-            if not ch:
-                acc += _ident_ln(ident, 'pass')
-            else:
-                raise Hell
+        # write `with tag'
+        acc += _ident_ln(orig_ident, "with tag('{}'{}):".format(tag, _attribs_f(attribs)))
 
-            return acc
+        # write `inside "with tag"'
+        if text:
+            acc += yield_str(ident, text)
 
-        return step(v, (ident, d))
+        if not (ch or text):
+            acc += _ident_ln(ident, 'pass')
+
+        if ch:
+            acc = reduce(lambda acc, d: dtt(acc, ident, d), ch, acc)
+
+        if tail:
+            acc += yield_str(orig_ident, tail)
+
+        return acc
 
     tags = dtt('', ident, d)
     return _pre + tags + _post
@@ -103,7 +203,7 @@ def _():
         return {_nfc(k): _nfc(as_[k]) for k in as_.keys()}
 
 
-    def etree_to_data(el):      # TODO: use trampoline i.s.o. recusive calls (deep nesting support?)
+    def etree_to_data(el):
         el_d = {
             'tag': _nfc(el.tag),
         }
