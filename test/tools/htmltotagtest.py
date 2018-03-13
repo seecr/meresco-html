@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
-from unittest import TestCase
+from seecr.test import SeecrTestCase, CallTrace
 
 from difflib import unified_diff
 from lxml.etree import _Element
 
+from weightless.core import asString
+from meresco.components.http.utils import parseResponse
+from meresco.html import DynamicHtml
+
 from meresco.html.tools.html_to_tag import html_to_tag, html_to_etree, etree_to_data, data_to_tag, _text_as_string_literal, _simple_str_literal, VALID_NON_UNICODE_IDENTIFIER_RE
 
 
-class HtmlToTagTest(TestCase):
+class HtmlToTagTest(SeecrTestCase):
     def assertEquals_udiff(self, expected, result, n=3):
         exp = expected.splitlines()
         res = result.splitlines()
@@ -126,10 +130,10 @@ def main(tag, **kw):
         self.assertEquals(r'"\\"', _text_as_string_literal(0, '\\'))
 
         # with newlines
-        self.assertEquals('"\n".join(\n"ape",\n"nut",\n"mies",\n"")', _text_as_string_literal(0, 'ape\nnut\nmies\n'))
-        self.assertEquals('"\n".join(\n  "ape",\n  "nut",\n  "mies",\n  "")', _text_as_string_literal(2, 'ape\nnut\nmies\n'))
-        self.assertEquals('"\n".join(\n   "",\n   "")', _text_as_string_literal(3, '\n'))
-        self.assertEquals('"\n".join(\n"x",\n"y\\"\\\\\r")', _text_as_string_literal(0, 'x\ny"\\\r'))
+        self.assertEquals('"\\n".join([\n"ape",\n"nut",\n"mies",\n""])', _text_as_string_literal(0, 'ape\nnut\nmies\n'))
+        self.assertEquals('"\\n".join([\n  "ape",\n  "nut",\n  "mies",\n  ""])', _text_as_string_literal(2, 'ape\nnut\nmies\n'))
+        self.assertEquals('"\\n".join([\n   "",\n   ""])', _text_as_string_literal(3, '\n'))
+        self.assertEquals('"\\n".join([\n"x",\n"y\\"\\\\\r"])', _text_as_string_literal(0, 'x\ny"\\\r'))
 
     def test_identifiers_re(self):
         def f(maybe_identifier_txt):
@@ -214,4 +218,104 @@ def main(tag, **kw):
 
     def test_full_cicle(self):
         # Parse html -> to py_str -> exec -> call main with tag -> extract generated html -> parse to data -> compare with expected.
-        self.fail('TODO')
+        def f(html_text, remove_blank_text=None):
+            kw = {}
+            if remove_blank_text is not None:
+                kw['remove_blank_text'] = remove_blank_text
+
+            return etree_to_data(html_to_etree(processTemplate(self, html_to_tag(html_text, **kw)), **kw))
+
+        # simple
+        self.assertEquals(
+            {'tag': 'h1', 'text': 'Hi!'},
+            f('<h1>Hi!</h1>'))
+
+        # nested with "irrelevant" whitespace removed.
+        chicken_soup = '''\
+<html lang="en">
+  <head>
+    <title>Hello</title>
+  </head>
+  <body>
+    <div id="container">
+      <h1 class="red hero">Welcome !</h1>
+      <p>
+            According to Dr. Jason chicken soup is one of the <strong>best</strong> soups invented.
+      </p>
+    </div>
+  </body>
+</html>'''
+        self.assertEquals(
+            {'tag': 'html',
+             'attribs': {'lang': 'en'},
+             'children': [
+                 {'tag': 'head',
+                  'children': [
+                      {'tag': 'title', 'text': 'Hello'}]},
+                 {'tag': 'body',
+                  'children': [
+                      {'tag': 'div',
+                       'attribs': {'id': 'container'},
+                       'children': [
+                           {'tag': 'h1',
+                            'attribs': {'class': 'red hero'},
+                            'text': 'Welcome !'},
+                           {'tag': 'p',
+                            'text': '\n            According to Dr. Jason chicken soup is one of the ',
+                            'children': [
+                                {'tag': 'strong',
+                                 'text': 'best',
+                                 'tail': ' soups invented.\n      ',
+                                 }]}]}]}]},
+            f(chicken_soup))
+
+        # nested without "irrelevant" whitespace removed
+        self.assertEquals(
+            {'tag': 'html',
+             'attribs': {'lang': 'en'},
+             'children': [
+                 {'tag': 'head',
+                  'text': '\n    ',
+                  'tail': '\n  ',
+                  'children': [
+                      {'tag': 'title',
+                       'text': 'Hello',
+                       'tail': '\n  ',
+                      }],
+                 },
+                 {'tag': 'body',
+                  'text': '\n    ',
+                  'children': [
+                      {'tag': 'div',
+                       'text': '\n      ',
+                       'tail': '\n  \n',
+                       'attribs': {'id': 'container'},
+                       'children': [
+                           {'tag': 'h1',
+                            'text': 'Welcome !',
+                            'tail': '\n      ',
+                            'attribs': {'class': 'red hero'},
+                           },
+                           {'tag': 'p',
+                            'text': '\n            According to Dr. Jason chicken soup is one of the ',
+                            'tail': '\n    ',
+                            'children': [
+                                {'tag': 'strong',
+                                 'text': 'best',
+                                 'tail': ' soups invented.\n      ',
+                                }],
+                           }],
+                      }],
+                 }],
+            },
+            f(chicken_soup, remove_blank_text=False))
+
+def processTemplate(self, template):
+    # print '>>>', template
+    open(self.tempdir+'/afile.sf', 'w').write(template)
+    d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
+    header, body = parseResponse(asString(d.handleRequest(path='/afile')))
+    if header['StatusCode'] != '200':
+        print body
+        raise
+    return body
