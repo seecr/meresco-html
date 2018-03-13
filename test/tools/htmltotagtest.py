@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from seecr.test import SeecrTestCase, CallTrace
+from seecr.test.io import stderr_replaced
 
 from difflib import unified_diff
 from lxml.etree import _Element
@@ -310,6 +311,45 @@ def main(tag, **kw):
             },
             f(chicken_soup, remove_blank_text=False))
 
+        # highlights namespace-bugs in html5lib (iff this test starts failing - party!).
+        weird_namespaceness = '''\
+<a>some text<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewbox="0 0 32 32" xmlns:xlink="http://www.w3.org/1999/xlink"><path fill="#fff" d="M15.6097079,14.5927191"/></svg>
+</a>'''
+        expected_bad = {
+            'tag': 'a',
+            'text': 'some text',
+            'children': [
+                {'tag': 'svg',
+                 'tail': '\n',
+                 'attribs': {
+                     'height': '32',
+                     'ns1u0003axlink': 'http://www.w3.org/1999/xlink',
+                     'ns1u0003axmlns': 'http://www.w3.org/2000/svg',
+                     'viewBox': '0 0 32 32',
+                     'width': '32',
+                     'xmlnsU0003Ans0': 'http://www.w3.org/2000/svg',
+                     'xmlnsu0003ans0': 'http://www.w3.org/2000/svg'},
+                 'children': [
+                     {'attribs': {
+                         'd': 'M15.6097079,14.5927191',
+                         'fill': '#fff'},
+                      'tag': 'path'}],
+                }]}
+        with stderr_replaced() as err:
+            result = f(weird_namespaceness)
+            self.assertTrue('DataLossWarning' in err.getvalue(), err.getvalue()) # This is weird in its own right...
+
+        self.assertEquals(
+            expected_bad,
+            result)
+
+        result = f(weird_namespaceness, remove_blank_text=False)
+
+        self.assertEquals('pre', result['tag'])
+        self.assertEquals(None, result.get('children'))
+        self.assertTrue('Traceback' in result['text'])#, result['text'])
+        self.assertTrue('SyntaxError:' in result['text'])#, result['text'])
+
 def processTemplate(self, template):
     # print '>>>', template
     open(self.tempdir+'/afile.sf', 'w').write(template)
@@ -317,5 +357,4 @@ def processTemplate(self, template):
     header, body = parseResponse(asString(d.handleRequest(path='/afile')))
     if header['StatusCode'] != '200':
         print body
-        raise
     return body

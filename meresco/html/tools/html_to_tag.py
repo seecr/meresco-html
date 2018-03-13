@@ -1,5 +1,5 @@
 import re
-from lxml.etree import Element, parse, XMLParser
+from lxml.etree import Element, parse, XMLParser, QName
 from lxml.html.html5parser import document_fromstring, fragments_fromstring, fromstring, HTMLParser
 from StringIO import StringIO
 
@@ -15,6 +15,13 @@ def html_to_tag(in_str, remove_blank_text=True):
 
     data = etree_to_data(tree)
     return data_to_tag(data)
+
+def _etree_mutate_fix_localname(etree):
+    for _x in etree.iter(Element):    # side-effect to remove some (wrongfully) surviving namespace stuff from HTML(5)Parser
+        if _x.tag != QName(_x).localname:
+            _x.tag = QName(_x).localname
+
+    return etree
 
 def html_to_etree(in_str, remove_blank_text=True):
     """
@@ -37,12 +44,15 @@ def html_to_etree(in_str, remove_blank_text=True):
         return None
 
     # Double-parse to remove (hopefully irrelevant) whitespace - some not-so-irrelevant whitespace will most likely be removed too
-    etree = fromstring(in_str, parser=_html5Parser)
+    etree = fromstring(in_str, parser=_html5Parser) # ATTENTION: tag/attributes namespace-info mangled here due to html5lib bugs.
+    _etree_mutate_fix_localname(etree)
     if remove_blank_text:
-        etree = parse(StringIO(lxmltostring(etree)), parser=_xmlParser)
+        s = lxmltostring(etree)
+        etree = parse(StringIO(s), parser=_xmlParser)
         etree = fromstring(lxmltostring(etree), parser=_html5Parser)
+        _etree_mutate_fix_localname(etree)  # and they spawn again after fromstring, so remove them again.
 
-    return etree
+    return etree.getroot() if hasattr(etree, 'getroot') else etree
 
 def _():                        # close over helpers not needed elsewhere.
     def first(iterable, default=None):
@@ -66,7 +76,7 @@ def _():                        # close over helpers not needed elsewhere.
 
     def etree_to_data(el):
         el_d = {
-            'tag': _nfc(el.tag),
+            'tag': _nfc(QName(el).localname), # A'la HTML5 no namespaces here, so be explicit.
         }
         attrs = attribs(el)
         if attrs:
@@ -149,6 +159,7 @@ _xmlParser = XMLParser(
     encoding='utf-8',
     remove_blank_text=True,
     huge_tree=True,
+    recover=True,   # ATTENTION: recover=True should *never* be needed at this point, but html5lib is broken in it's namespace-support (reading namespaced stuff correctly).  Disable this and see HtmlToTagTest.test_full_cicle fail horribly.
 
     # Default from LXML:
     # attribute_defaults=False,

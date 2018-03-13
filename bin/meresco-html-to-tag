@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+# vim: syntax=py #
+
+from seecrdeps import includeParentAndDeps, cleanup     #DO_NOT_DISTRIBUTE
+includeParentAndDeps(__file__, scanForDeps=True)        #DO_NOT_DISTRIBUTE
+cleanup(__file__)                                       #DO_NOT_DISTRIBUTE
+
+from sys import stdin, stdout
+from meresco.components import ParseArguments
+from meresco.html.tools.html_to_tag import html_to_tag
+
+if __name__ == '__main__':
+    parser = ParseArguments(description='''\
+Reads HTML from stdin, and outputs a template-with-tag-notation.
+
+Output may not exactly represent the input (for incomplete HTML and whitespace).''')
+
+    parser.addOption('', '--keep-blank-text', action='store_false', dest='remove_blank_text', default=True, help='Do not remove blank text when parsing the HTML.')
+
+    options, arguments = parser.parse()
+
+    in_str = stdin.read()
+    out_str = html_to_tag(in_str, **vars(options))
+    stdout.write(out_str)
+    stdout.flush()
