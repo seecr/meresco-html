@@ -782,6 +782,18 @@ def main(*args,**kwargs):
         head,body = ''.join(d.handleRequest(path='/afile')).split('\r\n\r\n')
         self.assertEquals('YES', body)
 
+    def testCanCreateClassesInTemplate(self):
+        open(self.tempdir+'/afile.sf', 'w').write('''\
+def main(*args, **kwargs):
+    class A(object):
+        def __init__(self):
+            self.b = 'result'
+
+    yield A().b''')
+        d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
+        head, body = ''.join(d.handleRequest(path='/afile')).split('\r\n\r\n')
+        self.assertEquals('result', body)
+
     def testChangingFileBeforeRetrievingFirstPage(self):
         reactor = Reactor()
         open(join(self.tempdir, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')

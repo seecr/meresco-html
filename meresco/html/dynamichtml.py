@@ -302,13 +302,14 @@ class DynamicHtml(Observable):
 
     def createGlobals(self):
         result = self._additionalGlobals.copy()
-        result['__builtins__'] = {
-            '__import__': self.__import__,
-            'importTemplate': lambda templateName: self.__import__(templateName),
-
+        result.update({
             # Allow class creaton
             '__module__': '__dynamichtml__',
             '__name__': '__dynamichtml__',
+        })
+        result['__builtins__'] = {
+            '__import__': self.__import__,
+            'importTemplate': lambda templateName: self.__import__(templateName),
 
             # standard Python stuff
             'Ellipsis': Ellipsis,
