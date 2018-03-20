@@ -51,7 +51,7 @@ import exceptions
 from simplejson import dumps, loads
 from urlparse import urlsplit, urlunsplit
 
-from ._html import TagFactory, escapeHtml
+from ._html import TagFactory, escapeHtml, tag_compose
 
 CRLF = '\r\n'
 
@@ -245,16 +245,17 @@ class DynamicHtml(Observable):
             return
 
         tag = TagFactory()
+        kwargs.update(tag=tag)
 
         try:
-            generators = self._createGenerators(path, tag=tag, **kwargs)
+            generators = self._createGenerators(path, **kwargs)
         except DynamicHtmlException, e:
             if self._notFoundPage is None:
                 yield e.httpHeader()
                 yield str(e)
                 return
             try:
-                generators = self._createGenerators(self._notFoundPage, tag=tag, **kwargs)
+                generators = self._createGenerators(self._notFoundPage, **kwargs)
             except DynamicHtmlException, innerException:
                 yield innerException.httpHeader()
                 yield str(innerException)
@@ -398,6 +399,8 @@ class DynamicHtml(Observable):
             # observables proxy
             'observable': self._observableProxy,
             'NoneOfTheObserversRespond': NoneOfTheObserversRespond,
+
+            'tag_compose': tag_compose,
 
             # commonly used/needed methods
             'escapeHtml': escapeHtml,

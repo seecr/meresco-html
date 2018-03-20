@@ -28,6 +28,6 @@ from ._utils import escapeHtml
 from ._html import Html
 from ._table import HtmlTable, Column
 from ._form import HtmlForm
-from ._tag import Tag, TagFactory
+from ._tag import Tag, TagFactory, tag_compose
 
-__all__ = ['Html', 'HtmlTable', 'HtmlForm', 'Column', 'Tag', 'TagFactory', 'escapeHtml']
+__all__ = ['Html', 'HtmlTable', 'HtmlForm', 'Column', 'Tag', 'TagFactory', 'escapeHtml', 'tag_compose']

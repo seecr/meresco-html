@@ -119,16 +119,29 @@ class TagFactory(object):
         @contextmanager
         @compose
         def ctx_man(*args, **kwargs):
-            g = f(*args, **kwargs)
+            g = compose(f(*args, **kwargs))
             for line in g:
                 if line == None:
                     break
-                self.stream.write(line)
+                self.stream.write(str(line))
             yield
             for line in g:
                 self.stream.write(line)
         return ctx_man
 
+def tag_compose(f):
+    @contextmanager
+    @compose
+    def ctx_man(tag, *args, **kwargs):
+        g = compose(f(tag, *args, **kwargs))
+        for line in g:
+            if line == None:
+                break
+            tag.stream.write(line)
+        yield
+        for line in g:
+            tag.stream.write(line)
+    return ctx_man
 
 class AsIs(str):
     def replace(self, *args):

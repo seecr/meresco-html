@@ -38,15 +38,17 @@ class TagTest(SeecrTestCase):
         s = '''
             def my_gen():
                 yield "hello"
-            @tag.compose
-            def my_tag(start, stop=None):
-                yield start
+            def snd_gen(s):
+                yield s
+            @tag_compose
+            def my_tag(tag, start, stop=None):
+                yield snd_gen(start)
                 with tag('div'):
                   with tag('h1'):
                     yield           # here goes the stuff within 'with'
                 yield stop
             with tag('head'):
-                with my_tag('forword', stop='afterword'):
+                with my_tag(tag, 'forword', stop='afterword'):
                     with tag('p'):
                         yield my_gen()
                 '''
