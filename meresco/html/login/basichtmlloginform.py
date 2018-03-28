@@ -219,7 +219,7 @@ class BasicHtmlLoginForm(PostActions):
             else:
                 session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'usernamePasswordDontMatch')}
 
-        yield redirectHttp % targetUrl
+        yield redirectHttp % targetUrl.format(username=username)
 
     def changePasswordForm(self, session, path, arguments, user=None, lang=None, onlyNewPassword=False, **kwargs):
         lang = lang or self._lang
