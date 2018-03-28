@@ -260,6 +260,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     <p class="error">BAD BOY</p>
     <form method="POST" name="changePassword" action="/action/changepassword">
     <input type="hidden" name="formUrl" value="/show/changepasswordform"/>
+    <input type="hidden" name="returnUrl" value="/show/changepasswordform"/>
     <input type="hidden" name="username" value="username"/>
         <dl>
             <dt>Old password</dt>
@@ -284,6 +285,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     <p class="error">BAD BOY</p>
     <form method="POST" name="changePassword" action="/action/changepassword">
     <input type="hidden" name="formUrl" value="/show/changepasswordform"/>
+    <input type="hidden" name="returnUrl" value="/show/changepasswordform"/>
     <input type="hidden" name="username" value="username"/>
         <dl>
             <dt>Oud wachtwoord</dt>
@@ -308,6 +310,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
     <p class="error">BAD BOY</p>
     <form method="POST" name="changePassword" action="/action/changepassword">
     <input type="hidden" name="formUrl" value="/show/changepasswordform?user=myuser"/>
+    <input type="hidden" name="returnUrl" value="/show/changepasswordform"/>
     <input type="hidden" name="username" value="myuser"/>
         <dl>
             <dt>Nieuw wachtwoord</dt>
@@ -367,7 +370,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = False
 
-        Body = urlencode(dict(username='user', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
+        Body = urlencode(dict(username='user', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform', returnUrl='/home'))
         session = {
             'user': BasicHtmlLoginForm.User('admin'),
             'BasicHtmlLoginForm.formValues': {}
@@ -397,7 +400,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
 
-        Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
+        Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform', returnUrl='/home'))
         session = {'user': BasicHtmlLoginForm.User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))

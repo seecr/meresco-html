@@ -196,6 +196,7 @@ class BasicHtmlLoginForm(PostActions):
         newPassword = bodyArgs.get('newPassword', [None])[0]
         retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
+        returnUrl = bodyArgs.get('returnUrl', [formUrl])[0]
 
         targetUrl = formUrl
 
@@ -211,7 +212,7 @@ class BasicHtmlLoginForm(PostActions):
             if (not oldPassword and handlingUser.canEdit(username) and handlingUser.name != username) or self.call.validateUser(username=username, password=oldPassword):
                 try:
                     self.call.setPassword(username, newPassword)
-                    targetUrl = self._home
+                    targetUrl = returnUrl
                 except ValueError:
                     session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'passwordInvalid')}
 
@@ -238,6 +239,7 @@ class BasicHtmlLoginForm(PostActions):
         values = dict(
             action=quoteattr(join(self._action, 'changepassword')),
             formUrl=quoteattr(formUrl),
+            returnUrl=quoteattr(kwargs.get('returnUrl', path)),
             username=quoteattr(username),
             lblOldPassword=getLabel(lang, "changepasswordForm", "old-password"),
             lblNewPassword=getLabel(lang, "changepasswordForm", "new-password"),
@@ -247,6 +249,7 @@ class BasicHtmlLoginForm(PostActions):
 
         yield """<form method="POST" name="changePassword" action=%(action)s>
         <input type="hidden" name="formUrl" value=%(formUrl)s/>
+        <input type="hidden" name="returnUrl" value=%(returnUrl)s/>
         <input type="hidden" name="username" value=%(username)s/>
         <dl>
             """ % values
