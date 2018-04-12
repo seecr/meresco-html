@@ -35,6 +35,7 @@ from urllib import urlencode
 from meresco.html.login import BasicHtmlLoginForm, PasswordFile
 from meresco.html.login.securezone import ORIGINAL_PATH
 from os.path import join
+from seecr.test.io import stdout_replaced
 
 class BasicHtmlLoginFormTest(SeecrTestCase):
     def setUp(self):
@@ -474,6 +475,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEquals('HTTP/1.0 401 Unauthorized\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUnauthorized access.', result)
         self.assertEquals(['hasUser'], [m.name for m in observer.calledMethods])
 
+    @stdout_replaced
     def testNewUserWithPOSTsucceeds(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
@@ -497,6 +499,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEqual({'Body': 'username=newuser&formUrl=%2Fpage%2FnewUser&password=secret&returnUrl=%2Freturn&retypedPassword=secret', 'username': 'newuser'}, observer.calledMethods[1].kwargs)
 
 
+    @stdout_replaced
     def testNewUserWithoutAnyUser(self):
         session = {}
         pf = PasswordFile(join(self.tempdir, 'passwd'))
@@ -507,6 +510,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEquals(['admin'], pf.listUsernames())
         self.assertTrue('401' in header)
 
+    @stdout_replaced
     def testNewUserWithoutRights(self):
         session = {'user': BasicHtmlLoginForm.User('auser')}
         pf = PasswordFile(join(self.tempdir, 'passwd'))
@@ -517,6 +521,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEquals(['admin'], pf.listUsernames())
         self.assertTrue('401' in header)
 
+    @stdout_replaced
     def testNewUserWithPOSTFails(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
@@ -536,6 +541,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertFalse(pf.validateUser('newuser', 'newpassword'))
         self.assertEquals({'errorMessage':'User already exists.', 'username':'newuser'}, session['BasicHtmlLoginForm.newUserFormValues'])
 
+    @stdout_replaced
     def testNewEmptyPassword(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
@@ -553,6 +559,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertTrue(pf.validateUser('existing', 'password'))
         self.assertEquals({'errorMessage':'New password is invalid.', 'username':'existing'}, session['BasicHtmlLoginForm.formValues'])
 
+    @stdout_replaced
     def testChangePassword_withEmptySession(self):
         # A.k.a. not logged-in.
         pf = PasswordFile(join(self.tempdir, 'passwd'))
@@ -574,6 +581,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
              'username': 'existing'},
             session['BasicHtmlLoginForm.formValues'])
 
+    @stdout_replaced
     def testNewUserWithPOSTFailsDifferentPasswords(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
@@ -590,6 +598,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEquals(set(['existing', 'admin']), set(pf.listUsernames()))
         self.assertEquals({'errorMessage':'Passwords do not match', 'username':'newuser'}, session['BasicHtmlLoginForm.newUserFormValues'])
 
+    @stdout_replaced
     def testShowUserList(self):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)

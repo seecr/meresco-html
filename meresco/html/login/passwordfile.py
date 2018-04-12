@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 #
 # This file is part of "Meresco Html"
@@ -83,7 +83,9 @@ class PasswordFile(object):
         except KeyError:
             self._makePersistent()
             if createAdminUserIfEmpty:
-                self._setUser('admin', 'admin')
+                password = randomString(10)
+                self._setUser('admin', password)
+                print 'Generated password for "admin": "{}"'.format(password)
         else:
             self._users.update(self._read())
 

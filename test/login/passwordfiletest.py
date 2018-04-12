@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 #
 # This file is part of "Meresco Html"
@@ -26,6 +26,7 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
+from seecr.test.io import stdout_replaced
 from simplejson import dump as jsonSave, dump, load
 
 from os.path import join
@@ -38,7 +39,8 @@ class PasswordFileTest(SeecrTestCase):
     def setUp(self):
         SeecrTestCase.setUp(self)
         self.filename=join(self.tempdir, 'passwd')
-        self.pwd = PasswordFile(filename=self.filename, hashMethod=poorHash)
+        with stdout_replaced() as self.stdout:
+            self.pwd = PasswordFile(filename=self.filename, hashMethod=poorHash)
 
     def testReadPasswordFile(self):
         passwdHash = poorHash('passwordsalt')
@@ -139,7 +141,8 @@ class PasswordFileTest(SeecrTestCase):
         self.assertFalse(self.pwd.hasUser(username='johnny'))
 
     def testCreateFileIfMissingWithDefaultAdmin(self):
-        self.assertTrue(self.pwd.validateUser(username='admin', password='admin'))
+        pw = self.stdout.getvalue().split('"')[3]
+        self.assertTrue(self.pwd.validateUser(username='admin', password=pw))
 
     def testConvert(self):
         userstxt = join(self.tempdir, 'users.txt')
@@ -163,6 +166,7 @@ class PasswordFileTest(SeecrTestCase):
         pwd = PasswordFile(join(self.tempdir, 'empty'), createAdminUserIfEmpty=False)
         self.assertEqual([], pwd.listUsernames())
 
+    @stdout_replaced
     def testParameterizedStorage(self):
         args = []
         class Storage(object):
