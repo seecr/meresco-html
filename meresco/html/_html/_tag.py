@@ -123,7 +123,7 @@ class TagFactory(object):
             for line in g:
                 if line == None:
                     break
-                self.stream.write(str(line))
+                self.stream.write(line)
             yield
             for line in g:
                 self.stream.write(line)
