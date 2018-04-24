@@ -26,11 +26,13 @@
 ## end license ##
 
 from cStringIO import StringIO
+from functools import partial
 from xml.sax.saxutils import quoteattr
 import re
 from contextlib import contextmanager
 from ._utils import escapeHtml
 from weightless.core import compose
+from warnings import warn
 
 class Tag(object):
     def __init__(self, stream, tagname, _enter_callback=lambda: None, _exit_callback=lambda: None, **attrs):
@@ -90,17 +92,18 @@ class Tag(object):
             write('>')
 
 class TagFactory(object):
-
     def __init__(self):
         self.stream = StringIO()
         self._count = 0
 
+    def _enter_callback(self):
+        self._count += 1
+
+    def _exit_callback(self):
+        self._count -= 1
+
     def __call__(self, *args, **kwargs):
-        def _enter():
-            self._count += 1
-        def _exit():
-            self._count -= 1
-        return Tag(self.stream, _enter_callback=_enter, _exit_callback=_exit, *args, **kwargs)
+        return Tag(self.stream, _enter_callback=self._enter_callback, _exit_callback=self._exit_callback, *args, **kwargs)
 
     def lines(self):
         if self.stream.tell():
@@ -116,31 +119,26 @@ class TagFactory(object):
         return AsIs(obj)
 
     def compose(self, f):
-        @contextmanager
-        @compose
-        def ctx_man(*args, **kwargs):
-            g = compose(f(*args, **kwargs))
-            for line in g:
-                if line == None:
-                    break
-                self.stream.write(line)
-            yield
-            for line in g:
-                self.stream.write(line)
-        return ctx_man
+        warn("Will be removed in the future. Use tag_compose instead of tag.compose", FutureWarning)
+        return partial(tag_compose(f, __bw_compat__=True), self)
 
-def tag_compose(f):
+def tag_compose(f, __bw_compat__=False):
+    # __bw_compat__ **will be removed**, do not use!
     @contextmanager
     @compose
     def ctx_man(tag, *args, **kwargs):
-        g = compose(f(tag, *args, **kwargs))
-        for line in g:
-            if line == None:
-                break
-            tag.stream.write(line)
-        yield
-        for line in g:
-            tag.stream.write(line)
+        tag._enter_callback()
+        try:
+            g = compose(f(*args, **kwargs) if __bw_compat__ else f(tag, *args, **kwargs))
+            for line in g:
+                if line == None:
+                    break
+                tag.stream.write(escapeHtml(str(line)))
+            yield
+            for line in g:
+                tag.stream.write(escapeHtml(str(line)))
+        finally:
+            tag._exit_callback()
     return ctx_man
 
 class AsIs(str):

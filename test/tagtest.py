@@ -26,13 +26,25 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase, CallTrace
-from meresco.html import Tag, DynamicHtml
+from seecr.test.io import stderr_replaced
+from seecr.functools.core import sequence, cat
+from meresco.html import Tag, TagFactory, DynamicHtml
 from meresco.html._html._tag import _clearname as clear
 from meresco.components.http.utils import parseResponse
 from weightless.core import asString
 from StringIO import StringIO
+from itertools import product
+
 
 class TagTest(SeecrTestCase):
+    @classmethod
+    def setUpClass(cls):
+        with stderr_replaced() as err:
+            TagFactory().compose(lambda: None)
+            err_val = err.getvalue()
+
+        assert 'FutureWarning' in err_val, 'Missing expected warning.'
+        SeecrTestCase.setUpClass()
 
     def testComposition(self):
         s = '''
@@ -53,6 +65,61 @@ class TagTest(SeecrTestCase):
                         yield my_gen()
                 '''
         self.assertEquals('<head>forword<div><h1><p>hello</p></h1></div>afterword</head>', self.processTemplate(s))
+
+    def testCompose_escapes_content(self):
+        s = '''
+            def my_gen():
+                yield "4: <>&"
+
+            def snd_gen():
+                yield "2: <>&"
+
+            @tag_compose
+            def my_tag(tag):
+                yield "1: <>&"
+                yield snd_gen()
+                with tag('div'):
+                  with tag('h1'):
+                    yield           # here goes the stuff within 'with'
+                yield "5: <>&"
+
+            with tag('body'):
+                with my_tag(tag):
+                    yield "3: <>&"
+                    with tag('p'):
+                        yield my_gen()
+                '''
+
+        self.assertEquals('<body>1: &lt;&gt;&amp;2: &lt;&gt;&amp;<div><h1>3: &lt;&gt;&amp;<p>4: &lt;&gt;&amp;</p></h1></div>5: &lt;&gt;&amp;</body>', self.processTemplate(s))
+
+    def testCompose_nested(self):
+        for tc in product([('tag_compose', 'tag'), ('tag.compose', '')], repeat=3):
+            s = '''
+                @{0}
+                def c({1}):
+                    yield '5: >&<'
+
+                @{2}
+                def b({3}):
+                    yield '2: >&<'
+                    yield
+                    yield '7: >&<'
+
+                @{4}
+                def a({5}):
+                    yield "1: >&<"
+                    with b({3}):
+                        yield "3: >&<"
+                        yield
+                    yield "8: >&<"
+
+                with a({5}):
+                    yield "4: >&<"
+                    with c({1}):
+                        yield "6: >&<"
+                    '''.format(*sequence(cat, tc))
+
+            self.assertEquals('1: &gt;&amp;&lt;2: &gt;&amp;&lt;3: &gt;&amp;&lt;4: &gt;&amp;&lt;5: &gt;&amp;&lt;6: &gt;&amp;&lt;7: &gt;&amp;&lt;8: &gt;&amp;&lt;', self.processTemplate(s))
 
     def testAttrs(self):
         s = StringIO()
