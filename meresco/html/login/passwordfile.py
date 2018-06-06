@@ -83,7 +83,10 @@ class PasswordFile(object):
         except KeyError:
             self._makePersistent()
             if createAdminUserIfEmpty:
-                password = randomString(10)
+                if __builtins__.get('__test__', False):
+                    password = 'admin'
+                else:
+                    password = randomString(10)
                 self._setUser('admin', password)
                 print 'Generated password for "admin": "{}"'.format(password)
         else:
