@@ -55,15 +55,26 @@ class DynamicHtmlTest(SeecrTestCase):
         self.assertTrue('File "path" does not exist.' in result, result)
 
     def testCustomFileNotFound(self):
-        open(join(self.tempdir, "redirect_to_me.sf"), 'w').write("""
+        open(join(self.tempdir, "not_found_template.sf"), 'w').write("""
 def main(**kwargs):
     yield "404 Handler"
 """)
-        d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", reactor=CallTrace('Reactor'))
+        d = DynamicHtml([self.tempdir], notFoundPage="/not_found_template", reactor=CallTrace('Reactor'))
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         headers, body = result.split('\r\n\r\n')
         self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8', headers)
         self.assertEquals('404 Handler', body)
+
+    def testCustomFileNotFound_path_is_originalPath(self):
+        open(join(self.tempdir, "not_found_template.sf"), 'w').write("""
+def main(path, **kwargs):
+    yield path
+""")
+        d = DynamicHtml([self.tempdir], notFoundPage="/not_found_template", reactor=CallTrace('Reactor'))
+        result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
+        headers, body = result.split('\r\n\r\n')
+        self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8', headers)
+        self.assertEquals('/a/path', body)
 
     def testNotFound_HeadExistButHasNoMain(self):
         open(self.tempdir + '/page.sf', 'w').write("""""")
@@ -85,11 +96,11 @@ def main(**kw):
         self.assertEquals('not-found', message)
 
     def testCustomFileNotFoundToFileThatDoesExist(self):
-        d = DynamicHtml([self.tempdir], notFoundPage="/redirect_to_me", reactor=CallTrace('Reactor'))
+        d = DynamicHtml([self.tempdir], notFoundPage="/not_found_template", reactor=CallTrace('Reactor'))
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         headers, body = result.split('\r\n\r\n')
         self.assertEquals('HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=utf-8', headers)
-        self.assertEquals('File "redirect_to_me" does not exist.', body)
+        self.assertEquals('File "not_found_template" does not exist.', body)
 
     def testASimpleFlatFile(self):
         open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')

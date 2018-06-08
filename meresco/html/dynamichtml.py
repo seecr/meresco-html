@@ -227,11 +227,14 @@ class DynamicHtml(Observable):
             return normalizedPath[:normalizedPath.index('/')], normalizedPath[normalizedPath.index('/'):]
         return normalizedPath, None
 
-    def _createGenerators(self, path, scheme='', **kwargs):
+    def _createGenerators(self, path, not_found_originalPath=None, scheme='', **kwargs):
         head, tail = self._splitPath(path)
         if not head in self._templates:
             raise DynamicHtmlException.notFound(head)
-        return compose(self._createMainGenerator(head, tail, path=path, **kwargs))
+        return compose(self._createMainGenerator(
+            head, tail,
+            path=(not_found_originalPath if not_found_originalPath is not None else path),
+            **kwargs))
 
     @compose
     def handleRequest(self, path='', **kwargs):
@@ -255,7 +258,7 @@ class DynamicHtml(Observable):
                 yield str(e)
                 return
             try:
-                generators = self._createGenerators(self._notFoundPage, **kwargs)
+                generators = self._createGenerators(self._notFoundPage, not_found_originalPath=path, **kwargs)
             except DynamicHtmlException, innerException:
                 yield innerException.httpHeader()
                 yield str(innerException)
