@@ -37,14 +37,6 @@ from itertools import product
 
 
 class TagTest(SeecrTestCase):
-    @classmethod
-    def setUpClass(cls):
-        with stderr_replaced() as err:
-            TagFactory().compose(lambda: None)
-            err_val = err.getvalue()
-
-        assert 'FutureWarning' in err_val, 'Missing expected warning.'
-        SeecrTestCase.setUpClass()
 
     def testComposition(self):
         s = '''

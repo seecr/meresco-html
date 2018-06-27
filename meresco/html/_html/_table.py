@@ -34,7 +34,7 @@ class HtmlTable(Html):
         self.columns = []
 
     def addColumn(self, column):
-        self.columns.append(column.setTable(self))
+        self.columns.append(column.setTag(self.tag))
 
     def main(self, items, **kwargs):
         with self.table_tag(items=items, **kwargs):
@@ -86,16 +86,20 @@ class HtmlTable(Html):
 
     def row_content(self, **kwargs):
         for column in self.columns:
-            with column.cell_tag(**kwargs):
-                yield column.cell_content(**kwargs)
+            yield column.main(**kwargs)
 
-class Column(object):
+class Column(Html):
     def __init__(self, label):
         self.label = label
+        Html.__init__(self)
 
-    def setTable(self, table):
-        self.tag = table.tag
+    def setTag(self, tag):
+        self.tag = tag
         return self
+
+    def main(self, **kwargs):
+        with self.cell_tag(**kwargs):
+            yield self.cell_content(**kwargs)
 
     def head_tag(self, **kwargs):
         return self.tag('th')

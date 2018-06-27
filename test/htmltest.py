@@ -53,6 +53,15 @@ class HtmlTest(SeecrTestCase):
             '</tbody>'
             '</table>', html)
 
+    def testIndividualColumnRender(self):
+        class MyColumn(Column):
+            def cell_tag(self, **_):
+                return self.tag('dif')
+            def cell_content(self, **_):
+                return str(_)
+        c1 = MyColumn(label='na')
+        self.assertEquals("<dif>{'item': 'ape'}</dif>", c1.render(item='ape'))
+
     def testMyOwnClassesEverywhere(self):
         class MyTable(HtmlTable):
             # kies maar, het kan op allerlei manieren. Ik denk: append, replace, delete, etc
@@ -189,3 +198,4 @@ class HtmlTest(SeecrTestCase):
             '<tr><td>2 3 -</td></tr>'
             '</tbody>'
             '</table>', html)
+

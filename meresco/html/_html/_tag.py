@@ -35,9 +35,9 @@ from weightless.core import compose
 from warnings import warn
 
 class Tag(object):
-    def __init__(self, stream, tagname, _enter_callback=lambda: None, _exit_callback=lambda: None, **attrs):
+    def __init__(self, html, tagname, _enter_callback=lambda: None, _exit_callback=lambda: None, **attrs):
         self.attrs = {_clearname(k):v for k,v in attrs.items()}
-        self.stream = stream
+        self.html = html
         self._enter_callback = _enter_callback
         self._exit_callback = _exit_callback
         self.attrs['tag'] = tagname
@@ -68,7 +68,7 @@ class Tag(object):
         self.tag = self.attrs.pop('tag', None)
         if not self.tag:
             return
-        write = self.stream.write
+        write = self.html.write
         write('<')
         write(self.tag)
         for k, v in sorted((k,v) for k,v in self.attrs.iteritems() if v):
@@ -86,7 +86,7 @@ class Tag(object):
     def __exit__(self, *a, **kw):
         self._exit_callback()
         if self.tag:
-            write = self.stream.write
+            write = self.html.write
             write('</')
             write(self.tag)
             write('>')
@@ -96,6 +96,9 @@ class TagFactory(object):
         self.stream = StringIO()
         self._count = 0
 
+    def write(self, d):
+        return self.stream.write(d)
+
     def _enter_callback(self):
         self._count += 1
 
@@ -103,7 +106,7 @@ class TagFactory(object):
         self._count -= 1
 
     def __call__(self, *args, **kwargs):
-        return Tag(self.stream, _enter_callback=self._enter_callback, _exit_callback=self._exit_callback, *args, **kwargs)
+        return Tag(self, _enter_callback=self._enter_callback, _exit_callback=self._exit_callback, *args, **kwargs)
 
     def lines(self):
         if self.stream.tell():
@@ -119,11 +122,9 @@ class TagFactory(object):
         return AsIs(obj)
 
     def compose(self, f):
-        warn("Will be removed in the future. Use tag_compose instead of tag.compose", FutureWarning)
         return partial(tag_compose(f, __bw_compat__=True), self)
 
 def tag_compose(f, __bw_compat__=False):
-    # __bw_compat__ **will be removed**, do not use!
     @contextmanager
     @compose
     def ctx_man(tag, *args, **kwargs):
