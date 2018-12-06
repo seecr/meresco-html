@@ -155,7 +155,7 @@ class DynamicHtml(Observable):
 
     def _initialize(self, reactor, watch):
         self._loadAllTemplates()
-        if watch:
+        if reactor is not None and watch:
             for directory in self._directories:
                 directoryWatcher = DirectoryWatcher(
                     directory,

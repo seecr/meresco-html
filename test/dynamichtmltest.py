@@ -307,6 +307,12 @@ def main(Headers={}, *args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=reactor, watch=False)
         self.assertEquals([], reactor.calledMethodNames())
 
+    def testNoReactorWorksJustNoWatcher(self):
+        open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
+        d = DynamicHtml([self.tempdir], reactor=None)
+        result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
+        self.assertEquals('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)
+
     def testFileMovedIntoDirectoryCausesReload(self):
         reactor = Reactor()
 
