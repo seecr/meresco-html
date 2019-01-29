@@ -955,3 +955,18 @@ def main(*args, **kwargs):
         self.assertEquals(['something'], t2.calledMethodNames())
         self.assertEquals(('arg',), t2.calledMethods[0].args)
         self.assertEquals({'kw': 'kw'}, t2.calledMethods[0].kwargs)
+
+    def testErrorHandlingCustomHook(self):
+        tracebacks = []
+        def error_handling_hook(traceback):
+            tracebacks.append(traceback)
+
+        reactor = Reactor()
+        d = DynamicHtml([self.tempdir], reactor=reactor, errorHandlingHook=error_handling_hook)
+        with open(join(self.tempdir, "page_with_error.sf"), 'w') as fp:
+            fp.write("""
+def main(*args, **kwargs):
+    yield 1/0""")
+        reactor.step()
+        r = list(d.handleRequest(path='/page_with_error'))
+        self.assertEqual(1, len(tracebacks))

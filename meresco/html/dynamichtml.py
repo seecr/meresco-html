@@ -131,7 +131,7 @@ class ObservableProxy(object):
 
 
 class DynamicHtml(Observable):
-    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None, watch=True):
+    def __init__(self, directories, reactor=None, prefix='', allowedModules=None, indexPage='', verbose=False, additionalGlobals=None, notFoundPage=None, watch=True, errorHandlingHook=None):
         Observable.__init__(self)
         self._verbose = verbose
         if type(directories) != list:
@@ -144,6 +144,7 @@ class DynamicHtml(Observable):
         self._templates = {}
         self._additionalGlobals = additionalGlobals or {}
         self._observableProxy = ObservableProxy(self)
+        self._errorHandlingHook = errorHandlingHook
         self._initialize(reactor, watch=watch)
 
     def _loadAllTemplates(self):
@@ -263,6 +264,9 @@ class DynamicHtml(Observable):
                 yield innerException.httpHeader()
                 yield str(innerException)
                 return
+        except Exception, e:
+            if self._errorHandlingHook:
+                self._errorHandlingHook(e)
 
         while True:
             try:
@@ -286,8 +290,13 @@ class DynamicHtml(Observable):
                 return
             except Exception:
                 s = format_exc() #cannot be inlined
-                yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
-                yield str(s)
+                if self._errorHandlingHook:
+                    response = self._errorHandlingHook(s)
+                    if not response is None:
+                        yield response
+                else:
+                    yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
+                    yield str(s)
                 return
 
         try:
@@ -297,9 +306,14 @@ class DynamicHtml(Observable):
             yield tag.lines()
         except Exception:
             s = format_exc() #cannot be inlined
-            yield "<pre>"
-            yield escapeHtml(s)
-            yield "</pre>"
+            if self._errorHandlingHook:
+                response = self._errorHandlingHook(s)
+                if not response is None:
+                    yield response
+            else:
+                yield "<pre>"
+                yield escapeHtml(s)
+                yield "</pre>"
 
     def getModule(self, name):
         return self._templates.get(name)
