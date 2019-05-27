@@ -266,7 +266,12 @@ class DynamicHtml(Observable):
                 return
         except Exception, e:
             if self._errorHandlingHook:
-                self._errorHandlingHook(e)
+                s = format_exc() #cannot be inlined
+                response = self._errorHandlingHook(s, path, **kwargs)
+                if not response is None:
+                    yield response
+                    return
+            raise e
 
         while True:
             try:
@@ -291,7 +296,7 @@ class DynamicHtml(Observable):
             except Exception:
                 s = format_exc() #cannot be inlined
                 if self._errorHandlingHook:
-                    response = self._errorHandlingHook(s)
+                    response = self._errorHandlingHook(s, path, **kwargs)
                     if not response is None:
                         yield response
                 else:
@@ -307,7 +312,7 @@ class DynamicHtml(Observable):
         except Exception:
             s = format_exc() #cannot be inlined
             if self._errorHandlingHook:
-                response = self._errorHandlingHook(s)
+                response = self._errorHandlingHook(s, path, **kwargs)
                 if not response is None:
                     yield response
             else:

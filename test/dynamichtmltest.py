@@ -958,8 +958,8 @@ def main(*args, **kwargs):
 
     def testErrorHandlingCustomHook(self):
         tracebacks = []
-        def error_handling_hook(traceback):
-            tracebacks.append(traceback)
+        def error_handling_hook(traceback, *args, **kwargs):
+            tracebacks.append((traceback, args, kwargs))
 
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor, errorHandlingHook=error_handling_hook)
@@ -968,5 +968,9 @@ def main(*args, **kwargs):
 def main(*args, **kwargs):
     yield 1/0""")
         reactor.step()
-        r = list(d.handleRequest(path='/page_with_error'))
+        r = list(d.handleRequest(path='/page_with_error', some_kwargs="something"))
         self.assertEqual(1, len(tracebacks))
+        t, a, k = tracebacks[0]
+        self.assertEqual(('/page_with_error',), a)
+        self.assertTrue('tag' in k, k)
+        self.assertEqual("something", k['some_kwargs'])
