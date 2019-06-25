@@ -299,9 +299,9 @@ class DynamicHtml(Observable):
                     response = self._errorHandlingHook(s, path, **kwargs)
                     if not response is None:
                         yield response
-                else:
-                    yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
-                    yield str(s)
+                        return
+                yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
+                yield str(s)
                 return
 
         try:
@@ -315,10 +315,10 @@ class DynamicHtml(Observable):
                 response = self._errorHandlingHook(s, path, **kwargs)
                 if not response is None:
                     yield response
-            else:
-                yield "<pre>"
-                yield escapeHtml(s)
-                yield "</pre>"
+                    return
+            yield "<pre>"
+            yield escapeHtml(s)
+            yield "</pre>"
 
     def getModule(self, name):
         return self._templates.get(name)
