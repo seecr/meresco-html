@@ -8,3 +8,5 @@ python-meresco-core (<< 4.1)
 python-weightless-core (>= 0.10.6)
 python-weightless-core (<< 0.11)
 python-simplejson
+python-seecr-zulutime (>= 0.2.10)
+python-seecr-zulutime (<< 0.3)
