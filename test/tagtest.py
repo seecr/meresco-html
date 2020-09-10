@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2017 SURFmarket https://surf.nl
-# Copyright (C) 2017-2018 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017-2018, 2020 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 #
 # This file is part of "Meresco Html"
@@ -27,7 +27,6 @@
 
 from seecr.test import SeecrTestCase, CallTrace
 from seecr.test.io import stderr_replaced
-from seecr.functools.core import sequence, cat
 from meresco.html import Tag, TagFactory, DynamicHtml
 from meresco.html._html._tag import _clearname as clear
 from meresco.components.http.utils import parseResponse
@@ -85,33 +84,41 @@ class TagTest(SeecrTestCase):
         self.assertEquals('<body>1: &lt;&gt;&amp;2: &lt;&gt;&amp;<div><h1>3: &lt;&gt;&amp;<p>4: &lt;&gt;&amp;</p></h1></div>5: &lt;&gt;&amp;</body>', self.processTemplate(s))
 
     def testCompose_nested(self):
-        for tc in product([('tag_compose', 'tag'), ('tag.compose', '')], repeat=3):
+        # Test with all possibilities of tag_compose, tag or tag.compose
+        for tc in product([dict(compose='tag_compose', tag='tag'), dict(compose='tag.compose', tag='')], repeat=3):
             s = '''
-                @{0}
-                def c({1}):
+                @{0[compose]}
+                def c({0[tag]}):
                     yield '5: >&<'
 
-                @{2}
-                def b({3}):
+                @{1[compose]}
+                def b({1[tag]}):
                     yield '2: >&<'
                     yield
                     yield '7: >&<'
 
-                @{4}
-                def a({5}):
+                @{2[compose]}
+                def a({2[tag]}):
                     yield "1: >&<"
-                    with b({3}):
+                    with b({1[tag]}):
                         yield "3: >&<"
                         yield
                     yield "8: >&<"
 
-                with a({5}):
+                with a({2[tag]}):
                     yield "4: >&<"
-                    with c({1}):
+                    with c({0[tag]}):
                         yield "6: >&<"
-                    '''.format(*sequence(cat, tc))
+                    '''.format(*tc)
 
-            self.assertEquals('1: &gt;&amp;&lt;2: &gt;&amp;&lt;3: &gt;&amp;&lt;4: &gt;&amp;&lt;5: &gt;&amp;&lt;6: &gt;&amp;&lt;7: &gt;&amp;&lt;8: &gt;&amp;&lt;', self.processTemplate(s))
+            self.assertEquals(''.join(['1: &gt;&amp;&lt;',
+                '2: &gt;&amp;&lt;',
+                '3: &gt;&amp;&lt;',
+                '4: &gt;&amp;&lt;',
+                '5: &gt;&amp;&lt;',
+                '6: &gt;&amp;&lt;',
+                '7: &gt;&amp;&lt;',
+                '8: &gt;&amp;&lt;']), self.processTemplate(s))
 
     def testAttrs(self):
         s = StringIO()
