@@ -251,6 +251,20 @@ class TagTest(SeecrTestCase):
                 yield 42
         '''))
 
+    def testDotTurnsIntoClasses(self):
+        self.assertEqual('<div class="w100 ph3">42</div>', self.processTemplate('''
+            with tag('div.w100.ph3'):
+                yield 42
+        '''))
+        self.assertEqual('<div class="other w100 ph3">42</div>', self.processTemplate('''
+            with tag('div.w100.ph3', class_=['other']):
+                yield 42
+        '''))
+        self.assertEqual('<div class="other w100 ph3" id="identifier">42</div>', self.processTemplate('''
+            with tag('div#identifier.w100.ph3', class_=['other']):
+                yield 42
+        '''))
+
 
    # with escape firstline
 

@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2017 SURFmarket https://surf.nl
-# Copyright (C) 2017-2018 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017-2018, 2020 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 #
 # This file is part of "Meresco Html"
@@ -40,7 +40,11 @@ class Tag(object):
         self.html = html
         self._enter_callback = _enter_callback
         self._exit_callback = _exit_callback
-        self.attrs['tag'] = tagname
+        self.attrs['tag'], id_, classes = _splittag(tagname)
+        if id_:
+            self.set('id', id_)
+        for c in classes:
+            self.append('class', c)
         self.as_is = AsIs
 
     def set(self, name, value):
@@ -154,3 +158,10 @@ def _clearname(name):
     if m:
         return m.group(1)
     return name
+
+def _splittag(tagname):
+    if not tagname:
+        return tagname, None, []
+    tagname, _, classstring = tagname.partition('.')
+    tagname, _, identifier = tagname.partition('#')
+    return tagname, identifier, [c for c in classstring.split('.') if c]
