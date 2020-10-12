@@ -35,24 +35,24 @@ includeParentAndDeps(__file__, scanForDeps=True) #DO_NOT_DISTRIBUTE
 from unittest import main
 
 from dynamichtmltest import DynamicHtmlTest
-from errorlogtest import ErrorLogTest
-from htmltest import HtmlTest
-from tagtest import TagTest
-from objectregistrytest import ObjectRegistryTest
-from postactionstest import PostActionsTest
-from urlencodetest import UrlencodeTest
-from nextpreviteratortest import NextPrevIteratorTest
-
-from login.basichtmlloginformtest import BasicHtmlLoginFormTest
-from login.groupsfiletest import GroupsFileTest
-from login.passwordfiletest import PasswordFileTest
-from login.remembermecookietest import RememberMeCookieTest
-from login.securezonetest import SecureZoneTest
-from login.usergroupsformtest import UserGroupsFormTest
-from login.userinfotest import UserInfoTest
-from login.userinfoformtest import UserInfoFormTest
-
-from tools.htmltotagtest import HtmlToTagTest
+#from errorlogtest import ErrorLogTest
+#from htmltest import HtmlTest
+#from tagtest import TagTest
+#from objectregistrytest import ObjectRegistryTest
+#from postactionstest import PostActionsTest
+#from urlencodetest import UrlencodeTest
+#from nextpreviteratortest import NextPrevIteratorTest
+#
+#from login.basichtmlloginformtest import BasicHtmlLoginFormTest
+#from login.groupsfiletest import GroupsFileTest
+#from login.passwordfiletest import PasswordFileTest
+#from login.remembermecookietest import RememberMeCookieTest
+#from login.securezonetest import SecureZoneTest
+#from login.usergroupsformtest import UserGroupsFormTest
+#from login.userinfotest import UserInfoTest
+#from login.userinfoformtest import UserInfoFormTest
+#
+#from tools.htmltotagtest import HtmlToTagTest
 
 if __name__ == '__main__':
     main()

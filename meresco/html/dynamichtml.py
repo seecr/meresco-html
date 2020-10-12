@@ -212,10 +212,9 @@ class DynamicHtml(Observable):
                 yield self._createMainGenerator(nextHead, nextTail, scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, **kwargs)
             nextGenerator = _()
 
-        try:
-            main = self._templates[head].main
-        except Exception:
+        if not head in self._templates:
             raise DynamicHtmlException.notFound(head)
+        main = self._templates[head].main
 
         def _():
             yield main(scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, pipe=nextGenerator, **kwargs)
@@ -344,18 +343,17 @@ class DynamicHtml(Observable):
             'abs': abs,
             'all': all,
             'any': any,
-            'apply': apply,
             'basestring': str,
             'bin': bin,
             'bool': bool,
-            'buffer': buffer,
+            'buffer': memoryview, # not sure if memoryview is 100% compatible with buffer
             'bytearray': bytearray,
             'callable': callable,
             'ceil': ceil,
             'chr': chr,
             'classmethod': classmethod,
-            'cmp': cmp,
-            'coerce': coerce,
+            #'cmp': cmp, deprecated
+            #'coerce': coerce,
             'complex': complex,
             'delattr': delattr,
             'dict': dict,
@@ -374,7 +372,7 @@ class DynamicHtml(Observable):
             'hex': hex,
             'id': id,
             'int': int,
-            'intern': intern,
+            #'intern': intern,
             'isinstance': isinstance,
             'islice': islice,
             'issubclass': issubclass,
@@ -385,7 +383,7 @@ class DynamicHtml(Observable):
             'long': int,
             'map': map,
             'max': max,
-            'memoryview': memoryview,
+            'memoryview': memoryview, # duplicate, see buffer
             'min': min,
             'next': next,
             'object': object,
@@ -412,7 +410,7 @@ class DynamicHtml(Observable):
             'unichr': chr,
             'unicode': str,
             'vars': vars,
-            'xrange': xrange,
+            'xrange': range,
             'zip': zip,
 
             # weightless stuff
