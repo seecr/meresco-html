@@ -26,39 +26,39 @@
 
 from seecr.test import SeecrTestCase
 from meresco.html import urlencode
-from urllib import urlencode as urllib_urlencode
+from urllib.parse import urlencode as urllib_urlencode
 
 class UrlencodeTest(SeecrTestCase):
 
     def testDict(self):
-        self.assertEquals('a=a%3Fp', urlencode({'a': 'a?p'}))
-        self.assertEquals('a=a%3Fp&a=fiets', urlencode({'a': ['a?p', 'fiets']}))
+        self.assertEqual('a=a%3Fp', urlencode({'a': 'a?p'}))
+        self.assertEqual('a=a%3Fp&a=fiets', urlencode({'a': ['a?p', 'fiets']}))
 
     def testUnicode(self):
-        self.assertEquals('a=a%3Fp', urlencode({'a': u'a?p'}))
-        self.assertEquals('a=a%C3%A1p', urlencode({'a': 'a\xc3\xa1p'}))
-        self.assertEquals('a=a%C3%A1p', urlencode({'a': 'aáp'}))
-        self.assertEquals('a=a%C3%A1p', urlencode({'a': u'aáp'}))
+        self.assertEqual('a=a%3Fp', urlencode({'a': 'a?p'}))
+        self.assertEqual('a=a%C3%A1p', urlencode({'a': 'a\xc3\xa1p'}))
+        self.assertEqual('a=a%C3%A1p', urlencode({'a': 'aáp'}))
+        self.assertEqual('a=a%C3%A1p', urlencode({'a': 'aáp'}))
 
     def testUnicodeTupleList(self):
-        self.assertEquals('a=a%3Fp', urlencode([('a', u'a?p')]))
-        self.assertEquals('a=a%C3%A1p', urlencode([('a', 'a\xc3\xa1p')]))
-        self.assertEquals('a=a%C3%A1p', urlencode([('a', 'aáp')]))
-        self.assertEquals('a=a%C3%A1p', urlencode([('a', u'aáp')]))
+        self.assertEqual('a=a%3Fp', urlencode([('a', 'a?p')]))
+        self.assertEqual('a=a%C3%A1p', urlencode([('a', 'a\xc3\xa1p')]))
+        self.assertEqual('a=a%C3%A1p', urlencode([('a', 'aáp')]))
+        self.assertEqual('a=a%C3%A1p', urlencode([('a', 'aáp')]))
 
     def testIntegerInUrlencode(self):
-        self.assertEquals('a=3', urlencode({'a': 3}))
+        self.assertEqual('a=3', urlencode({'a': 3}))
 
     def testUnicodeBugInDefaultUnicode(self):
-        self.assertEquals('a=a%3Fp', urllib_urlencode({'a': u'a?p'}))
-        self.assertEquals('a=3', urllib_urlencode({'a': 3}))
-        self.assertEquals('a=a%C3%A1p', urllib_urlencode({'a': 'a\xc3\xa1p'}))
-        self.assertEquals('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}))
-        self.assertEquals('a=a%C3%A1p', urllib_urlencode({'a': u'aáp'}))
-        self.assertEquals('a=a%3Fp', urllib_urlencode({'a': u'a?p'}, doseq=True))
-        self.assertEquals('a=a%C3%A1p', urllib_urlencode({'a': 'a\xc3\xa1p'}, doseq=True))
-        self.assertEquals('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}, doseq=True))
+        self.assertEqual('a=a%3Fp', urllib_urlencode({'a': 'a?p'}))
+        self.assertEqual('a=3', urllib_urlencode({'a': 3}))
+        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'a\xc3\xa1p'}))
+        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}))
+        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}))
+        self.assertEqual('a=a%3Fp', urllib_urlencode({'a': 'a?p'}, doseq=True))
+        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'a\xc3\xa1p'}, doseq=True))
+        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}, doseq=True))
         # Bug in unicode characters and us of doseq=True
-        self.assertEquals('a=a%3Fp', urllib_urlencode({'a': u'aáp'}, doseq=True))
+        self.assertEqual('a=a%3Fp', urllib_urlencode({'a': 'aáp'}, doseq=True))
 
 

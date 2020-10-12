@@ -87,7 +87,7 @@ class GroupsFile(object):
 
     def listGroups(self, used=False):
         if used:
-            return set(groupname for groups in self._users.values() for groupname in groups)
+            return set(groupname for groups in list(self._users.values()) for groupname in groups)
         return set(self._groups)
 
     def setGroupsForUser(self, username, groupnames):
@@ -115,7 +115,7 @@ class GroupsFile(object):
         keepOnlyTheseGroups = set(keepOnlyTheseGroups)
         keepOnlyTheseGroups.update(self._groupsForUserManagement)
         for removedGroup in set(self._groups) - keepOnlyTheseGroups:
-            for username, userGroups in self._users.items():
+            for username, userGroups in list(self._users.items()):
                 if removedGroup in userGroups:
                     self._setGroupsForUser(username=username, groupnames=(n for n in userGroups if n != removedGroup))
         self._groups = list(keepOnlyTheseGroups)

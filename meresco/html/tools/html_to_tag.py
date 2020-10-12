@@ -26,11 +26,12 @@
 import re
 from lxml.etree import Element, parse, XMLParser, QName
 from lxml.html.html5parser import document_fromstring, fragments_fromstring, fromstring, HTMLParser
-from StringIO import StringIO
+from io import StringIO
 
 from unicodedata import normalize
 
 from meresco.components import lxmltostring
+from functools import reduce
 
 
 def html_to_tag(in_str, remove_blank_text=True):
@@ -60,7 +61,7 @@ def html_to_etree(in_str, remove_blank_text=True):
     if in_str is None:
         return None
 
-    if not isinstance(in_str, basestring):
+    if not isinstance(in_str, str):
         raise ValueError('input must be a string')
 
     in_str = _nfc(in_str).strip()
@@ -96,7 +97,7 @@ def _():                        # close over helpers not needed elsewhere.
 
     def attribs(el):
         as_ = el.attrib
-        return {_nfc(k): _nfc(as_[k]) for k in as_.keys()}
+        return {_nfc(k): _nfc(as_[k]) for k in list(as_.keys())}
 
 
     def etree_to_data(el):
@@ -114,7 +115,7 @@ def _():                        # close over helpers not needed elsewhere.
             el_d['tail'] = _nfc(el.tail)
 
         if has_ch(el):
-            el_d['children'] = map(etree_to_data, iter_ch(el))
+            el_d['children'] = list(map(etree_to_data, iter_ch(el)))
 
         return el_d
 
@@ -210,7 +211,7 @@ def _nfc(aString):
 
     Canonical decomposition followed by canonical composition
     """
-    return normalize('NFC', unicode(aString)).encode('utf-8')
+    return normalize('NFC', str(aString)).encode('utf-8')
 
 def _ident_ln(ident, a_str, newline=True):
     return (' ' * ident) + a_str + ('\n' if newline else '')
@@ -254,7 +255,7 @@ def _attribs_f(attribs):
         new_class = attribs['class'].strip().split()
 
     # no reserved words as keyword-argument & remove special cases:
-    attribs = {(k+'_' if k in PY_KEYWORDS else k): v for (k, v) in attribs.iteritems() if k not in {'class'}}
+    attribs = {(k+'_' if k in PY_KEYWORDS else k): v for (k, v) in attribs.items() if k not in {'class'}}
 
     # partition into kw_args and kw_dict values:
     def f(acc, kv):
@@ -269,7 +270,7 @@ def _attribs_f(attribs):
 
     kw_args, kw_dict = reduce(
         f,
-        attribs.iteritems(),
+        iter(attribs.items()),
         [([('class_', new_class)] if new_class else []), []]) # re-add special cases
     kw_args.sort()
     kw_dict.sort()

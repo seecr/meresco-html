@@ -26,7 +26,7 @@
 
 from meresco.core import Observable
 from meresco.components.http.utils import redirectHttp
-from labels import getLabel
+from .labels import getLabel
 
 class SecureZone(Observable):
     def __init__(self, loginPath, excluding=None, defaultLanguage='en'):

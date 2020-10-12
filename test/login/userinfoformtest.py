@@ -34,7 +34,7 @@ from meresco.html.login import UserInfo, UserInfoForm
 from meresco.html.login import BasicHtmlLoginForm
 from os.path import join
 from weightless.core import asString
-from urllib import urlencode
+from urllib.parse import urlencode
 
 class UserInfoFormTest(SeecrTestCase):
     def setUp(self):
@@ -57,9 +57,9 @@ class UserInfoFormTest(SeecrTestCase):
             'fullname': ['THE user'],
         }
         result = asString(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.adminUser}))
-        self.assertEquals('HTTP/1.0 302 Found', result.split(CRLF)[0])
-        self.assertEquals({'Location': '/user'}, headerToDict(result))
-        self.assertEquals({'fullname': 'THE user'}, self.info.userInfo('aUser'))
+        self.assertEqual('HTTP/1.0 302 Found', result.split(CRLF)[0])
+        self.assertEqual({'Location': '/user'}, headerToDict(result))
+        self.assertEqual({'fullname': 'THE user'}, self.info.userInfo('aUser'))
 
     def testUpdateUserByOtherUserFails(self):
         data = {
@@ -68,8 +68,8 @@ class UserInfoFormTest(SeecrTestCase):
             'fullname': ['THE user'],
         }
         result = asString(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.normalUser}))
-        self.assertEquals('HTTP/1.0 401 Unauthorized', result.split(CRLF)[0])
-        self.assertEquals({}, self.info.userInfo('aUser'))
+        self.assertEqual('HTTP/1.0 401 Unauthorized', result.split(CRLF)[0])
+        self.assertEqual({}, self.info.userInfo('aUser'))
 
     def testUpdateInfoForUserByItself(self):
         data = {
@@ -78,9 +78,9 @@ class UserInfoFormTest(SeecrTestCase):
             'fullname': ['THE user'],
         }
         result = asString(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.normalUser}))
-        self.assertEquals('HTTP/1.0 302 Found', result.split(CRLF)[0])
-        self.assertEquals({'Location': '/user'}, headerToDict(result))
-        self.assertEquals({'fullname': 'THE user'}, self.info.userInfo(self.normalUser.name))
+        self.assertEqual('HTTP/1.0 302 Found', result.split(CRLF)[0])
+        self.assertEqual({'Location': '/user'}, headerToDict(result))
+        self.assertEqual({'fullname': 'THE user'}, self.info.userInfo(self.normalUser.name))
 
     def testForm(self):
         result = asString(self.form.userInfoForm(self.normalUser, forUsername=self.normalUser.name, path='/path/to/form', arguments={'key':['value']}))
@@ -99,7 +99,7 @@ class UserInfoFormTest(SeecrTestCase):
 
     def testFormNormalUserOfOtherUser(self):
         result = asString(self.form.userInfoForm(self.normalUser, forUsername='other', path='/path/to/form', arguments={'key':['value']}))
-        self.assertEquals('', result)
+        self.assertEqual('', result)
 
     def testHandleNewUser(self):
         data = {

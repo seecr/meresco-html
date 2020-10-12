@@ -37,19 +37,19 @@ class GroupsFileTest(SeecrTestCase):
     def testUserNoGroups(self):
         user = BasicHtmlLoginForm.User('username')
         self.groups.enrichUser(user)
-        self.assertEquals(set(), user.groups())
+        self.assertEqual(set(), user.groups())
 
     def testListGroups(self):
-        self.assertEquals(set(['admin', 'management', 'users']), self.groups.listGroups())
+        self.assertEqual(set(['admin', 'management', 'users']), self.groups.listGroups())
 
     def testAddUserToGroup(self):
         user = BasicHtmlLoginForm.User('username')
         self.groups.enrichUser(user)
-        self.assertEquals(set(), user.groups())
+        self.assertEqual(set(), user.groups())
         self.groups.setGroupsForUser(username='username', groupnames=['admin'])
-        self.assertEquals(set(['admin']), user.groups())
+        self.assertEqual(set(['admin']), user.groups())
         self.groups.setGroupsForUser(username='username', groupnames=['admin', 'users'])
-        self.assertEquals(set(['admin', 'users']), user.groups())
+        self.assertEqual(set(['admin', 'users']), user.groups())
 
     def testAddUserOnlyToAvailableGroups(self):
         self.assertRaises(ValueError, lambda: self.groups.setGroupsForUser(username='username', groupnames=['newgroup']))
@@ -68,13 +68,13 @@ class GroupsFileTest(SeecrTestCase):
     def testManagementGroups(self):
         user = BasicHtmlLoginForm.User('username')
         self.groups.enrichUser(user)
-        self.assertEquals(set(), user.managementGroups())
+        self.assertEqual(set(), user.managementGroups())
         self.groups.setGroupsForUser(username='username', groupnames=['admin', 'users'])
-        self.assertEquals(set(['admin']), user.managementGroups())
+        self.assertEqual(set(['admin']), user.managementGroups())
         self.groups.setGroupsForUser(username='username', groupnames=['management', 'users'])
-        self.assertEquals(set(['management']), user.managementGroups())
+        self.assertEqual(set(['management']), user.managementGroups())
         self.groups.setGroupsForUser(username='username', groupnames=['management', 'admin', 'users'])
-        self.assertEquals(set(['admin', 'management']), user.managementGroups())
+        self.assertEqual(set(['admin', 'management']), user.managementGroups())
 
     def testRemoveOldGroups(self):
         gf = GroupsFile(join(self.tempdir, 'groups1'), availableGroups=['users', 'toberemoved'])
@@ -85,17 +85,17 @@ class GroupsFileTest(SeecrTestCase):
         userroot = BasicHtmlLoginForm.User('root')
         gf.enrichUser(usertest)
         gf.enrichUser(userroot)
-        self.assertEquals(set(['users', 'toberemoved']), usertest.groups())
-        self.assertEquals(set(['users', 'toberemoved', 'admin']), userroot.groups())
-        self.assertEquals(set(['users', 'toberemoved', 'admin']), gf.listGroups())
+        self.assertEqual(set(['users', 'toberemoved']), usertest.groups())
+        self.assertEqual(set(['users', 'toberemoved', 'admin']), userroot.groups())
+        self.assertEqual(set(['users', 'toberemoved', 'admin']), gf.listGroups())
         gf.convert(keepOnlyTheseGroups=set(['users']))
         usertest = BasicHtmlLoginForm.User('test')
         userroot = BasicHtmlLoginForm.User('root')
         gf.enrichUser(usertest)
         gf.enrichUser(userroot)
-        self.assertEquals(set(['users']), usertest.groups())
-        self.assertEquals(set(['users', 'admin']), userroot.groups())
-        self.assertEquals(set(['users', 'admin']), gf.listGroups())
+        self.assertEqual(set(['users']), usertest.groups())
+        self.assertEqual(set(['users', 'admin']), userroot.groups())
+        self.assertEqual(set(['users', 'admin']), gf.listGroups())
 
     def testCanEdit(self):
         self.groups.setGroupsForUser('admin1', ['admin'])
@@ -144,7 +144,7 @@ class GroupsFileTest(SeecrTestCase):
         others = Group('others')
         user1 = BasicHtmlLoginForm.User('user1')
         self.groups.enrichUser(user1)
-        self.assertEquals(set(['users', 'management']), user1.groups())
+        self.assertEqual(set(['users', 'management']), user1.groups())
         self.assertTrue(user1.isMemberOf('users'))
         self.assertTrue(user1.isMemberOf(users))
         self.assertTrue(user1.isMemberOfAny('users'))

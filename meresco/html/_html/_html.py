@@ -27,7 +27,7 @@
 ## end license ##
 
 from weightless.core import compose
-from cStringIO import StringIO
+from io import StringIO
 
 from ._tag import Tag
 from ._utils import escapeHtml

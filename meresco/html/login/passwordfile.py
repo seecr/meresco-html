@@ -48,7 +48,7 @@ def usernameTest(username):
     return bool(VALIDNAME.match(username))
 
 def randomString(length=5):
-    return ''.join(choice(_SALT_1 + _SALT_2) for i in xrange(length))
+    return ''.join(choice(_SALT_1 + _SALT_2) for i in range(length))
 
 class FileStorage(object):
     def store(self, id_, data):
@@ -85,7 +85,7 @@ class PasswordFile(object):
             if createAdminUserIfEmpty:
                 password = randomString(10)
                 self._setUser('admin', password)
-                print 'Generated password for "admin": "{}"'.format(password)
+                print('Generated password for "admin": "{}"'.format(password))
         else:
             self._users.update(self._read())
 
@@ -123,7 +123,7 @@ class PasswordFile(object):
         self._setUser(username=username, password=password)
 
     def listUsernames(self):
-        return self._users.keys()
+        return list(self._users.keys())
 
     def hasUser(self, username):
         return username in self._users

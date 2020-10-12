@@ -31,7 +31,7 @@ from meresco.html import Tag, TagFactory, DynamicHtml
 from meresco.html._html._tag import _clearname as clear
 from meresco.components.http.utils import parseResponse
 from weightless.core import asString
-from StringIO import StringIO
+from io import StringIO
 from itertools import product
 
 
@@ -55,7 +55,7 @@ class TagTest(SeecrTestCase):
                     with tag('p'):
                         yield my_gen()
                 '''
-        self.assertEquals('<head>forword<div><h1><p>hello</p></h1></div>afterword</head>', self.processTemplate(s))
+        self.assertEqual('<head>forword<div><h1><p>hello</p></h1></div>afterword</head>', self.processTemplate(s))
 
     def testCompose_escapes_content(self):
         s = '''
@@ -81,7 +81,7 @@ class TagTest(SeecrTestCase):
                         yield my_gen()
                 '''
 
-        self.assertEquals('<body>1: &lt;&gt;&amp;2: &lt;&gt;&amp;<div><h1>3: &lt;&gt;&amp;<p>4: &lt;&gt;&amp;</p></h1></div>5: &lt;&gt;&amp;</body>', self.processTemplate(s))
+        self.assertEqual('<body>1: &lt;&gt;&amp;2: &lt;&gt;&amp;<div><h1>3: &lt;&gt;&amp;<p>4: &lt;&gt;&amp;</p></h1></div>5: &lt;&gt;&amp;</body>', self.processTemplate(s))
 
     def testCompose_nested(self):
         # Test with all possibilities of tag_compose, tag or tag.compose
@@ -111,7 +111,7 @@ class TagTest(SeecrTestCase):
                         yield "6: >&<"
                     '''.format(*tc)
 
-            self.assertEquals(''.join(['1: &gt;&amp;&lt;',
+            self.assertEqual(''.join(['1: &gt;&amp;&lt;',
                 '2: &gt;&amp;&lt;',
                 '3: &gt;&amp;&lt;',
                 '4: &gt;&amp;&lt;',
@@ -166,11 +166,11 @@ class TagTest(SeecrTestCase):
         self.assertEqual('<a class="value">data</a>', s.getvalue())
 
     def testClearName(self):
-        self.assertEquals('class', clear('class'))
-        self.assertEquals('class', clear('class_'))
-        self.assertEquals('_class', clear('_class'))
-        self.assertEquals('_class_', clear('_class_'))
-        self.assertEquals('class__', clear('class__'))
+        self.assertEqual('class', clear('class'))
+        self.assertEqual('class', clear('class_'))
+        self.assertEqual('_class', clear('_class'))
+        self.assertEqual('_class_', clear('_class_'))
+        self.assertEqual('class__', clear('class__'))
 
     def testReservedWordAttrs(self):
         s = StringIO()

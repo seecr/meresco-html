@@ -43,17 +43,17 @@ class HtmlToTagTest(SeecrTestCase):
         res = result.splitlines()
         diff = unified_diff(exp, res, fromfile='expected', tofile='result', n=3)
         if expected != result:
-            self.assertEquals(expected, result, '\n'.join(diff))
+            self.assertEqual(expected, result, '\n'.join(diff))
 
     def test_bad_input(self):
         self.assertRaises(ValueError, lambda: html_to_tag(0))
 
     def test_empty_input(self):
-        self.assertEquals('', html_to_tag(None))
-        self.assertEquals('', html_to_tag(''))
-        self.assertEquals('', html_to_tag(u''))
-        self.assertEquals('', html_to_tag(' \t\r\n '))
-        self.assertEquals('', html_to_tag(u' \t\r\n '))
+        self.assertEqual('', html_to_tag(None))
+        self.assertEqual('', html_to_tag(''))
+        self.assertEqual('', html_to_tag(''))
+        self.assertEqual('', html_to_tag(' \t\r\n '))
+        self.assertEqual('', html_to_tag(' \t\r\n '))
 
     def test_simple_fragment(self):
         expected = """\
@@ -68,23 +68,23 @@ def main(tag, **kw):
 
     # html_to_etree
     def test_empty(self):
-        self.assertEquals(None, html_to_etree(None))
-        self.assertEquals(None, html_to_etree(''))
+        self.assertEqual(None, html_to_etree(None))
+        self.assertEqual(None, html_to_etree(''))
 
     def test_fragment_tag_only(self):
         res = html_to_etree('<h1></h1>')
-        self.assertEquals('_Element', type(res).__name__)
-        self.assertEquals({'tag': 'h1'}, etree_to_data(res))
+        self.assertEqual('_Element', type(res).__name__)
+        self.assertEqual({'tag': 'h1'}, etree_to_data(res))
 
     def test_fragment_tag_text_and_attrs(self):
-        self.assertEquals({
+        self.assertEqual({
             'tag': 'h1',
             'attribs': {'style': 'color: yellow;'},
             'text': 'text'
         }, etree_to_data(html_to_etree('<h1 style="color: yellow;">text</h1>')))
 
     def test_fragment_2tag_and_nested(self):
-        self.assertEquals({
+        self.assertEqual({
             'tag': 'div',
             'children': [
                 {'tag': 'h1',
@@ -100,7 +100,7 @@ def main(tag, **kw):
         }, etree_to_data(html_to_etree('<h1>text</h1><p><span>text</span></p>')))
 
     def test_fragment_document_with_nested(self):
-        self.assertEquals({
+        self.assertEqual({
             'tag': 'html',
             'children': [
                 {'tag': 'head',
@@ -119,71 +119,71 @@ def main(tag, **kw):
     return
     yield
 '''
-        self.assertEquals(
+        self.assertEqual(
             expected,
             data_to_tag({'tag': 'h2'}))
 
     def test_simple_str_literal(self):
         # lone newline
-        self.assertEquals('"\\n"', _simple_str_literal('\n'))
+        self.assertEqual('"\\n"', _simple_str_literal('\n'))
 
                 # double quoted (by default)
-        self.assertEquals('""', _simple_str_literal(''))           # ident is ignored for non-newline text
-        self.assertEquals('"text"', _simple_str_literal('text'))  # ident is ignored for non-newline text
-        self.assertEquals('" te xt "', _simple_str_literal(' te xt '))
+        self.assertEqual('""', _simple_str_literal(''))           # ident is ignored for non-newline text
+        self.assertEqual('"text"', _simple_str_literal('text'))  # ident is ignored for non-newline text
+        self.assertEqual('" te xt "', _simple_str_literal(' te xt '))
 
         # double-quote escaped
-        self.assertEquals(r'"\""', _simple_str_literal('"'))
-        self.assertEquals(r'"\"\"with\"-text"', _simple_str_literal('""with"-text'))
+        self.assertEqual(r'"\""', _simple_str_literal('"'))
+        self.assertEqual(r'"\"\"with\"-text"', _simple_str_literal('""with"-text'))
 
         # backslash too
-        self.assertEquals(r'"\\"', _simple_str_literal('\\'))
+        self.assertEqual(r'"\\"', _simple_str_literal('\\'))
 
         # with newlines
-        self.assertEquals('"ape\\nnut\\nmies\\n"', _simple_str_literal('ape\nnut\nmies\n'))
+        self.assertEqual('"ape\\nnut\\nmies\\n"', _simple_str_literal('ape\nnut\nmies\n'))
 
     def test_escape_text(self):
         # double quoted (by default)
-        self.assertEquals('""', _text_as_string_literal(0, ''))           # ident is ignored for non-newline text
-        self.assertEquals('"text"', _text_as_string_literal(99, 'text'))  # ident is ignored for non-newline text
-        self.assertEquals('" te xt "', _text_as_string_literal(0, ' te xt '))
+        self.assertEqual('""', _text_as_string_literal(0, ''))           # ident is ignored for non-newline text
+        self.assertEqual('"text"', _text_as_string_literal(99, 'text'))  # ident is ignored for non-newline text
+        self.assertEqual('" te xt "', _text_as_string_literal(0, ' te xt '))
 
         # double-quote escaped
-        self.assertEquals(r'"\""', _text_as_string_literal(0, '"'))
-        self.assertEquals(r'"\"\"with\"-text"', _text_as_string_literal(0, '""with"-text'))
+        self.assertEqual(r'"\""', _text_as_string_literal(0, '"'))
+        self.assertEqual(r'"\"\"with\"-text"', _text_as_string_literal(0, '""with"-text'))
 
         # backslash too
-        self.assertEquals(r'"\\"', _text_as_string_literal(0, '\\'))
+        self.assertEqual(r'"\\"', _text_as_string_literal(0, '\\'))
 
         # with newlines
-        self.assertEquals('"\\n".join([\n"ape",\n"nut",\n"mies",\n""])', _text_as_string_literal(0, 'ape\nnut\nmies\n'))
-        self.assertEquals('"\\n".join([\n  "ape",\n  "nut",\n  "mies",\n  ""])', _text_as_string_literal(2, 'ape\nnut\nmies\n'))
-        self.assertEquals('"\\n".join([\n   "",\n   ""])', _text_as_string_literal(3, '\n'))
-        self.assertEquals('"\\n".join([\n"x",\n"y\\"\\\\\r"])', _text_as_string_literal(0, 'x\ny"\\\r'))
+        self.assertEqual('"\\n".join([\n"ape",\n"nut",\n"mies",\n""])', _text_as_string_literal(0, 'ape\nnut\nmies\n'))
+        self.assertEqual('"\\n".join([\n  "ape",\n  "nut",\n  "mies",\n  ""])', _text_as_string_literal(2, 'ape\nnut\nmies\n'))
+        self.assertEqual('"\\n".join([\n   "",\n   ""])', _text_as_string_literal(3, '\n'))
+        self.assertEqual('"\\n".join([\n"x",\n"y\\"\\\\\r"])', _text_as_string_literal(0, 'x\ny"\\\r'))
 
     def test_identifiers_re(self):
         def f(maybe_identifier_txt):
             return bool(VALID_NON_UNICODE_IDENTIFIER_RE.match(maybe_identifier_txt))
 
         # not
-        self.assertEquals(False, f(''))
-        self.assertEquals(False, f('with space'))
-        self.assertEquals(False, f('0'))
-        self.assertEquals(False, f('012345abcABC'))
-        self.assertEquals(False, f('ë'))  # Would be valid iff unicode taken into account.
+        self.assertEqual(False, f(''))
+        self.assertEqual(False, f('with space'))
+        self.assertEqual(False, f('0'))
+        self.assertEqual(False, f('012345abcABC'))
+        self.assertEqual(False, f('ë'))  # Would be valid iff unicode taken into account.
 
         # is
-        self.assertEquals(True, f('a'))
-        self.assertEquals(True, f('id_'))
-        self.assertEquals(True, f('id'))
-        self.assertEquals(True, f('_'))
-        self.assertEquals(True, f('_a'))
-        self.assertEquals(True, f('_A'))
-        self.assertEquals(True, f('class'))
-        self.assertEquals(True, f('_0'))
-        self.assertEquals(True, f('_012345'))
-        self.assertEquals(True, f('_012345abcABC'))
-        self.assertEquals(True, f('ABC'))
+        self.assertEqual(True, f('a'))
+        self.assertEqual(True, f('id_'))
+        self.assertEqual(True, f('id'))
+        self.assertEqual(True, f('_'))
+        self.assertEqual(True, f('_a'))
+        self.assertEqual(True, f('_A'))
+        self.assertEqual(True, f('class'))
+        self.assertEqual(True, f('_0'))
+        self.assertEqual(True, f('_012345'))
+        self.assertEqual(True, f('_012345abcABC'))
+        self.assertEqual(True, f('ABC'))
 
     def test_data_one_tag_all(self):
         expected = '''\
@@ -194,7 +194,7 @@ def main(tag, **kw):
     return
     yield
 '''
-        self.assertEquals(
+        self.assertEqual(
             expected,
             data_to_tag({
                 'tag': 'div',
@@ -223,7 +223,7 @@ def main(tag, **kw):
     return
     yield
 '''
-        self.assertEquals(
+        self.assertEqual(
             expected,
             data_to_tag({
                 'tag': 'span',
@@ -252,7 +252,7 @@ def main(tag, **kw):
             return etree_to_data(html_to_etree(processTemplate(self, html_to_tag(html_text, **kw)), **kw))
 
         # simple
-        self.assertEquals(
+        self.assertEqual(
             {'tag': 'h1', 'text': 'Hi!'},
             f('<h1>Hi!</h1>'))
 
@@ -271,7 +271,7 @@ def main(tag, **kw):
     </div>
   </body>
 </html>'''
-        self.assertEquals(
+        self.assertEqual(
             {'tag': 'html',
              'attribs': {'lang': 'en'},
              'children': [
@@ -296,7 +296,7 @@ def main(tag, **kw):
             f(chicken_soup))
 
         # nested without "irrelevant" whitespace removed
-        self.assertEquals(
+        self.assertEqual(
             {'tag': 'html',
              'attribs': {'lang': 'en'},
              'children': [
@@ -364,14 +364,14 @@ def main(tag, **kw):
             result = f(weird_namespaceness)
             self.assertTrue('DataLossWarning' in err.getvalue(), err.getvalue()) # This is weird in its own right...
 
-        self.assertEquals(
+        self.assertEqual(
             expected_bad,
             result)
 
         result = f(weird_namespaceness, remove_blank_text=False)
 
-        self.assertEquals('pre', result['tag'])
-        self.assertEquals(None, result.get('children'))
+        self.assertEqual('pre', result['tag'])
+        self.assertEqual(None, result.get('children'))
         self.assertTrue('Traceback' in result['text'])#, result['text'])
         self.assertTrue('SyntaxError:' in result['text'])#, result['text'])
 
@@ -381,5 +381,5 @@ def processTemplate(self, template):
     d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
     header, body = parseResponse(asString(d.handleRequest(path='/afile')))
     if header['StatusCode'] != '200':
-        print body
+        print(body)
     return body

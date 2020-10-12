@@ -25,7 +25,7 @@
 #
 ## end license ##
 
-from cStringIO import StringIO
+from io import StringIO
 from functools import partial
 from xml.sax.saxutils import quoteattr
 import re
@@ -36,7 +36,7 @@ from warnings import warn
 
 class Tag(object):
     def __init__(self, html, tagname, _enter_callback=lambda: None, _exit_callback=lambda: None, **attrs):
-        self.attrs = {_clearname(k):v for k,v in attrs.items()}
+        self.attrs = {_clearname(k):v for k,v in list(attrs.items())}
         self.html = html
         self._enter_callback = _enter_callback
         self._exit_callback = _exit_callback
@@ -75,7 +75,7 @@ class Tag(object):
         write = self.html.write
         write('<')
         write(self.tag)
-        for k, v in sorted((k,v) for k,v in self.attrs.iteritems() if v):
+        for k, v in sorted((k,v) for k,v in self.attrs.items() if v):
             write(' ')
             write(k)
             write('=')

@@ -61,7 +61,7 @@ class ErrorLog(object):
                 fp.write("\n - End of Traceback -\n")
             self._nrOfFiles = self._rotate()
         else:
-            print traceback
+            print(traceback)
 
     def errorHandlingHook(self, traceback, *args, **kwargs):
         self.logError(traceback, *args, **kwargs)

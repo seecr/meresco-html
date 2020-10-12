@@ -42,8 +42,8 @@ class UserInfoTest(SeecrTestCase):
         self.userinfo.addUserInfo('username', fullname='Full Username')
         user = User('username')
         self.userinfo.enrichUser(user)
-        self.assertEquals('Full Username', user.fullname)
-        self.assertEquals('Full Username', user.title())
+        self.assertEqual('Full Username', user.fullname)
+        self.assertEqual('Full Username', user.title())
 
     def testFullnameAfterChange(self):
         self.userinfo.addUserInfo('username', fullname='Full Username')
@@ -51,18 +51,18 @@ class UserInfoTest(SeecrTestCase):
         user = User('username')
         user2 = User('username2')
         self.userinfo.enrichUser(user)
-        self.assertEquals('Full Username', user.fullname)
+        self.assertEqual('Full Username', user.fullname)
         self.userinfo.addUserInfo('username', fullname='New Fullname')
-        self.assertEquals('New Fullname', user.fullname)
-        self.assertEquals('Full Username 2', user2.fullname)
-        self.assertEquals('New Fullname', user.title())
+        self.assertEqual('New Fullname', user.fullname)
+        self.assertEqual('Full Username 2', user2.fullname)
+        self.assertEqual('New Fullname', user.title())
 
     def testFullnameIfNotSet(self):
         user = User('username')
         self.userinfo.enrichUser(user)
-        self.assertEquals('', user.fullname)
-        self.assertEquals('Username', user.title())
+        self.assertEqual('', user.fullname)
+        self.assertEqual('Username', user.title())
 
     def testPersistent(self):
         self.userinfo.addUserInfo('username', fullname='Full Username')
-        self.assertEquals('Full Username', UserInfo(join(self.tempdir, 'userinfo')).userInfo('username')['fullname'])
+        self.assertEqual('Full Username', UserInfo(join(self.tempdir, 'userinfo')).userInfo('username')['fullname'])

@@ -43,7 +43,7 @@ class HtmlForm(Html):
 
     def hidden_input(self, hiddenData=None, **kwargs):
         hiddenData = hiddenData or {}
-        for name, value in hiddenData.items():
+        for name, value in list(hiddenData.items()):
             with self.tag('input').set('type', 'hidden')\
                 .set('name', name)\
                 .set('value', value):

@@ -38,7 +38,7 @@ class IntegrationState(_IntegrationState):
     def __init__(self, stateName, tests=None, fastMode=False):
         _IntegrationState.__init__(self, "meresco-html-server-"+stateName, tests=tests, fastMode=fastMode)
 
-        self.port = PortNumberGenerator.next()
+        self.port = next(PortNumberGenerator)
 
     def binDir(self):
         binDir = '/usr/bin'

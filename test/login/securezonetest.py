@@ -45,9 +45,9 @@ class SecureZoneTest(SeecrTestCase):
 
         response = ''.join(compose(root.all.handleRequest(path='/secret_page', query='a=b', session=session, arguments={})))
 
-        self.assertEquals(redirectHttp % '/page_with_login', response)
-        self.assertEquals(0, len(observer.calledMethods))
-        self.assertEquals({'originalPath':'/secret_page?a=b', 'BasicHtmlLoginForm.formValues':{'errorMessage': 'Login required for "/secret_page".'}}, session)
+        self.assertEqual(redirectHttp % '/page_with_login', response)
+        self.assertEqual(0, len(observer.calledMethods))
+        self.assertEqual({'originalPath':'/secret_page?a=b', 'BasicHtmlLoginForm.formValues':{'errorMessage': 'Login required for "/secret_page".'}}, session)
 
     def testSecureZoneWithoutQuery(self):
         secureZone = SecureZone('/page_with_login', defaultLanguage="nl")
@@ -59,9 +59,9 @@ class SecureZoneTest(SeecrTestCase):
 
         response = asString(root.all.handleRequest(path='/secret_page', query='', session=session, arguments={}))
 
-        self.assertEquals(redirectHttp % '/page_with_login', response)
-        self.assertEquals(0, len(observer.calledMethods))
-        self.assertEquals({'originalPath':'/secret_page', 'BasicHtmlLoginForm.formValues': {'errorMessage': 'Inloggen verplicht voor "/secret_page".'}}, session)
+        self.assertEqual(redirectHttp % '/page_with_login', response)
+        self.assertEqual(0, len(observer.calledMethods))
+        self.assertEqual({'originalPath':'/secret_page', 'BasicHtmlLoginForm.formValues': {'errorMessage': 'Inloggen verplicht voor "/secret_page".'}}, session)
 
     def testSecureZoneAllowed(self):
         secureZone = SecureZone('/page_with_login')
@@ -76,10 +76,10 @@ class SecureZoneTest(SeecrTestCase):
 
         response = asString(root.all.handleRequest(path='/secret_page', query='a=b', session={'user':user}, arguments={}))
 
-        self.assertEquals(1, len(observer.calledMethods))
-        self.assertEquals('/secret_page', observer.calledMethods[0].kwargs['path'])
-        self.assertEquals('a=b', observer.calledMethods[0].kwargs['query'])
-        self.assertEquals({'user':user}, observer.calledMethods[0].kwargs['session'])
+        self.assertEqual(1, len(observer.calledMethods))
+        self.assertEqual('/secret_page', observer.calledMethods[0].kwargs['path'])
+        self.assertEqual('a=b', observer.calledMethods[0].kwargs['query'])
+        self.assertEqual({'user':user}, observer.calledMethods[0].kwargs['session'])
 
     def testAllowedInsecurePages(self):
         secureZone = SecureZone('/page_with_login', excluding=['/allowed'])
@@ -91,9 +91,9 @@ class SecureZoneTest(SeecrTestCase):
 
         response = asString(root.all.handleRequest(path='/allowed_page', query='a=b', session=session, arguments={}))
 
-        self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
-        self.assertEquals({}, session)
+        self.assertEqual('HTTP/1.0 200 OK\r\n\r\nBody', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual({}, session)
 
     def testAllowedInsecurePagesForLoginPage(self):
         secureZone = SecureZone('/page_with_login', excluding=['/allowed'])
@@ -106,7 +106,7 @@ class SecureZoneTest(SeecrTestCase):
 
         response = asString(root.all.handleRequest(path='/page_with_login', query='a=b', session=session, arguments={}))
 
-        self.assertEquals('HTTP/1.0 200 OK\r\n\r\nBody', response)
-        self.assertEquals(['handleRequest'], observer.calledMethodNames())
-        self.assertEquals({}, session)
+        self.assertEqual('HTTP/1.0 200 OK\r\n\r\nBody', response)
+        self.assertEqual(['handleRequest'], observer.calledMethodNames())
+        self.assertEqual({}, session)
 

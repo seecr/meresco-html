@@ -133,7 +133,7 @@ class PasswordFileTest(SeecrTestCase):
         self.pwd.addUser(username='john', password='password')
         self.pwd.addUser(username='graham', password='password2')
         self.pwd.addUser(username='hank', password='password3')
-        self.assertEquals(set(['admin', 'hank', 'graham', 'john']), set(self.pwd.listUsernames()))
+        self.assertEqual(set(['admin', 'hank', 'graham', 'john']), set(self.pwd.listUsernames()))
 
     def testHasUser(self):
         self.pwd.addUser(username='john', password='password')
@@ -180,5 +180,5 @@ class PasswordFileTest(SeecrTestCase):
         pwd = PasswordFile('a name', storage=Storage())
         pwd.addUser(username='erik', password='insect')
         id_, data = args[-1]
-        self.assertEquals('a name', id_)
+        self.assertEqual('a name', id_)
         self.assertTrue('erik' in data) # I believe. More elaborate tests above.

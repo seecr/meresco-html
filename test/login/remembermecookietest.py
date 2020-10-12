@@ -62,7 +62,7 @@ class RememberMeCookieTest(SeecrTestCase):
         self.assertEqual(['/some_page'], self.paths)
         self.assertFalse('user' in session, session)
         self.assertEqual(['cookieName', 'handleRequest'], self.observer.calledMethodNames())
-        self.assertEquals({'path': '/some_page', 'session': {}, 'Headers':{}}, self.observer.calledMethods[-1].kwargs)
+        self.assertEqual({'path': '/some_page', 'session': {}, 'Headers':{}}, self.observer.calledMethods[-1].kwargs)
 
     def testCookie(self):
         session = {}
@@ -75,5 +75,5 @@ class RememberMeCookieTest(SeecrTestCase):
         self.assertEqual(['/some_page'], self.paths)
         self.assertTrue('user' in session, session)
         self.assertEqual(['cookieName', 'validateCookie', 'handleRequest'], self.observer.calledMethodNames())
-        self.assertEquals({'path': '/some_page', 'session': {'user':'USER'}, 'Headers':Headers}, self.observer.calledMethods[-1].kwargs)
+        self.assertEqual({'path': '/some_page', 'session': {'user':'USER'}, 'Headers':Headers}, self.observer.calledMethods[-1].kwargs)
 

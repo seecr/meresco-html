@@ -35,7 +35,7 @@ class ErrorLogTest(SeecrTestCase):
         self.log = ErrorLog(self.tempdir, logtofile=True, maxSize=10)
 
     def testRotate(self):
-        for i in xrange(100):
+        for i in range(100):
             with open(join(self.tempdir, '{:03d}.error.txt'.format(i)), 'w') as f:
                 f.write('')
         self.assertEqual(100, len(listdir(self.tempdir)))

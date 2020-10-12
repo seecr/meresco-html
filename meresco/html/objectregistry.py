@@ -122,7 +122,7 @@ class ObjectRegistry(PostActions):
         self._register['listKeys'] = listKeys or []
 
     def registerConversion(self, **kwargs):
-        self._register['json'] = kwargs.keys()
+        self._register['json'] = list(kwargs.keys())
 
     def _handle(self, method, Body, session, **kwargs):
         formValues = parse_qs(Body, keep_blank_values=True)
@@ -135,13 +135,13 @@ class ObjectRegistry(PostActions):
                     identifier=identifier,
                     **formValues
                 )
-        except ObjectRegistryException, e:
+        except ObjectRegistryException as e:
             session['ObjectRegistry'] = dict(
                 error=getLabel(self._lang, 'objectRegistry', e.code).format(**e.kwargs),
                 values=dict(identifier=[identifier], **formValues)
             )
             redirectTo = formUrl
-        except Exception, e:
+        except Exception as e:
             session['ObjectRegistry'] = dict(
                 error=getLabel(self._lang, 'objectRegistry', "unexpectedException").format(str(e)),
                 values=dict(identifier=[identifier], **formValues)
