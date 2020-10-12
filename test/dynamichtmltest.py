@@ -54,8 +54,9 @@ class DynamicHtmlTest(SeecrTestCase):
         self.assertTrue(result.startswith('HTTP/1.0 404 Not Found'), result)
         self.assertTrue('File "path" does not exist.' in result, result)
 
-    def XtestCustomFileNotFound(self):
-        open(join(self.tempdir, "not_found_template.sf"), 'w').write("""
+    def testCustomFileNotFound(self):
+        with open(join(self.tempdir, 'not_found_template.sf'), 'w') as f:
+            f.write("""
 def main(**kwargs):
     yield "404 Handler"
 """)
@@ -65,8 +66,9 @@ def main(**kwargs):
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8', headers)
         self.assertEqual('404 Handler', body)
 
-    def XtestCustomFileNotFound_path_is_originalPath(self):
-        open(join(self.tempdir, "not_found_template.sf"), 'w').write("""
+    def testCustomFileNotFound_path_is_originalPath(self):
+        with open(join(self.tempdir, "not_found_template.sf"), 'w') as f:
+            f.write("""
 def main(path, **kwargs):
     yield path
 """)

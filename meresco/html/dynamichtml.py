@@ -184,7 +184,8 @@ class DynamicHtml(Observable):
             createdLocals = {}
             try:
                 path = self._pathForTemplateName(templateName)
-                exec(compile(open(path, "rb").read(), path, 'exec'), moduleGlobals, createdLocals)
+                with open(path, "rb") as f:
+                    exec(compile(f.read(), path, 'exec'), moduleGlobals, createdLocals)
             except Exception:
                 s = escapeHtml(format_exc())
                 createdLocals['main'] = lambda *args, **kwargs: (x for x in ['<pre>', s, '</pre>'])
