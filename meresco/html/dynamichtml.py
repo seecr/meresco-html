@@ -380,6 +380,7 @@ class DynamicHtml(Observable):
             'isinstance': isinstance,
             'islice': islice,
             'issubclass': issubclass,
+            '__build_class__': __build_class__,
             'iter': iter,
             'len': len,
             'list': list,

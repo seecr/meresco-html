@@ -734,14 +734,14 @@ def main(*args, **kwargs):
         header, body = result.split('\r\n\r\n')
         self.assertEqual('one', body)
 
-    def XtestLoadTemplate(self):
+    def testLoadTemplate(self):
         path1, path2 = self.createTwoPaths()
-        open(join(path2, 'page.sf'), 'w').write("""
+        self.mktmpfl('2/page.sf', """
 def main(*args,**kwargs):
   one = importTemplate("one")
   yield one.main(*args,**kwargs)
 """)
-        open(join(path1, 'one.sf'), 'w').write("""
+        self.mktmpfl('1/one.sf', """
 def main(*args,**kwargs):
   yield "one"
 """)
@@ -750,61 +750,61 @@ def main(*args,**kwargs):
         header, body = result.split('\r\n\r\n')
         self.assertEqual('one', body)
 
-    def XtestImportFromSecondPath(self):
+    def testImportFromSecondPath(self):
         reactor = Reactor()
         path1, path2 = self.createTwoPaths()
-        open(join(path2, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
-        open(join(path1, 'page.sf'), 'w').write('import one\ndef main(*args,**kwargs):\n yield one.main(*args,**kwargs)')
+        self.mktmpfl('2/one.sf', 'def main(*args,**kwargs):\n yield "one"')
+        self.mktmpfl('1/page.sf', 'import one\ndef main(*args,**kwargs):\n yield one.main(*args,**kwargs)')
         d = DynamicHtml([path1, path2], reactor=reactor)
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
         self.assertEqual('one', body)
-        open(join(path2, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "two"')
+        self.mktmpfl('2/one.sf', 'def main(*args,**kwargs):\n yield "two"')
         reactor.step()
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
         self.assertEqual('two', body)
 
-    def XtestFirstDirectoryHasTheRightFile(self):
+    def testFirstDirectoryHasTheRightFile(self):
         path1, path2 = self.createTwoPaths()
-        open(join(path1, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
-        open(join(path2, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "two"')
+        self.mktmpfl('1/page.sf', 'def main(*args,**kwargs):\n yield "one"')
+        self.mktmpfl('2/page.sf', 'def main(*args,**kwargs):\n yield "two"')
         d = DynamicHtml([path1, path2], reactor=CallTrace('Reactor'))
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
         self.assertEqual('one', body)
 
-    def XtestFirstDirectoryHasTheRightFileButSecondFileChanges(self):
+    def testFirstDirectoryHasTheRightFileButSecondFileChanges(self):
         reactor = Reactor()
         path1, path2 = self.createTwoPaths()
-        open(join(path1, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
-        open(join(path2, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "two"')
+        self.mktmpfl('1/page.sf', 'def main(*args,**kwargs):\n yield "one"')
+        self.mktmpfl('2/page.sf', 'def main(*args,**kwargs):\n yield "two"')
         d = DynamicHtml([path1, path2], reactor=reactor)
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
         self.assertEqual('one', body)
 
-        open(join(path2, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "three"')
+        self.mktmpfl('2/page.sf', 'def main(*args,**kwargs):\n yield "three"')
         reactor.step()
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
         self.assertEqual('one', body)
 
-    def XtestOldApiRaisesWarning(self):
+    def testOldApiRaisesWarning(self):
         try:
             d = DynamicHtml("aDirectory", reactor=CallTrace('Reactor'))
             self.fail()
         except TypeError as te:
             self.assertEqual("Usage: DynamicHtml([aDirectory, ...], ....)", str(te))
 
-    def XtestAdditionalGlobals(self):
-        open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield something')
+    def testAdditionalGlobals(self):
+        self.mktmpfl('afile.sf', 'def main(*args, **kwargs): \n  yield something')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'), additionalGlobals={'something':'YES'})
         head,body = ''.join(d.handleRequest(path='/afile')).split('\r\n\r\n')
         self.assertEqual('YES', body)
 
-    def XtestCanCreateClassesInTemplate(self):
-        open(self.tempdir+'/afile.sf', 'w').write('''\
+    def testCanCreateClassesInTemplate(self):
+        self.mktmpfl('afile.sf', '''\
 def main(*args, **kwargs):
     class A(object):
         def __init__(self):
@@ -815,21 +815,20 @@ def main(*args, **kwargs):
         head, body = ''.join(d.handleRequest(path='/afile')).split('\r\n\r\n')
         self.assertEqual('result', body)
 
-    def XtestChangingFileBeforeRetrievingFirstPage(self):
+    def testChangingFileBeforeRetrievingFirstPage(self):
         reactor = Reactor()
-        open(join(self.tempdir, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
-        open(join(self.tempdir, 'two.sf'), 'w').write('def main(*args,**kwargs):\n yield "two"')
+        self.mktmpfl('one.sf', 'def main(*args,**kwargs):\n yield "one"')
+        self.mktmpfl('two.sf', 'def main(*args,**kwargs):\n yield "two"')
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        open(join(self.tempdir, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one++"')
+        self.mktmpfl('one.sf', 'def main(*args,**kwargs):\n yield "one++"')
         reactor.step()
         header, body = ''.join(d.handleRequest(path='/two')).split('\r\n'*2)
         self.assertEqual('two', body)
 
-    def XtestPassCallable(self):
+    def testPassCallable(self):
         reactor = Reactor()
-        tmplatename = join(self.tempdir, 'withcallable.sf')
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        open(tmplatename, 'w').write(
+        self.mktmpfl('withcallable.sf' ,
                 "def main(*args, **kwargs):\n"
                 "    def f():\n"
                 "        pass\n"
@@ -842,11 +841,10 @@ def main(*args, **kwargs):
         self.assertTrue(callable(r[1]), r[1])
         self.assertEqual("text2", r[2])
 
-    def XtestPassYield(self):
+    def testPassYield(self):
         reactor = Reactor()
-        tmplatename = join(self.tempdir, 'withyield.sf')
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        open(tmplatename, 'w').write(
+        self.mktmpfl('withyield.sf',
                 "def main(*args, **kwargs):\n"
                 "    yield 'HTTP/1.0 200 OK\\r\\n\\r\\n'\n"
                 "    yield Yield\n"
@@ -857,11 +855,10 @@ def main(*args, **kwargs):
         self.assertTrue(Yield is r[1], r[1])
         self.assertEqual("text2", r[2])
 
-    def XtestPassCallableAsFirstThing(self):
+    def testPassCallableAsFirstThing(self):
         reactor = Reactor()
-        tmplatename = join(self.tempdir, 'withcallable.sf')
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        open(tmplatename, 'w').write(
+        self.mktmpfl('withcallable.sf',
                 "def main(*args, **kwargs):\n"
                 "    def f():\n"
                 "        pass\n"
@@ -879,13 +876,13 @@ def main(*args, **kwargs):
         self.assertTrue(callable(r[4]))
         self.assertEqual("text2", r[5])
 
-    def XtestSetAttributeOnTemplateObjectNotAllowed(self):
-        open(self.tempdir + '/two.sf', 'w').write(r"""
+    def testSetAttributeOnTemplateObjectNotAllowed(self):
+        self.mktmpfl('two.sf', r"""
 
 def main(*args, **kwargs):
     yield "Hoi"
 """)
-        open(self.tempdir + '/one.sf', 'w').write(r"""
+        self.mktmpfl('one.sf', r"""
 
 import two
 two.three = 3
@@ -898,20 +895,20 @@ def main(*args, **kwargs):
         result =  ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/one', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('AttributeError' in result, result)
 
-    def XtestShouldExposeLoadedModulesForTestingPurposes(self):
-        open(self.tempdir + '/one.sf', 'w').write(r"""
+    def testShouldExposeLoadedModulesForTestingPurposes(self):
+        self.mktmpfl('one.sf', r"""
 attr = 'attr'
 def sync():
     return 'aye'
 def asyncReturn():
-    raise StopIteration('aye')
+    return 'aye'
     yield
 def observableDownward():
     yield observable.all.something('arg', kw='kw')
 def main(*args, **kwargs):
     yield "Hoi"
 """)
-        open(self.tempdir + '/two.sf', 'w').write(r"""
+        self.mktmpfl('two.sf', r"""
 
 import one
 
@@ -960,15 +957,14 @@ def main(*args, **kwargs):
         self.assertEqual(('arg',), t2.calledMethods[0].args)
         self.assertEqual({'kw': 'kw'}, t2.calledMethods[0].kwargs)
 
-    def XtestErrorHandlingCustomHook(self):
+    def testErrorHandlingCustomHook(self):
         tracebacks = []
         def error_handling_hook(traceback, *args, **kwargs):
             tracebacks.append((traceback, args, kwargs))
 
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor, errorHandlingHook=error_handling_hook)
-        with open(join(self.tempdir, "page_with_error.sf"), 'w') as fp:
-            fp.write("""
+        self.mktmpfl("page_with_error.sf", """
 def main(*args, **kwargs):
     yield 1/0""")
         reactor.step()
