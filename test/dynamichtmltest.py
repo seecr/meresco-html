@@ -78,9 +78,11 @@ def main(path, **kwargs):
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8', headers)
         self.assertEqual('/a/path', body)
 
-    def XtestNotFound_HeadExistButHasNoMain(self):
-        open(self.tempdir + '/page.sf', 'w').write("""""")
-        open(self.tempdir + '/_missing.sf', 'w').write("""
+    def testNotFound_HeadExistButHasNoMain(self):
+        with open(self.tempdir + '/page.sf', 'w') as f:
+            f.write("""""")
+        with open(self.tempdir + '/_missing.sf', 'w') as f:
+            f.write("""
 def main(**kw):
     yield 'not-found'
 """)
@@ -97,15 +99,16 @@ def main(**kw):
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEqual('not-found', message)
 
-    def XtestCustomFileNotFoundToFileThatDoesExist(self):
+    def testCustomFileNotFoundToFileThatDoesExist(self):
         d = DynamicHtml([self.tempdir], notFoundPage="/not_found_template", reactor=CallTrace('Reactor'))
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         headers, body = result.split('\r\n\r\n')
         self.assertEqual('HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=utf-8', headers)
         self.assertEqual('File "not_found_template" does not exist.', body)
 
-    def XtestASimpleFlatFile(self):
-        open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
+    def testASimpleFlatFile(self):
+        with open(self.tempdir+'/afile.sf', 'w') as f:
+            f.write('def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)

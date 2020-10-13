@@ -66,7 +66,10 @@ class TemplateModule(object):
     def __getattr__(self, attr):
         if self._globals is None:
             self._globals = self._loadGlobals()
-        return self._globals[attr]
+        try:
+            return self._globals[attr]
+        except KeyError:
+            raise AttributeError
 
     def __setattr__(self, name, value):
         if name in ['_loadGlobals', '_globals']:
@@ -213,7 +216,7 @@ class DynamicHtml(Observable):
                 yield self._createMainGenerator(nextHead, nextTail, scheme=scheme, netloc=netloc, path=path, query=query, Headers=Headers, arguments=arguments, **kwargs)
             nextGenerator = _()
 
-        if not head in self._templates:
+        if not head in self._templates or not hasattr(self._templates[head], 'main'):
             raise DynamicHtmlException.notFound(head)
         main = self._templates[head].main
 
