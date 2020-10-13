@@ -41,22 +41,24 @@ from meresco.html import DynamicHtml, Tag
 
 
 class DynamicHtmlTest(SeecrTestCase):
+
+    def mktmpfl(self, nm, cntnts):
+        with open(self.tempdir + '/' + nm, 'w') as f: f.write(cntnts)
+
     def testFileNotFound(self):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=utf-8\r\n\r\nFile "a" does not exist.', result)
 
     def testFileNotFound2(self):
-        with open(join(self.tempdir, 'a.sf'), 'w') as f:
-            f.write('def main(pipe, **kwargs):\n yield pipe')
+        self.mktmpfl('a.sf', 'def main(pipe, **kwargs):\n yield pipe')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/a/path', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue(result.startswith('HTTP/1.0 404 Not Found'), result)
         self.assertTrue('File "path" does not exist.' in result, result)
 
     def testCustomFileNotFound(self):
-        with open(join(self.tempdir, 'not_found_template.sf'), 'w') as f:
-            f.write("""
+        self.mktmpfl('not_found_template.sf', """
 def main(**kwargs):
     yield "404 Handler"
 """)
@@ -67,8 +69,7 @@ def main(**kwargs):
         self.assertEqual('404 Handler', body)
 
     def testCustomFileNotFound_path_is_originalPath(self):
-        with open(join(self.tempdir, "not_found_template.sf"), 'w') as f:
-            f.write("""
+        self.mktmpfl("not_found_template.sf", """
 def main(path, **kwargs):
     yield path
 """)
@@ -79,10 +80,8 @@ def main(path, **kwargs):
         self.assertEqual('/a/path', body)
 
     def testNotFound_HeadExistButHasNoMain(self):
-        with open(self.tempdir + '/page.sf', 'w') as f:
-            f.write("""""")
-        with open(self.tempdir + '/_missing.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('page.sf', """""")
+        self.mktmpfl('_missing.sf', """
 def main(**kw):
     yield 'not-found'
 """)
@@ -107,22 +106,19 @@ def main(**kw):
         self.assertEqual('File "not_found_template" does not exist.', body)
 
     def testASimpleFlatFile(self):
-        with open(self.tempdir+'/afile.sf', 'w') as f:
-            f.write('def main(*args, **kwargs): \n  yield "John is a nut"')
+        self.mktmpfl('afile.sf', 'def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)
 
     def testPrefix(self):
-        with open(self.tempdir+'/afile.sf', 'w') as f:
-            f.write('def main(*args, **kwargs): \n  yield "John is a nut"')
+        self.mktmpfl('afile.sf', 'def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'), prefix='/prefix')
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/prefix/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)
 
     def testSimpleGenerator(self):
-        with open(self.tempdir+'/testSimple.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('testSimple.sf', """
 def main(*args, **kwargs):
   for n in ('aap', 'noot', 'mies'):
     yield str(n)
@@ -133,15 +129,13 @@ def main(*args, **kwargs):
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\naapnootmies', result)
 
     def testIncludeOther(self):
-        with open(self.tempdir+'/simple.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('simple.sf', """
 def main(*args, **kwargs):
     yield 'is'
     yield 'snake'
 """
         )
-        with open(self.tempdir+'/other.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('other.sf', """
 import simple
 def main(*args, **kwargs):
     yield 'me'
@@ -153,8 +147,7 @@ def main(*args, **kwargs):
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nmeissnake', result)
 
     def testUseModuleLocals(self):
-        with open(self.tempdir+'/testSimple.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('testSimple.sf', """
 moduleLocal = "local is available"
 def main(*args, **kwargs):
     yield moduleLocal
@@ -165,8 +158,7 @@ def main(*args, **kwargs):
         self.assertTrue('local is available' in result, result)
 
     def testUseModuleLocalsRecursive(self):
-        with open(self.tempdir+'/testSimple.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('testSimple.sf', """
 def recursiveModuleLocal(recurse):
     if recurse:
         return recursiveModuleLocal(recurse=False)
@@ -181,8 +173,7 @@ def main(*args, **kwargs):
         self.assertTrue('recursiveModuleLocal result' in result, result)
 
     def testUseModuleLocalsCrissCross(self):
-        with open(self.tempdir+'/testSimple.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('testSimple.sf', """
 def f():
     return "f()"
 
@@ -200,7 +191,7 @@ def main(*args, **kwargs):
     def testErrorWhileImporting(self):
         sys.stderr = StringIO()
         try:
-            open(self.tempdir+'/testSimple.sf', 'w').write("""
+            self.mktmpfl('testSimple.sf', """
 x = 1/0
 def main(*args, **kwargs):
   pass
@@ -214,8 +205,7 @@ def main(*args, **kwargs):
             sys.stderr = sys.__stderr__
 
     def testRuntimeError(self):
-        with open(self.tempdir+'/testSimple.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('testSimple.sf', """
 def main(*args, **kwargs):
   yield 1/0
   yield "should not get here"
@@ -242,8 +232,7 @@ def main(*args, **kwargs):
             def onceSomething(self, *args, **kwargs):
                 onces.append(True)
 
-        with open(self.tempdir+'/afile.sf', 'w') as f:
-            f.write("""#
+        self.mktmpfl('afile.sf', """#
 def main(*args, **kwargs):
   result = observable.call.callSomething()
   yield result
@@ -267,8 +256,7 @@ def main(*args, **kwargs):
             def getX(*args, **kwargs):
                 return "eks"
 
-        with open(self.tempdir+'/afile.sf', 'w') as f:
-            f.write("""#
+        self.mktmpfl('afile.sf', """#
 x = observable.call.getX()
 def main(*args, **kwargs):
   yield x
@@ -283,8 +271,7 @@ def main(*args, **kwargs):
         reactor = Reactor()
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        with open(self.tempdir+'/file.sf', 'w') as f:
-            f.write("""
+        self.mktmpfl('file.sf', """
 def main(Headers={}, *args, **kwargs):
     yield str(Headers)
 """)
@@ -294,38 +281,38 @@ def main(Headers={}, *args, **kwargs):
         self.assertEqual("""HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n{'key': 'value'}""", ''.join(result))
 
 
-    def XtestCreateFileCausesReload(self):
+    def testCreateFileCausesReload(self):
         reactor = Reactor()
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        open(self.tempdir+'/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "one"')
+        self.mktmpfl('/file1.sf', 'def main(*args, **kwargs): \n  yield "one"')
         reactor.step()
 
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
-    def XtestModifyFileCausesReload(self):
+    def testModifyFileCausesReload(self):
         reactor = Reactor()
 
-        open(self.tempdir+'/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "one"')
+        self.mktmpfl('file1.sf', 'def main(*args, **kwargs): \n  yield "one"')
         d = DynamicHtml([self.tempdir], reactor=reactor)
 
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
-        open(self.tempdir+'/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "two"')
+        self.mktmpfl('file1.sf', 'def main(*args, **kwargs): \n  yield "two"')
         reactor.step()
 
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\ntwo', ''.join(result))
 
-    def XtestNoDirectoryWatcherAddedToReactorWhenNotWatch(self):
+    def testNoDirectoryWatcherAddedToReactorWhenNotWatch(self):
         reactor = CallTrace('reactor')
         d = DynamicHtml([self.tempdir], reactor=reactor, watch=False)
         self.assertEqual([], reactor.calledMethodNames())
 
-    def XtestNoReactorWorksJustNoWatcher(self):
-        open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
+    def testNoReactorWorksJustNoWatcher(self):
+        self.mktmpfl('afile.sf', 'def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml([self.tempdir], reactor=None)
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)
