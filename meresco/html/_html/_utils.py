@@ -24,7 +24,7 @@
 #
 ## end license ##
 
-from cgi import escape as _escapeHtml
+from html import escape as _escapeHtml
 def escapeHtml(aString):
     return _escapeHtml(aString).replace('"','&quot;')
 

@@ -317,10 +317,10 @@ def main(Headers={}, *args, **kwargs):
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)
 
-    def XtestFileMovedIntoDirectoryCausesReload(self):
+    def testFileMovedIntoDirectoryCausesReload(self):
         reactor = Reactor()
 
-        open('/tmp/file1.sf', 'w').write('def main(*args, **kwargs): \n  yield "one"')
+        with open('/tmp/file1.sf', 'w') as f: f.write('def main(*args, **kwargs): \n  yield "one"')
         d = DynamicHtml([self.tempdir], reactor=reactor)
 
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
@@ -332,14 +332,14 @@ def main(Headers={}, *args, **kwargs):
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\none', ''.join(result))
 
-    def XtestReloadImportedModules(self):
+    def testReloadImportedModules(self):
         reactor = Reactor()
 
-        open(self.tempdir + '/file1.sf', 'w').write("""
+        self.mktmpfl('file1.sf', """
 def main(value, *args, **kwargs):
     return "original template %s" % value
 """)
-        open(self.tempdir + '/file2.sf', 'w').write("""
+        self.mktmpfl('file2.sf', """
 import file1
 
 def main(*args, **kwargs):
@@ -350,7 +350,7 @@ def main(*args, **kwargs):
         result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/file2'))
         self.assertTrue('original template word!' in result, result)
 
-        open(self.tempdir + '/file1.sf', 'w').write("""
+        self.mktmpfl('file1.sf', """
 def main(value, *args, **kwargs):
     return "changed template %s" % value
 """)
@@ -359,7 +359,7 @@ def main(value, *args, **kwargs):
         result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/file2'))
         self.assertTrue('changed template word!' in result, result)
 
-    def XtestReloadEverythingOnAnyChangeWhenWatching(self):
+    def testReloadEverythingOnAnyChangeWhenWatching(self):
         def howOften(name):
             _anIdState = [0]
             def anId():
@@ -396,7 +396,7 @@ reloaded = using_util_reloaded_id()
 def using():
     return reloaded + ' - ' + util.f()
 ''')
-        def Xtest():
+        def test():
             additionalGlobals = {
                 'util_reloaded_id': howOften("util-reloaded"),
                 'using_util_reloaded_id': howOften("using-util-reloaded"),
@@ -463,10 +463,10 @@ def using():
 
         asProcess(test())
 
-    def XtestBuiltins(self):
+    def testBuiltins(self):
         reactor = Reactor()
 
-        open(self.tempdir + '/file1.sf', 'w').write("""
+        self.mktmpfl('file1.sf', """
 def main(headers={}, *args, **kwargs):
     yield str(True)
     yield str(False)
@@ -476,7 +476,7 @@ def main(headers={}, *args, **kwargs):
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nTrueFalse', ''.join(result))
 
-        open(self.tempdir + '/file1.sf', 'w').write("""
+        self.mktmpfl('file1.sf', """
 def main(headers={}, *args, **kwargs):
     yield int('1')
     yield 2
@@ -486,7 +486,7 @@ def main(headers={}, *args, **kwargs):
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n12', ''.join(x for x in result))
 
-        open(self.tempdir + '/file1.sf', 'w').write("""
+        self.mktmpfl('file1.sf', """
 def main(headers={}, *args, **kwargs):
     yield escapeHtml('&<>"')
 """)
@@ -495,9 +495,9 @@ def main(headers={}, *args, **kwargs):
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;&quot;', ''.join(result))
 
-        open(self.tempdir + '/file1.sf', 'w').write("""
+        self.mktmpfl('file1.sf', """
 def main(headers={}, *args, **kwargs):
-    yield str(zip([1,2,3],['one','two','three']))
+    yield str(list(zip([1,2,3],['one','two','three'])))
 """)
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
@@ -505,10 +505,10 @@ def main(headers={}, *args, **kwargs):
         self.assertEqual('''HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n[(1, 'one'), (2, 'two'), (3, 'three')]''', ''.join(result))
 
 
-    def XtestImportForeignModules(self):
+    def testImportForeignModules(self):
         reactor = Reactor()
 
-        open(self.tempdir + '/file1.sf', 'w').write("""
+        self.mktmpfl('file1.sf', """
 import sys
 
 def main(headers={}, *args, **kwargs):
@@ -520,7 +520,7 @@ def main(headers={}, *args, **kwargs):
         resultText = ''.join(result)
         self.assertTrue("<module 'sys' (built-in)>" in resultText, resultText)
 
-        open(self.tempdir + '/file1.sf', 'w').write("""
+        self.mktmpfl('file1.sf', """
 import sys
 
 def main(headers={}, *args, **kwargs):
