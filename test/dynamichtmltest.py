@@ -113,14 +113,16 @@ def main(**kw):
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)
 
-    def XtestPrefix(self):
-        open(self.tempdir+'/afile.sf', 'w').write('def main(*args, **kwargs): \n  yield "John is a nut"')
+    def testPrefix(self):
+        with open(self.tempdir+'/afile.sf', 'w') as f:
+            f.write('def main(*args, **kwargs): \n  yield "John is a nut"')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'), prefix='/prefix')
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/prefix/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)
 
-    def XtestSimpleGenerator(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write("""
+    def testSimpleGenerator(self):
+        with open(self.tempdir+'/testSimple.sf', 'w') as f:
+            f.write("""
 def main(*args, **kwargs):
   for n in ('aap', 'noot', 'mies'):
     yield str(n)
@@ -130,14 +132,16 @@ def main(*args, **kwargs):
         result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\naapnootmies', result)
 
-    def XtestIncludeOther(self):
-        open(self.tempdir+'/simple.sf', 'w').write("""
+    def testIncludeOther(self):
+        with open(self.tempdir+'/simple.sf', 'w') as f:
+            f.write("""
 def main(*args, **kwargs):
     yield 'is'
     yield 'snake'
 """
         )
-        open(self.tempdir+'/other.sf', 'w').write("""
+        with open(self.tempdir+'/other.sf', 'w') as f:
+            f.write("""
 import simple
 def main(*args, **kwargs):
     yield 'me'
@@ -148,8 +152,9 @@ def main(*args, **kwargs):
         result = ''.join(compose(s.handleRequest(scheme='http', netloc='host.nl', path='/other', query='?query=something', fragments='#fragments', arguments={'query': 'something'})))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nmeissnake', result)
 
-    def XtestUseModuleLocals(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write("""
+    def testUseModuleLocals(self):
+        with open(self.tempdir+'/testSimple.sf', 'w') as f:
+            f.write("""
 moduleLocal = "local is available"
 def main(*args, **kwargs):
     yield moduleLocal
@@ -159,8 +164,9 @@ def main(*args, **kwargs):
         result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('local is available' in result, result)
 
-    def XtestUseModuleLocalsRecursive(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write("""
+    def testUseModuleLocalsRecursive(self):
+        with open(self.tempdir+'/testSimple.sf', 'w') as f:
+            f.write("""
 def recursiveModuleLocal(recurse):
     if recurse:
         return recursiveModuleLocal(recurse=False)
@@ -174,8 +180,9 @@ def main(*args, **kwargs):
         result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('recursiveModuleLocal result' in result, result)
 
-    def XtestUseModuleLocalsCrissCross(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write("""
+    def testUseModuleLocalsCrissCross(self):
+        with open(self.tempdir+'/testSimple.sf', 'w') as f:
+            f.write("""
 def f():
     return "f()"
 
@@ -190,7 +197,7 @@ def main(*args, **kwargs):
         result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('g(f())' in result, result)
 
-    def XtestErrorWhileImporting(self):
+    def testErrorWhileImporting(self):
         sys.stderr = StringIO()
         try:
             open(self.tempdir+'/testSimple.sf', 'w').write("""
@@ -202,12 +209,13 @@ def main(*args, **kwargs):
             s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
             result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
 
-            self.assertTrue('x = 1/0\nZeroDivisionError: integer division or modulo by zero' in result)
+            self.assertTrue('x = 1/0\nZeroDivisionError: division by zero' in result)
         finally:
             sys.stderr = sys.__stderr__
 
-    def XtestRuntimeError(self):
-        open(self.tempdir+'/testSimple.sf', 'w').write("""
+    def testRuntimeError(self):
+        with open(self.tempdir+'/testSimple.sf', 'w') as f:
+            f.write("""
 def main(*args, **kwargs):
   yield 1/0
   yield "should not get here"
@@ -216,9 +224,9 @@ def main(*args, **kwargs):
         s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue("HTTP/1.0 500 Internal Server Error\r\n\r\n" in result, result)
-        self.assertTrue("integer division or modulo by zero" in result, result)
+        self.assertTrue("division by zero" in result, result)
 
-    def XtestObservability(self):
+    def testObservability(self):
         onces = []
         dos = []
         class Something(object):
@@ -228,13 +236,14 @@ def main(*args, **kwargs):
                 yield "all"
             def anySomething(self, *args, **kwargs):
                 yield "any"
-                raise StopIteration('retval')
+                return 'retval'
             def doSomething(self, *args, **kwargs):
                 dos.append(True)
             def onceSomething(self, *args, **kwargs):
                 onces.append(True)
 
-        open(self.tempdir+'/afile.sf', 'w').write("""#
+        with open(self.tempdir+'/afile.sf', 'w') as f:
+            f.write("""#
 def main(*args, **kwargs):
   result = observable.call.callSomething()
   yield result
@@ -247,17 +256,19 @@ def main(*args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         d.addObserver(Something())
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
+        self.maxDiff = None
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\ncallallany', ''.join(result))
 
         self.assertEqual([True], dos)
         self.assertEqual([True], onces)
 
-    def XtestObservabilityOutsideMainOnModuleLevel(self):
+    def testObservabilityOutsideMainOnModuleLevel(self):
         class X(object):
             def getX(*args, **kwargs):
                 return "eks"
 
-        open(self.tempdir+'/afile.sf', 'w').write("""#
+        with open(self.tempdir+'/afile.sf', 'w') as f:
+            f.write("""#
 x = observable.call.getX()
 def main(*args, **kwargs):
   yield x
@@ -268,11 +279,12 @@ def main(*args, **kwargs):
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\neks', ''.join(result))
 
 
-    def XtestHeaders(self):
+    def testHeaders(self):
         reactor = Reactor()
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        open(self.tempdir+'/file.sf', 'w').write("""
+        with open(self.tempdir+'/file.sf', 'w') as f:
+            f.write("""
 def main(Headers={}, *args, **kwargs):
     yield str(Headers)
 """)
