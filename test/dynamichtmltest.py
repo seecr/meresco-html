@@ -531,15 +531,15 @@ def main(headers={}, *args, **kwargs):
         result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertTrue('This module provides access to some objects' in result, result)
 
-    def XtestPipelining(self):
-        open(self.tempdir + '/pipe1.sf', 'w').write("""
+    def testPipelining(self):
+        self.mktmpfl('pipe1.sf', """
 def main(pipe=None, *args, **kwargs):
     yield 'one'
     for data in pipe:
         yield data
     yield 'four'
 """)
-        open(self.tempdir + '/pipe2.sf', 'w').write("""
+        self.mktmpfl('pipe2.sf', """
 def main(pipe=None, *args, **kwargs):
     yield 'two'
     yield 'three'
@@ -550,12 +550,12 @@ def main(pipe=None, *args, **kwargs):
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEqual('onetwothreefour', message)
 
-    def XtestLongPipeLine(self):
+    def testLongPipeLine(self):
         filenames = []
         for i in range(10):
             filename = 'pipe%s' % i
             filenames.append(filename)
-            open(self.tempdir + '/' + filename + '.sf', 'w').write("""
+            self.mktmpfl(filename + '.sf', """
 def main(pipe=None, *args, **kwargs):
     yield str(%s)
     for data in pipe:
@@ -569,15 +569,15 @@ def main(pipe=None, *args, **kwargs):
         self.assertEqual('0123456789', message)
 
 
-    def XtestPipelineError(self):
-        open(self.tempdir + '/pipe1.sf', 'w').write("""
+    def testPipelineError(self):
+        self.mktmpfl('pipe1.sf', """
 def main(pipe=None, *args, **kwargs):
     yield 'one'
     for data in pipe:
         yield data
     yield 'four'
 """)
-        open(self.tempdir + '/pipe2.sf', 'w').write("""
+        self.mktmpfl('pipe2.sf', """
 def main(pipe=None, *args, **kwargs):
     yield 'two'
     1/0
@@ -588,10 +588,10 @@ def main(pipe=None, *args, **kwargs):
         d = DynamicHtml([self.tempdir], reactor=reactor)
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/pipe1/pipe2')
         headers, message = ''.join(result).split('\r\n\r\n')
-        self.assertTrue('integer division or modulo by zero' in message)
+        self.assertTrue('division by zero' in message)
 
-    def XtestYieldingEmptyPipe(self):
-        open(self.tempdir + '/page.sf', 'w').write("""
+    def testYieldingEmptyPipe(self):
+        self.mktmpfl('page.sf', """
 def main(pipe=None, *args, **kwargs):
     yield "start"
     for data in pipe:
@@ -605,8 +605,8 @@ def main(pipe=None, *args, **kwargs):
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEqual('startend', message)
 
-    def XtestPathTailDoesNotExist(self):
-        open(self.tempdir + '/page.sf', 'w').write("""
+    def testPathTailDoesNotExist(self):
+        self.mktmpfl('page.sf', """
 def main(**kwargs):
     yield "nopipe"
 """)
@@ -616,7 +616,7 @@ def main(**kwargs):
         headers, message = ''.join(result).split('\r\n\r\n')
         self.assertEqual('nopipe', message)
 
-    def XtestIndexPage(self):
+    def testIndexPage(self):
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
         result = asString(d.handleRequest(path='/'))
@@ -635,12 +635,12 @@ def main(**kwargs):
         headers, message = result.split('\r\n\r\n')
         self.assertEqual('HTTP/1.0 302 Found\r\nLocation: /page?a=1', headers)
 
-    def XtestSFExtension(self):
-        open(self.tempdir + '/page1.sf', 'w').write("""
+    def testSFExtension(self):
+        self.mktmpfl('page1.sf', """
 def main(*args, **kwargs):
     yield "page1"
 """)
-        open(self.tempdir + '/page2.sf', 'w').write("""
+        self.mktmpfl('page2.sf', """
 import page1
 def main(*args, **kwargs):
     yield page1.main()
@@ -650,8 +650,8 @@ def main(*args, **kwargs):
         result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page2'))
         self.assertTrue('page1' in result, result)
 
-    def XtestIgnoreNonSFExtensions(self):
-        open(self.tempdir + '/page.otherextension.sf', 'w').write("""
+    def testIgnoreNonSFExtensions(self):
+        self.mktmpfl('page.otherextension.sf', """
 def main(*args, **kwargs):
     yield "should not happen"
 """)
@@ -660,8 +660,8 @@ def main(*args, **kwargs):
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/page'))
         self.assertTrue('should not happen' not in result, result)
 
-    def XtestHandlePOSTRequest(self):
-        open(self.tempdir + '/page.sf', 'w').write(r"""
+    def testHandlePOSTRequest(self):
+        self.mktmpfl('page.sf', r"""
 def main(Headers={}, Body=None, Method=None, *args, **kwargs):
     yield 'Content-Type: %s\n' % Headers.get('Content-Type')
     yield 'Body: %s\n' % Body
@@ -674,8 +674,8 @@ def main(Headers={}, Body=None, Method=None, *args, **kwargs):
 
         self.assertTrue('Content-Type: application/x-www-form-urlencoded\nBody: label=value&otherlabel=value\nMethod: POST\n' in result, result)
 
-    def XtestRedirect(self):
-        open(self.tempdir + '/page.sf', 'w').write(r"""
+    def testRedirect(self):
+        self.mktmpfl('page.sf', r"""
 def main(*args, **kwargs):
     yield http.redirect('/here')
 """)
@@ -684,18 +684,18 @@ def main(*args, **kwargs):
         result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page'))
         self.assertEqual('HTTP/1.0 302 Found\r\nLocation: /here\r\n\r\n', result)
 
-    def XtestRedirectWithAdditionalHeaders(self):
-        open(self.tempdir + '/page.sf', 'w').write(r"""
+    def testRedirectWithAdditionalHeaders(self):
+        self.mktmpfl('page.sf', r"""
 def main(*args, **kwargs):
     yield http.redirect('/here', additionalHeaders={'Pragma': 'no-cache', 'Expires': '0'})
 """)
         reactor = Reactor()
         d = DynamicHtml([self.tempdir], reactor=reactor)
         result = ''.join(d.handleRequest(scheme='http', netloc='host.nl', path='/page'))
-        self.assertEqual('HTTP/1.0 302 Found\r\nExpires: 0\r\nLocation: /here\r\nPragma: no-cache\r\n\r\n', result)
+        self.assertEqual('HTTP/1.0 302 Found\r\nLocation: /here\r\nPragma: no-cache\r\nExpires: 0\r\n\r\n', result)
 
-    def XtestKeywordArgumentsArePassed(self):
-        open(self.tempdir+'/afile.sf', 'w').write('def main(pipe, tag, *args, **kwargs): \n  yield str(kwargs)')
+    def testKeywordArgumentsArePassed(self):
+        self.mktmpfl('afile.sf', 'def main(pipe, tag, *args, **kwargs): \n  yield str(kwargs)')
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         result = ''.join(d.handleRequest(path='/afile', netloc='localhost', key='value', key2='value2'))
         header, body = result.split('\r\n\r\n')
@@ -717,18 +717,18 @@ def main(*args, **kwargs):
         makedirs(path2)
         return path1, path2
 
-    def XtestMoreDirectories(self):
+    def testMoreDirectories(self):
         path1, path2 = self.createTwoPaths()
-        open(join(path2, 'page.sf'), 'w').write('def main(*args,**kwargs):\n yield "page"')
+        self.mktmpfl('2/page.sf', 'def main(*args,**kwargs):\n yield "page"')
         d = DynamicHtml([path1, path2], reactor=CallTrace('Reactor'))
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
         self.assertEqual('page', body)
 
-    def XtestImportFromFirstPath(self):
+    def testImportFromFirstPath(self):
         path1, path2 = self.createTwoPaths()
-        open(join(path2, 'page.sf'), 'w').write('import one\ndef main(*args,**kwargs):\n yield one.main(*args,**kwargs)')
-        open(join(path1, 'one.sf'), 'w').write('def main(*args,**kwargs):\n yield "one"')
+        self.mktmpfl('2/page.sf', 'import one\ndef main(*args,**kwargs):\n yield one.main(*args,**kwargs)')
+        self.mktmpfl('1/one.sf', 'def main(*args,**kwargs):\n yield "one"')
         d = DynamicHtml([path1, path2], reactor=CallTrace('Reactor'))
         result = ''.join(d.handleRequest(path='/page'))
         header, body = result.split('\r\n\r\n')
