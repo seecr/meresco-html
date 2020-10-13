@@ -35,7 +35,7 @@ includeParentAndDeps(__file__, scanForDeps=True) #DO_NOT_DISTRIBUTE
 from unittest import main
 
 from dynamichtmltest import DynamicHtmlTest
-#from errorlogtest import ErrorLogTest
+from errorlogtest import ErrorLogTest
 #from htmltest import HtmlTest
 #from tagtest import TagTest
 #from objectregistrytest import ObjectRegistryTest

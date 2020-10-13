@@ -74,7 +74,7 @@ class ErrorLog(object):
         l = listdir(self._directory)
         if len(l) > self._maxSize:
             # do not rotate every time we are on the edge, clean up a bit mor.
-            for f in sorted(l)[:-(self._maxSize * 4/5)]:
+            for f in sorted(l)[:-int(self._maxSize * 4/5)]:
                 remove(join(self._directory, f))
         return len(l)
 
