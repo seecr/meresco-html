@@ -102,7 +102,7 @@ def redirectTo(location, additionalHeaders=None, permanent=False):
     headers = {'Location': location}
     if not additionalHeaders is None:
         headers.update(additionalHeaders)
-    return HTTP_CODE + CRLF.join("{0}: {1}".format(*i) for i in list(headers.items())) + CRLF + CRLF
+    return HTTP_CODE + CRLF.join("{0}: {1}".format(*i) for i in headers.items()) + CRLF + CRLF
 
 class Http(object):
     def redirect(self, location, additionalHeaders=None, permanent=False):
@@ -120,7 +120,7 @@ def urlencode(query, doseq=True):
     if not doseq:
         return _urlencode(query, doseq)
     if hasattr(query, 'items'):
-        query = list(query.items())
+        query = query.items()
     return _urlencode([(k,_stringify(v)) for k,v in query], doseq)
 
 class ObservableProxy(object):
@@ -448,5 +448,5 @@ class DynamicHtml(Observable):
             'urlunsplit': urlunsplit,
             'DynamicHtmlException': DynamicHtmlException,
         }
-        result['__builtins__'].update((excName, excType) for excName, excType in list(vars(exceptions).items()) if not excName.startswith('_'))
+        result['__builtins__'].update((excName, excType) for excName, excType in vars(exceptions).items() if not excName.startswith('_'))
         return result
