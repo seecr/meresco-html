@@ -32,7 +32,7 @@ from meresco.html._html.nextpreviterator import nextpreviterator
 class NextPrevIteratorTest(TestCase):
     def testNoIterator(self):
         self.assertRaises(TypeError, lambda: nextpreviterator(None))
-        
+
     def testEmpty(self):
         self.assertEqual([], list(nextpreviterator([])))
 
