@@ -60,7 +60,7 @@ class HtmlTest(SeecrTestCase):
             def cell_content(self, **_):
                 return str(_)
         c1 = MyColumn(label='na')
-        self.assertEqual("<dif>{'item': 'ape'}</dif>", c1.render(item='ape'))
+        self.assertEqual("<dif>{&#x27;item&#x27;: &#x27;ape&#x27;}</dif>", c1.render(item='ape'))
 
     def testMyOwnClassesEverywhere(self):
         class MyTable(HtmlTable):
