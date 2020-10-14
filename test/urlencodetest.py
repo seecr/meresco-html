@@ -36,13 +36,18 @@ class UrlencodeTest(SeecrTestCase):
 
     def testUnicode(self):
         self.assertEqual('a=a%3Fp', urlencode({'a': 'a?p'}))
-        self.assertEqual('a=a%C3%A1p', urlencode({'a': 'a\xc3\xa1p'}))
+
+        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': b'a\xc3\xa1p'}))
+        self.assertEqual('a=a%C3%A1p', urlencode({'a': b'a\xc3\xa1p'}))
+
         self.assertEqual('a=a%C3%A1p', urlencode({'a': 'aáp'}))
         self.assertEqual('a=a%C3%A1p', urlencode({'a': 'aáp'}))
 
     def testUnicodeTupleList(self):
         self.assertEqual('a=a%3Fp', urlencode([('a', 'a?p')]))
-        self.assertEqual('a=a%C3%A1p', urlencode([('a', 'a\xc3\xa1p')]))
+
+        self.assertEqual('a=a%C3%A1p', urlencode([('a', b'a\xc3\xa1p')]))
+
         self.assertEqual('a=a%C3%A1p', urlencode([('a', 'aáp')]))
         self.assertEqual('a=a%C3%A1p', urlencode([('a', 'aáp')]))
 
@@ -52,13 +57,13 @@ class UrlencodeTest(SeecrTestCase):
     def testUnicodeBugInDefaultUnicode(self):
         self.assertEqual('a=a%3Fp', urllib_urlencode({'a': 'a?p'}))
         self.assertEqual('a=3', urllib_urlencode({'a': 3}))
-        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'a\xc3\xa1p'}))
+
+        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': b'a\xc3\xa1p'}))
+
         self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}))
         self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}))
         self.assertEqual('a=a%3Fp', urllib_urlencode({'a': 'a?p'}, doseq=True))
-        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'a\xc3\xa1p'}, doseq=True))
+        self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': b'a\xc3\xa1p'}, doseq=True))
         self.assertEqual('a=a%C3%A1p', urllib_urlencode({'a': 'aáp'}, doseq=True))
-        # Bug in unicode characters and us of doseq=True
-        self.assertEqual('a=a%3Fp', urllib_urlencode({'a': 'aáp'}, doseq=True))
 
 

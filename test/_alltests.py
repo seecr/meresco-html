@@ -39,8 +39,8 @@ from errorlogtest import ErrorLogTest
 from tagtest import TagTest
 from htmltest import HtmlTest
 from objectregistrytest import ObjectRegistryTest
-#from postactionstest import PostActionsTest
-#from urlencodetest import UrlencodeTest
+from postactionstest import PostActionsTest
+from urlencodetest import UrlencodeTest
 #from nextpreviteratortest import NextPrevIteratorTest
 #
 #from login.basichtmlloginformtest import BasicHtmlLoginFormTest

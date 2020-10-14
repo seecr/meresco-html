@@ -108,20 +108,8 @@ class Http(object):
     def redirect(self, location, additionalHeaders=None, permanent=False):
         return redirectTo(location, additionalHeaders=additionalHeaders, permanent=permanent)
 
-def _stringify(values):
-    if isinstance(values, str):
-        return str(values)
-    try:
-        return [str(value) for value in values]
-    except TypeError: # not iterable
-        return str(values)
-
 def urlencode(query, doseq=True):
-    if not doseq:
-        return _urlencode(query, doseq)
-    if hasattr(query, 'items'):
-        query = query.items()
-    return _urlencode([(k,_stringify(v)) for k,v in query], doseq)
+    return _urlencode(query, doseq)
 
 class ObservableProxy(object):
 
