@@ -4,7 +4,7 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2011-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2013, 2015, 2020 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Html"
 #
@@ -27,12 +27,4 @@
 export LANG=en_US.UTF-8
 export PYTHONPATH=.:"$PYTHONPATH"
 
-if [ -e /usr/bin/python3.7 ]; then
-    pyversion="python3.7"
-fi
-option=$1
-if [ "${option:0:10}" == "--python" ]; then
-    shift
-    pyversion="${option:2}"
-fi
-$pyversion _alltests.py "$@"
+python3 _alltests.py "$@"
