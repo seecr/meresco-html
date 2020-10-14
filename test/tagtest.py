@@ -234,7 +234,7 @@ class TagTest(SeecrTestCase):
         '''))
 
     def testEscapeOtherStuff(self):
-        self.assertEqual("<p>['&amp;', 'noot']</p>", self.processTemplate('''
+        self.assertEqual("<p>[&#x27;&amp;&#x27;, &#x27;noot&#x27;]</p>", self.processTemplate('''
             with tag('p'):
                 yield ['&', 'noot']
         '''))
@@ -269,7 +269,7 @@ class TagTest(SeecrTestCase):
    # with escape firstline
 
     def processTemplate(self, template):
-        open(self.tempdir+'/afile.sf', 'w').write('def main(tag, **kwargs):\n'+template)
+        with open(self.tempdir+'/afile.sf', 'w') as f: f.write('def main(tag, **kwargs):\n'+template)
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
         header, body = parseResponse(asString(d.handleRequest(path='/afile')))
         self.assertEqual('200', header['StatusCode'], body)

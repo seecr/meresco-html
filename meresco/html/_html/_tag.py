@@ -34,6 +34,13 @@ from ._utils import escapeHtml
 from weightless.core import compose
 from warnings import warn
 
+def isiter(a):
+    try:
+        iter(a)
+    except TypeError:
+        return False
+    return True
+
 class Tag(object):
     def __init__(self, html, tagname, _enter_callback=lambda: None, _exit_callback=lambda: None, **attrs):
         self.attrs = {_clearname(k):v for k,v in list(attrs.items())}
@@ -79,7 +86,10 @@ class Tag(object):
             write(' ')
             write(k)
             write('=')
-            write(quoteattr(' '.join(str(i) for i in v) if hasattr(v, '__iter__') else str(v)))
+            if isiter(v) and not isinstance(v, str):
+                write(quoteattr(' '.join(str(i) for i in v)))
+            else:
+                write(quoteattr(str(v)))
         if self.tag in ['br', 'hr']:
             write('/')
             self.tag = None
@@ -116,6 +126,7 @@ class TagFactory(object):
         if self.stream.tell():
             yield self.stream.getvalue()
             self.stream.truncate(0)
+            self.stream.seek(0)
 
     def escape(self, obj):
         if self._count:
