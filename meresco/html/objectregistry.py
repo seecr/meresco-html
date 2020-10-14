@@ -26,7 +26,7 @@
 
 from os.path import join, isfile, isdir
 from os import makedirs
-from cgi import parse_qs
+from urllib.parse import parse_qs
 
 from meresco.components.http.utils import redirectHttp
 

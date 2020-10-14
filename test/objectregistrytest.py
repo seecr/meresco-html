@@ -29,7 +29,7 @@ from seecr.test import SeecrTestCase, CallTrace
 from meresco.html import ObjectRegistry
 from urllib.parse import urlencode
 from weightless.core import asString
-from weightless.http import parseHeaders
+from weightless.http import parseHeadersString
 from meresco.components.http.utils import CRLF
 from meresco.html.objectregistry import ObjectRegistryException
 from uuid import uuid4
@@ -160,7 +160,7 @@ class ObjectRegistryTest(SeecrTestCase):
                 ('enabled1', 'on'),
             ])
         header, _ = asString(registry.handleRequest(Method='POST', path='/objects/add', Body=data, session={})).split(CRLF*2)
-        redirectLocation = parseHeaders(header+CRLF)['Location']
+        redirectLocation = parseHeadersString(header+CRLF)['Location']
         path, objectid = redirectLocation.split('#')
         self.assertEqual('/redirect', path)
         self.assertEqual({
@@ -176,7 +176,7 @@ class ObjectRegistryTest(SeecrTestCase):
                 ('redirectPath', '/object?id={}')
             ])
         header, _ = asString(registry.handleRequest(Method='POST', path='/objects/add', Body=data, session={})).split(CRLF*2)
-        redirectLocation = parseHeaders(header+CRLF)['Location']
+        redirectLocation = parseHeadersString(header+CRLF)['Location']
         path, objectid = redirectLocation.split('=')
         self.assertEqual('/object?id', path)
         self.assertEqual({
@@ -194,7 +194,7 @@ class ObjectRegistryTest(SeecrTestCase):
                 ('redirectPath', '/object?id={}')
             ])
         header, _ = asString(registry.handleRequest(Method='POST', path='/objects/add', Body=data, session={})).split(CRLF*2)
-        redirectLocation = parseHeaders(header+CRLF)['Location']
+        redirectLocation = parseHeadersString(header+CRLF)['Location']
         path, objectid = redirectLocation.split('#')
         self.assertEqual('/redirect', path)
         self.assertEqual('', objectid)
@@ -216,7 +216,7 @@ class ObjectRegistryTest(SeecrTestCase):
                 ('enabled2', 'on'),
             ])
         header, _ = asString(registry.handleRequest(Method='POST', path='/objects/update', Body=data, session={})).split(CRLF*2)
-        redirectLocation = parseHeaders(header+CRLF)['Location']
+        redirectLocation = parseHeadersString(header+CRLF)['Location']
         path, objectid = redirectLocation.split('#')
         self.assertEqual(object1id, objectid)
         self.assertEqual({
@@ -262,10 +262,10 @@ class ObjectRegistryTest(SeecrTestCase):
         registry.registerKeys(keys=['name', 'key2'], booleanKeys=['enabled'])
         objs = registry.listObjects()
         self.assertEqual(2, len(objs))
-        self.assertEqual(sorted([
+        self.assertEqual([
                 {'key2': 'value_1', 'enabled': True, 'name': 'object1'},
                 {'key2': 'value_2', 'enabled': True, 'name': 'object2'}
-            ]), sorted(objs.values()))
+            ], list(objs.values()))
 
     def testListKeys(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
@@ -285,9 +285,9 @@ class ObjectRegistryTest(SeecrTestCase):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect', defaults=defaults)
         registry.registerKeys(keys=['name', 'key2'], booleanKeys=['enabled'])
         objs = registry.getConfiguration(key='whatever')
-        self.assertEqual(sorted([
+        self.assertEqual([
                 {'key2': 'value_1', 'enabled': True, 'name': 'object1'},
                 {'key2': 'value_2', 'enabled': True, 'name': 'object2'}
-            ]), sorted(objs.values()))
+            ], list(objs.values()))
 
 

@@ -38,7 +38,7 @@ from dynamichtmltest import DynamicHtmlTest
 from errorlogtest import ErrorLogTest
 from tagtest import TagTest
 from htmltest import HtmlTest
-#from objectregistrytest import ObjectRegistryTest
+from objectregistrytest import ObjectRegistryTest
 #from postactionstest import PostActionsTest
 #from urlencodetest import UrlencodeTest
 #from nextpreviteratortest import NextPrevIteratorTest
