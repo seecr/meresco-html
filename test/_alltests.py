@@ -44,8 +44,8 @@ from urlencodetest import UrlencodeTest
 from nextpreviteratortest import NextPrevIteratorTest
 
 # TODO
-# from login.basichtmlloginformtest import BasicHtmlLoginFormTest
-# from login.groupsfiletest import GroupsFileTest
+from login.basichtmlloginformtest import BasicHtmlLoginFormTest
+from login.groupsfiletest import GroupsFileTest
 from login.passwordfiletest import PasswordFileTest
 from login.remembermecookietest import RememberMeCookieTest
 from login.securezonetest import SecureZoneTest

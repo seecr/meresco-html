@@ -27,7 +27,6 @@
 ## end license ##
 
 from meresco.components.http.utils import redirectHttp, CRLF, insertHeader, findCookies
-from cgi import parse_qs
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
 from .securezone import ORIGINAL_PATH
@@ -35,7 +34,7 @@ from .securezone import ORIGINAL_PATH
 from meresco.html import PostActions
 
 from .labels import getLabel
-from urllib.parse import urlencode
+from urllib.parse import urlencode, parse_qs
 from time import time
 from ._constants import UNAUTHORIZED
 
@@ -232,7 +231,7 @@ class BasicHtmlLoginForm(PostActions):
 
         formUrl = path
         if arguments:
-            formUrl += "?" + urlencode(arguments, doseq=True)
+            formUrl += "?" + urlencode(sorted(arguments.items()), doseq=True)
 
         username = session[USER].name if user is None else (user if isinstance(user, str) else user.name)
         values = dict(

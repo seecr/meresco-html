@@ -136,7 +136,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace(onlySpecifiedMethods=True, returnValues={'hasUser': True})
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
-        Body = urlencode(dict(username='user', password='secret'))
+        Body = urlencode(sorted(dict(username='user', password='secret').items()))
         session = {ORIGINAL_PATH:'/please/go/here'}
 
         result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -482,7 +482,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace()
         self.form.addObserver(observer)
         pf.addUser('existing', 'password')
-        Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
+        Body = urlencode(sorted(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return').items()))
         session = {'user': BasicHtmlLoginForm.User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -496,7 +496,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEqual('Added user "newuser"', session['BasicHtmlLoginForm.newUserFormValues']['successMessage'])
         self.assertEqual(['addUser', 'handleNewUser'], observer.calledMethodNames())
         self.assertEqual({'username': 'newuser', 'password': 'secret'}, observer.calledMethods[0].kwargs)
-        self.assertEqual({'Body': 'username=newuser&formUrl=%2Fpage%2FnewUser&password=secret&returnUrl=%2Freturn&retypedPassword=secret', 'username': 'newuser'}, observer.calledMethods[1].kwargs)
+        self.assertEqual({'Body': 'formUrl=%2Fpage%2FnewUser&password=secret&returnUrl=%2Freturn&retypedPassword=secret&username=newuser', 'username': 'newuser'}, observer.calledMethods[1].kwargs)
 
 
     @stdout_replaced
