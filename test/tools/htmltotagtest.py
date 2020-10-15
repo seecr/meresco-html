@@ -376,8 +376,8 @@ def main(tag, **kw):
         self.assertTrue('SyntaxError:' in result['text'])#, result['text'])
 
 def processTemplate(self, template):
-    # print '>>>', template
-    open(self.tempdir+'/afile.sf', 'w').write(template)
+    with open(self.tempdir+'/afile.sf', 'w') as f:
+        f.write(template)
     d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
     header, body = parseResponse(asString(d.handleRequest(path='/afile')))
     if header['StatusCode'] != '200':

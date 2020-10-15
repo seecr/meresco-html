@@ -211,7 +211,7 @@ def _nfc(aString):
 
     Canonical decomposition followed by canonical composition
     """
-    return normalize('NFC', str(aString)).encode('utf-8')
+    return normalize('NFC', str(aString))
 
 def _ident_ln(ident, a_str, newline=True):
     return (' ' * ident) + a_str + ('\n' if newline else '')
