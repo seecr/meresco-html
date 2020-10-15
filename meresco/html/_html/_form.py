@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2017 SURFmarket https://surf.nl
-# Copyright (C) 2017 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017, 2020 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "Meresco Html"
 #

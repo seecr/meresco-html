@@ -5,7 +5,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2008-2009 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2012-2019 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2020 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
 # Copyright (C) 2018 SURF https://surf.nl
 #

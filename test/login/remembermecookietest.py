@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2005-2010 Seek You Too B.V. (CQ2) http://www.cq2.nl
-# Copyright (C) 2011-2014, 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2011-2014, 2016, 2020 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 #
 # This file is part of "Meresco Html"
