@@ -46,12 +46,12 @@ from nextpreviteratortest import NextPrevIteratorTest
 # TODO
 # from login.basichtmlloginformtest import BasicHtmlLoginFormTest
 # from login.groupsfiletest import GroupsFileTest
-# from login.passwordfiletest import PasswordFileTest
-# from login.remembermecookietest import RememberMeCookieTest
-# from login.securezonetest import SecureZoneTest
-# from login.usergroupsformtest import UserGroupsFormTest
-# from login.userinfotest import UserInfoTest
-# from login.userinfoformtest import UserInfoFormTest
+from login.passwordfiletest import PasswordFileTest
+from login.remembermecookietest import RememberMeCookieTest
+from login.securezonetest import SecureZoneTest
+from login.usergroupsformtest import UserGroupsFormTest
+from login.userinfotest import UserInfoTest
+from login.userinfoformtest import UserInfoFormTest
 
 from tools.htmltotagtest import HtmlToTagTest
 

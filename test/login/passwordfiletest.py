@@ -32,6 +32,8 @@ from simplejson import dump as jsonSave, dump, load
 from os.path import join
 from meresco.html.login import PasswordFile
 from meresco.html.login.passwordfile import md5Hash
+from meresco.components.json import JsonDict
+import warnings
 
 poorHash = lambda data: ''.join(reversed(data))
 
@@ -44,8 +46,8 @@ class PasswordFileTest(SeecrTestCase):
 
     def testReadPasswordFile(self):
         passwdHash = poorHash('passwordsalt')
-        data = dict(users={'John':{'salt':'salt', 'password':passwdHash}}, version=PasswordFile.version)
-        jsonSave(data, open(self.filename, 'w'))
+        data = JsonDict(users={'John':{'salt':'salt', 'password':passwdHash}}, version=PasswordFile.version)
+        data.dump(self.filename)
         pf = PasswordFile(filename=self.filename, hashMethod=poorHash)
         self.assertTrue(pf.validateUser('John', 'password'))
 
@@ -94,11 +96,15 @@ class PasswordFileTest(SeecrTestCase):
 
     def testChangePasswordWithBadPassword(self):
         self.pwd.addUser(username='Harry', password='good')
-        self.assertRaises(ValueError, self.pwd.changePassword, username='Harry', oldPassword='good', newPassword='')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertRaises(ValueError, self.pwd.changePassword, username='Harry', oldPassword='good', newPassword='')
 
     def testChangePasswordWithEmptyOldPassword(self):
         self.pwd.addUser(username='Harry', password='good')
-        self.pwd.changePassword(username='Harry', oldPassword=None, newPassword='good2')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.pwd.changePassword(username='Harry', oldPassword=None, newPassword='good2')
         self.assertFalse(self.pwd.validateUser(username='Harry', password='good'))
         self.assertTrue(self.pwd.validateUser(username='Harry', password='good2'))
 
@@ -153,11 +159,10 @@ class PasswordFileTest(SeecrTestCase):
 
     def testCreateSaltAfterConversion(self):
         tmpfile = join(self.tempdir, 'passwdwithoutsalt')
-        with open(tmpfile, 'w') as f:
-            dump(dict(users=dict(username=dict(salt='', password=md5Hash('secret'))), version=PasswordFile.version), f)
+        JsonDict(users=dict(username=dict(salt='', password=md5Hash('secret'))), version=PasswordFile.version).dump(tmpfile)
         pwd = PasswordFile(tmpfile)
         self.assertTrue(pwd.validateUser('username', 'secret'))
-        d = load(open(tmpfile))
+        d = JsonDict.load(tmpfile)
         self.assertTrue(5, len(d['users']['username']['salt']))
         pwd = PasswordFile(tmpfile)
         self.assertTrue(pwd.validateUser('username', 'secret'))

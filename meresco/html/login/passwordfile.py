@@ -38,7 +38,7 @@ from warnings import warn
 USER_RW = S_IRUSR | S_IWUSR
 
 def md5Hash(data):
-    return md5(data).hexdigest()
+    return md5(data.encode('utf-8')).hexdigest()
 
 def simplePasswordTest(passwd):
     return bool(passwd.strip())
@@ -58,7 +58,8 @@ class FileStorage(object):
         chmod(id_, USER_RW)
     def retrieve(self, id_):
         try:
-            return open(id_).read()
+            with open(id_) as f:
+                return f.read()
         except IOError:
             raise KeyError
 
