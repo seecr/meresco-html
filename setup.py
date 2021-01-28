@@ -46,7 +46,6 @@ setup(
         'meresco',            #DO_NOT_DISTRIBUTE
     ] + packages,
     data_files=data_files,
-    scripts=[join('bin', f) for f in listdir('bin')],
     version='%VERSION%',
     author='Seecr (Seek You Too B.V.)',
     author_email='info@seecr.nl',

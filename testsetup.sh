@@ -25,31 +25,27 @@
 #
 ## end license ##
 
-set -o errexit
-rm -rf tmp build
-mydir=$(cd $(dirname $0); pwd)
 source /usr/share/seecr-tools/functions.d/test
 
-pyversions="2.6"
-if distro_is_debian_wheezy; then
-    pyversions="2.6 2.7"
+set -e
+mydir=$(cd $(dirname $0); pwd)
+rm -rf tmp build
+
+definePythonVars
+$PYTHON setup.py install --root tmp
+removeDoNotDistribute tmp
+cp -r test tmp/test
+find tmp -type f -exec sed -e "
+    s,^usrSharePath.*$,usrSharePath='$mydir/tmp/usr/share/meresco-html',;
+    s,^docDir.*$,docDir = '$mydir/tmp/usr/share/doc/meresco-html',;
+    " -i {} \;
+
+if [ -z "$@" ]; then
+    runtests "alltests.sh"
+else
+    runtests "$@"
 fi
 
-VERSION="x.y.z"
 
-for pyversion in $pyversions; do
-    definePythonVars $pyversion
-    echo "###### $pyversion, $PYTHON"
-    ${PYTHON} setup.py install --root tmp
-done
-cp -r test tmp/test
-removeDoNotDistribute tmp
-find tmp -name '*.py' -exec sed -r -e "
-    s/\\\$Version:[^\\\$]*\\\$/\\\$Version: ${VERSION}\\\$/;
-    s,^docDir.*$,docDir = '$mydir/tmp/usr/share/doc/meresco-html',;
-    " -i '{}' \;
-
-cp -r test tmp/test
-runtests "$@"
 rm -rf tmp build
 
