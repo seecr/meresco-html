@@ -46,7 +46,6 @@ from postactionstest import PostActionsTest
 from urlencodetest import UrlencodeTest
 from nextpreviteratortest import NextPrevIteratorTest
 
-# TODO
 from login.basichtmlloginformtest import BasicHtmlLoginFormTest
 from login.groupsfiletest import GroupsFileTest
 from login.passwordfiletest import PasswordFileTest
@@ -55,8 +54,6 @@ from login.securezonetest import SecureZoneTest
 from login.usergroupsformtest import UserGroupsFormTest
 from login.userinfotest import UserInfoTest
 from login.userinfoformtest import UserInfoFormTest
-
-from tools.htmltotagtest import HtmlToTagTest
 
 if __name__ == '__main__':
     main()
