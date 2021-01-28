@@ -3,10 +3,13 @@
 # "Meresco Html" is a template engine based on generators, and a sequel to Slowfoot.
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
-# Copyright (C) 2017 SURF https://surf.nl
+# Copyright (C) 2017, 2020-2021 SURF https://www.surf.nl
 # Copyright (C) 2017 SURFmarket https://surf.nl
-# Copyright (C) 2017, 2020 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2017, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2017 St. IZW (Stichting Informatievoorziening Zorg en Welzijn) http://izw-naz.nl
+# Copyright (C) 2020-2021 Data Archiving and Network Services https://dans.knaw.nl
+# Copyright (C) 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
+# Copyright (C) 2020-2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
 #
 # This file is part of "Meresco Html"
 #
