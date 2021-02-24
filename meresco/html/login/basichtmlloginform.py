@@ -57,7 +57,7 @@ class BasicHtmlLoginForm(PostActions):
         self._rememberMeCookie = rememberMeCookie
 
     def handleLogin(self, session=None, Body=None, **kwargs):
-        bodyArgs = parse_qs(Body, keep_blank_values=True)
+        bodyArgs = parse_qs(str(Body, encoding='utf-8'), keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
         rememberMe = bodyArgs.get('rememberMe', [None])[0] != None
@@ -171,7 +171,7 @@ class BasicHtmlLoginForm(PostActions):
         if handlingUser is None or not handlingUser.canEdit():
             yield UNAUTHORIZED
             return
-        bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
+        bodyArgs = parse_qs(str(Body, encoding='utf-8'), keep_blank_values=True) if Body else {}
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
         retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
@@ -191,7 +191,7 @@ class BasicHtmlLoginForm(PostActions):
         yield redirectHttp % targetUrl.format(username=username)
 
     def handleChangePassword(self, session, Body, **kwargs):
-        bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
+        bodyArgs = parse_qs(str(Body, encoding='utf-8'), keep_blank_values=True) if Body else {}
         username = bodyArgs.get('username', [None])[0]
         oldPassword = bodyArgs.get('oldPassword', [None])[0]
         newPassword = bodyArgs.get('newPassword', [None])[0]
@@ -312,7 +312,7 @@ function deleteUser(username) {
             sessionUser.canEdit(user.name)
 
     def handleRemove(self, session, Body, **kwargs):
-        bodyArgs = parse_qs(Body, keep_blank_values=True) if Body else {}
+        bodyArgs = parse_qs(str(Body, encoding='utf-8'), keep_blank_values=True) if Body else {}
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
         sessionUser = session.get(USER)
         user = self._checkAndCreateUser(bodyArgs.get('username', [None])[0])

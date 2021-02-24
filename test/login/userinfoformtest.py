@@ -28,12 +28,11 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from seecr.test.utils import headerToDict
-from meresco.components.http.utils import CRLF
+from meresco.components.http.utils import CRLF, parseResponse
 from meresco.html.login import UserInfo, UserInfoForm
 from meresco.html.login import BasicHtmlLoginForm
 from os.path import join
-from weightless.core import asString
+from weightless.core.utils import asString, asBytes
 from urllib.parse import urlencode
 
 class UserInfoFormTest(SeecrTestCase):
@@ -56,9 +55,10 @@ class UserInfoFormTest(SeecrTestCase):
             'username': ['aUser'],
             'fullname': ['THE user'],
         }
-        result = asString(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.adminUser}))
-        self.assertEqual('HTTP/1.0 302 Found', result.split(CRLF)[0])
-        self.assertEqual({'Location': '/user'}, headerToDict(result))
+        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.adminUser}))
+        header, body = parseResponse(result)
+        self.assertEqual('302', header['StatusCode'])
+        self.assertEqual('/user', header['Headers']['Location'])
         self.assertEqual({'fullname': 'THE user'}, self.info.userInfo('aUser'))
 
     def testUpdateUserByOtherUserFails(self):
@@ -67,8 +67,9 @@ class UserInfoFormTest(SeecrTestCase):
             'username': ['aUser'],
             'fullname': ['THE user'],
         }
-        result = asString(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.normalUser}))
-        self.assertEqual('HTTP/1.0 401 Unauthorized', result.split(CRLF)[0])
+        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.normalUser}))
+        header, body = parseResponse(result)
+        self.assertEqual('401', header['StatusCode'])
         self.assertEqual({}, self.info.userInfo('aUser'))
 
     def testUpdateInfoForUserByItself(self):
@@ -77,9 +78,10 @@ class UserInfoFormTest(SeecrTestCase):
             'username': [self.normalUser.name],
             'fullname': ['THE user'],
         }
-        result = asString(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.normalUser}))
-        self.assertEqual('HTTP/1.0 302 Found', result.split(CRLF)[0])
-        self.assertEqual({'Location': '/user'}, headerToDict(result))
+        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.normalUser}))
+        header, body = parseResponse(result)
+        self.assertEqual('302', header['StatusCode'])
+        self.assertEqual('/user', header['Headers']['Location'])
         self.assertEqual({'fullname': 'THE user'}, self.info.userInfo(self.normalUser.name))
 
     def testForm(self):

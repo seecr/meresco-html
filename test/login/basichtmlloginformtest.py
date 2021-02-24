@@ -30,10 +30,10 @@
 ## end license ##
 
 from weightless.core import asString, be, Observable, consume
+from weightless.core.utils import asBytes
 
 from seecr.test import SeecrTestCase, CallTrace
-from seecr.test.utils import headerToDict
-from meresco.components.http.utils import CRLF, redirectHttp
+from meresco.components.http.utils import CRLF, redirectHttp, parseResponse
 from urllib.parse import urlencode
 
 from meresco.html.login import BasicHtmlLoginForm, PasswordFile
@@ -132,23 +132,21 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 </div>""", result)
 
     def testRedirectOnGet(self):
-        result = asString(self.form.handleRequest(path='/whatever', Client=('127.0.0.1', 3451), Method='GET'))
-        header, body = result.split(CRLF*2)
-        self.assertTrue('405' in header)
+        header, body = parseResponse(asBytes(self.form.handleRequest(path='/whatever', Client=('127.0.0.1', 3451), Method='GET')))
+        self.assertEqual('405', header['StatusCode'])
 
     def testLoginWithPOSTsucceedsRedirectsToOriginalPath(self):
         observer = CallTrace(onlySpecifiedMethods=True, returnValues={'hasUser': True})
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
-        Body = urlencode(sorted(dict(username='user', password='secret').items()))
+        Body = urlencode(sorted(dict(username='user', password='secret').items())).encode()
         session = {ORIGINAL_PATH:'/please/go/here'}
 
-        result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        header, body = parseResponse(asBytes(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session)))
 
         self.assertEqual('user', session['user'].name)
-        header, body = result.split(CRLF*2)
-        self.assertTrue('302' in header)
-        self.assertTrue('Location: /please/go/here' in header)
+        self.assertEqual('302', header['StatusCode'])
+        self.assertEqual('/please/go/here', header['Headers']['Location'])
         user = session['user']
         self.assertFalse(user.isAdmin())
 
@@ -159,7 +157,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace(onlySpecifiedMethods=True, returnValues={'hasUser': True})
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
-        Body = urlencode(dict(username='user', password='secret'))
+        Body = urlencode(dict(username='user', password='secret')).encode()
         session = {ORIGINAL_PATH:'/please/go/here'}
 
         result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -183,7 +181,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home')
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
-        Body = urlencode(dict(username='admin', password='secret'))
+        Body = urlencode(dict(username='admin', password='secret')).encode()
         session = {}
 
         result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -201,7 +199,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace()
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = False
-        Body = urlencode(dict(username='user', password='wrong'))
+        Body = urlencode(dict(username='user', password='wrong')).encode()
         session = {}
 
         result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -222,7 +220,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             user.additionalInfo = "more info"
         observer.methods['enrichUser'] = enrichUser
         self.form.addObserver(observer)
-        Body = urlencode(dict(username='user', password='secret'))
+        Body = urlencode(dict(username='user', password='secret')).encode()
         session = {}
 
         consume(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -336,7 +334,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 </div>""", result)
 
     def testChangePasswordMismatch(self):
-        Body = urlencode(dict(username='user', oldPassword='correct', newPassword="good", retypedPassword="mismatch", formUrl='/show/changepasswordform'))
+        Body = urlencode(dict(username='user', oldPassword='correct', newPassword="good", retypedPassword="mismatch", formUrl='/show/changepasswordform')).encode()
         session = {'user': BasicHtmlLoginForm.User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -348,7 +346,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = False
 
-        Body = urlencode(dict(username='user', oldPassword='wrong', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
+        Body = urlencode(dict(username='user', oldPassword='wrong', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform')).encode()
         session = {'user': BasicHtmlLoginForm.User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -360,7 +358,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = False
 
-        Body = urlencode(dict(username='username', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
+        Body = urlencode(dict(username='username', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform')).encode()
         session = {
             'user': BasicHtmlLoginForm.User('username'),
             'BasicHtmlLoginForm.formValues': {}
@@ -375,7 +373,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = False
 
-        Body = urlencode(dict(username='user', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform', returnUrl='/home'))
+        Body = urlencode(dict(username='user', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform', returnUrl='/home')).encode()
         session = {
             'user': BasicHtmlLoginForm.User('admin'),
             'BasicHtmlLoginForm.formValues': {}
@@ -390,7 +388,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = False
 
-        Body = urlencode(dict(username='admin', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform'))
+        Body = urlencode(dict(username='admin', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform')).encode()
         session = {
             'user': BasicHtmlLoginForm.User('admin'),
             'BasicHtmlLoginForm.formValues': {}
@@ -405,7 +403,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
 
-        Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform', returnUrl='/home'))
+        Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform', returnUrl='/home')).encode()
         session = {'user': BasicHtmlLoginForm.User('user')}
 
         result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -420,7 +418,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             path='/login/remove',
             Client=('127.0.0.1', 3451),
             Method='POST',
-            Body=urlencode(dict(username='user', formUrl='/show/userlist')),
+            Body=urlencode(dict(username='user', formUrl='/show/userlist')).encode(),
             session={}))
         self.assertEqual(['hasUser', 'enrichUser'], [m.name for m in observer.calledMethods])
         self.assertEqual('HTTP/1.0 401 Unauthorized\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUnauthorized access.', result)
@@ -432,7 +430,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             path='/login/remove',
             Client=('127.0.0.1', 3451),
             Method='POST',
-            Body=urlencode(dict(username='user', formUrl='/show/userlist')),
+            Body=urlencode(dict(username='user', formUrl='/show/userlist')).encode(),
             session={'user': BasicHtmlLoginForm.User('admin')}))
 
         self.assertEqual(['hasUser', 'enrichUser', 'removeUser', 'removeCookies', 'removeCookies'], [m.name for m in observer.calledMethods])
@@ -446,7 +444,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
             path='/login/remove',
             Client=('127.0.0.1', 3451),
             Method='POST',
-            Body=urlencode(dict(username='user', formUrl='/show/userlist')),
+            Body=urlencode(dict(username='user', formUrl='/show/userlist')).encode(),
             session=session))
 
         self.assertEqual(['hasUser'], [m.name for m in observer.calledMethods])
@@ -457,7 +455,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         session = {'user': self.form.loginAsUser('admin')}
         observer.calledMethods.reset()
-        result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='user'))))
+        result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='user')).encode()))
         self.assertEqual("HTTP/1.0 302 Found\r\nLocation: /home\r\n\r\n", result)
         self.assertEqual(['hasUser', 'removeUser'], [m.name for m in observer.calledMethods])
 
@@ -466,7 +464,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         session = {'user': self.form.loginAsUser('user')}
         observer.calledMethods.reset()
-        result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='admin'))))
+        result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='admin')).encode()))
         self.assertEqual('HTTP/1.0 401 Unauthorized\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUnauthorized access.', result)
         self.assertEqual(['hasUser'], [m.name for m in observer.calledMethods])
 
@@ -475,7 +473,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         session = {'user': self.form.loginAsUser('admin')}
         observer.calledMethods.reset()
-        result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='admin'))))
+        result = asString(self.form.handleRemove(session=session, Body=urlencode(dict(username='admin')).encode()))
         self.assertEqual('HTTP/1.0 401 Unauthorized\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nUnauthorized access.', result)
         self.assertEqual(['hasUser'], [m.name for m in observer.calledMethods])
 
@@ -486,7 +484,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace()
         self.form.addObserver(observer)
         pf.addUser('existing', 'password')
-        Body = urlencode(sorted(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return').items()))
+        Body = urlencode(sorted(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return').items())).encode()
         session = {'user': BasicHtmlLoginForm.User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -500,7 +498,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEqual('Added user "newuser"', session['BasicHtmlLoginForm.newUserFormValues']['successMessage'])
         self.assertEqual(['addUser', 'handleNewUser'], observer.calledMethodNames())
         self.assertEqual({'username': 'newuser', 'password': 'secret'}, observer.calledMethods[0].kwargs)
-        self.assertEqual({'Body': 'formUrl=%2Fpage%2FnewUser&password=secret&returnUrl=%2Freturn&retypedPassword=secret&username=newuser', 'username': 'newuser'}, observer.calledMethods[1].kwargs)
+        self.assertEqual({'Body': b'formUrl=%2Fpage%2FnewUser&password=secret&returnUrl=%2Freturn&retypedPassword=secret&username=newuser', 'username': 'newuser'}, observer.calledMethods[1].kwargs)
 
 
     @stdout_replaced
@@ -508,7 +506,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         session = {}
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
-        Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
+        Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return')).encode()
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         header, body = result.split(CRLF*2)
         self.assertEqual(['admin'], pf.listUsernames())
@@ -519,7 +517,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         session = {'user': BasicHtmlLoginForm.User('auser')}
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
-        Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return'))
+        Body = urlencode(dict(username='newuser', password='secret', retypedPassword='secret', formUrl='/page/newUser', returnUrl='/return')).encode()
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
         header, body = result.split(CRLF*2)
         self.assertEqual(['admin'], pf.listUsernames())
@@ -531,7 +529,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
         pf.addUser('newuser', 'oldpassword')
-        Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='newpassword', formUrl='/page/newUser', returnUrl='/return'))
+        Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='newpassword', formUrl='/page/newUser', returnUrl='/return')).encode()
         session = {'user': BasicHtmlLoginForm.User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -550,7 +548,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
-        Body = urlencode(dict(username='existing', oldPassword='password', newPassword='', retypedPassword='', formUrl='/page/newUser', returnUrl='/return'))
+        Body = urlencode(dict(username='existing', oldPassword='password', newPassword='', retypedPassword='', formUrl='/page/newUser', returnUrl='/return')).encode()
         session = {'user': BasicHtmlLoginForm.User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -569,7 +567,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
-        Body = urlencode(dict(username='existing', oldPassword='password', newPassword='new_pass', retypedPassword='new_pass', formUrl='/page/newUser', returnUrl='/return'))
+        Body = urlencode(dict(username='existing', oldPassword='password', newPassword='new_pass', retypedPassword='new_pass', formUrl='/page/newUser', returnUrl='/return')).encode()
         session = {}
 
         result = asString(self.form.handleRequest(path='/action/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -590,7 +588,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         pf = PasswordFile(join(self.tempdir, 'passwd'))
         self.form.addObserver(pf)
         pf.addUser('existing', 'password')
-        Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='retypedpassword', formUrl='/page/newUser', returnUrl='/return'))
+        Body = urlencode(dict(username='newuser', password='newpassword', retypedPassword='retypedpassword', formUrl='/page/newUser', returnUrl='/return')).encode()
         session = {'user': BasicHtmlLoginForm.User('admin')}
 
         result = asString(self.form.handleRequest(path='/action/newUser', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
@@ -675,7 +673,7 @@ function deleteUser(username) {
             )
         )
 
-        asString(dna.all.handleNewUser(session={'user': BasicHtmlLoginForm.User('admin')}, Body=urlencode(dict(password="password", retypedPassword="password", username='nieuw'))))
+        asString(dna.all.handleNewUser(session={'user': BasicHtmlLoginForm.User('admin')}, Body=urlencode(dict(password="password", retypedPassword="password", username='nieuw')).encode()))
         self.assertEqual(3, len(values))
 
     def testSetRememberMeCookie(self):
@@ -706,19 +704,17 @@ function deleteUser(username) {
         )
 
         session = {}
-        header, _ = asString(dna.all.handleRequest(
+        header, body = parseResponse(asBytes(dna.all.handleRequest(
             Method="POST",
             path="/",
             session=session,
-            Body=urlencode(dict(username="test", password="ignored", rememberMe="on"))
-        )).split('\r\n\r\n', 1)
+            Body=urlencode(dict(username="test", password="ignored", rememberMe="on")).encode(),
+        )))
 
         self.assertTrue('user' in session, session)
-        headers = headerToDict(header)
-        self.assertEqual("/index", headers['Location'])
+        self.assertEqual("/index", header['Headers']['Location'])
 
-        self.assertTrue('Set-Cookie' in headers, headers)
-        self.assertEqual("somevalue", headers['Set-Cookie'])
+        self.assertEqual("somevalue", header['Headers']['Set-Cookie'])
 
     def testLoginForWithRememberMe(self):
         form = BasicHtmlLoginForm(
