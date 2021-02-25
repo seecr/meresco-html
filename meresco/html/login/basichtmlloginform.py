@@ -198,28 +198,34 @@ class BasicHtmlLoginForm(PostActions):
         retypedPassword = bodyArgs.get('retypedPassword', [None])[0]
         formUrl = bodyArgs.get('formUrl', [self._home])[0]
         returnUrl = bodyArgs.get('returnUrl', [formUrl])[0]
-
         targetUrl = formUrl
 
         handlingUser = session.get(USER)
         if not handlingUser:
-            session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'loginRequired')}
+            session['BasicHtmlLoginForm.formValues']={
+                'username': username,
+                'errorMessage': getLabel(self._lang, 'changepasswordForm', 'loginRequired')}
             yield redirectHttp % targetUrl
             return
 
         if newPassword != retypedPassword:
-            session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'dontMatch')}
+            session['BasicHtmlLoginForm.formValues']={
+                'username': username,
+                'errorMessage': getLabel(self._lang, 'changepasswordForm', 'dontMatch')}
         else:
             if (not oldPassword and handlingUser.canEdit(username) and handlingUser.name != username) or self.call.validateUser(username=username, password=oldPassword):
                 try:
                     self.call.setPassword(username, newPassword)
                     targetUrl = returnUrl
                 except ValueError:
-                    session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'passwordInvalid')}
+                    session['BasicHtmlLoginForm.formValues']={
+                        'username': username,
+                        'errorMessage': getLabel(self._lang, 'changepasswordForm', 'passwordInvalid')}
 
             else:
-                session['BasicHtmlLoginForm.formValues']={'username': username, 'errorMessage': getLabel(self._lang, 'changepasswordForm', 'usernamePasswordDontMatch')}
-
+                session['BasicHtmlLoginForm.formValues']={
+                    'username': username,
+                    'errorMessage': getLabel(self._lang, 'changepasswordForm', 'usernamePasswordDontMatch')}
         yield redirectHttp % targetUrl.format(username=username)
 
     def changePasswordForm(self, session, path, arguments, user=None, lang=None, onlyNewPassword=False, **kwargs):
