@@ -33,7 +33,7 @@ from meresco.components.http.utils import redirectHttp
 from meresco.html import PostActions
 from meresco.html.dynamichtml import escapeHtml
 from urllib.parse import urlencode
-from urllib.parse import parse_qs
+from meresco.html.utils import parse_qs
 from .groupsfile import GroupsFile
 from ._constants import UNAUTHORIZED
 

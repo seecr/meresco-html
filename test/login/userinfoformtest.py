@@ -55,7 +55,7 @@ class UserInfoFormTest(SeecrTestCase):
             'username': ['aUser'],
             'fullname': ['THE user'],
         }
-        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.adminUser}))
+        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=asBody(data), session={'user': self.adminUser}))
         header, body = parseResponse(result)
         self.assertEqual('302', header['StatusCode'])
         self.assertEqual('/user', header['Headers']['Location'])
@@ -67,7 +67,7 @@ class UserInfoFormTest(SeecrTestCase):
             'username': ['aUser'],
             'fullname': ['THE user'],
         }
-        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.normalUser}))
+        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=asBody(data), session={'user': self.normalUser}))
         header, body = parseResponse(result)
         self.assertEqual('401', header['StatusCode'])
         self.assertEqual({}, self.info.userInfo('aUser'))
@@ -78,7 +78,7 @@ class UserInfoFormTest(SeecrTestCase):
             'username': [self.normalUser.name],
             'fullname': ['THE user'],
         }
-        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=urlencode(data, doseq=True), session={'user': self.normalUser}))
+        result = asBytes(self.form.handleRequest(Method='POST', path='/action/updateInfoForUser', Body=asBody(data), session={'user': self.normalUser}))
         header, body = parseResponse(result)
         self.assertEqual('302', header['StatusCode'])
         self.assertEqual('/user', header['Headers']['Location'])
@@ -108,5 +108,7 @@ class UserInfoFormTest(SeecrTestCase):
             'username': ['aUser'],
             'fullname': ['THE user'],
         }
-        self.form.handleNewUser(username='user', Body=urlencode(data, doseq=True))
+        self.form.handleNewUser(username='user', Body=asBody(data))
         self.assertEqual({'fullname': 'THE user'}, self.info.userInfo('user'))
+
+asBody = lambda data: bytes(urlencode(data, doseq=True), encoding='utf-8')

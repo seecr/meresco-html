@@ -45,6 +45,7 @@ from objectregistrytest import ObjectRegistryTest
 from postactionstest import PostActionsTest
 from urlencodetest import UrlencodeTest
 from nextpreviteratortest import NextPrevIteratorTest
+from utilstest import UtilsTest
 
 from login.basichtmlloginformtest import BasicHtmlLoginFormTest
 from login.groupsfiletest import GroupsFileTest

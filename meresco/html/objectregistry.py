@@ -30,7 +30,6 @@
 
 from os.path import join, isfile, isdir
 from os import makedirs
-from urllib.parse import parse_qs
 
 from meresco.components.http.utils import redirectHttp
 
@@ -38,6 +37,7 @@ from meresco.html import PostActions
 from uuid import uuid4, UUID
 from meresco.components.json import JsonDict
 from .labels import getLabel
+from .utils import parse_qs
 
 class ObjectRegistry(PostActions):
     def __init__(self, stateDir, name, redirectPath, lang='en', validate=None, defaults=None, **kwargs):

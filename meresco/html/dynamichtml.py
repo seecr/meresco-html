@@ -33,7 +33,7 @@
 from glob import glob
 from os.path import join, isfile, dirname, basename
 from traceback import format_exc
-from cgi import parse_qs
+from meresco.html.utils import parse_qs
 from itertools import groupby, islice
 from io import StringIO
 from contextlib import contextmanager

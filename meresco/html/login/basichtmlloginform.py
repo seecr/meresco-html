@@ -37,7 +37,8 @@ from .securezone import ORIGINAL_PATH
 from meresco.html import PostActions
 
 from .labels import getLabel
-from urllib.parse import urlencode, parse_qs
+from urllib.parse import urlencode
+from meresco.html.utils import parse_qs
 from time import time
 from ._constants import UNAUTHORIZED
 

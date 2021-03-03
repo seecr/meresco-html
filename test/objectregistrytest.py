@@ -112,7 +112,7 @@ class ObjectRegistryTest(SeecrTestCase):
         identifier = str(uuid4())
         self.assertRaises(ObjectRegistryException, lambda: registry.updateObject(identifier=identifier, key0=['value']))
 
-        data = urlencode([
+        data = urlencodedData([
                 ('identifier', identifier),
                 ('key1', 'value1'),
             ])
@@ -159,7 +159,7 @@ class ObjectRegistryTest(SeecrTestCase):
     def testPostRequest(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(keys=['key1', 'key2'], booleanKeys=['enabled1', 'enabled2'])
-        data = urlencode([
+        data = urlencodedData([
                 ('key1', 'value1'),
                 ('enabled1', 'on'),
             ])
@@ -174,7 +174,7 @@ class ObjectRegistryTest(SeecrTestCase):
     def testRedirectWithPostedRedirectPath(self):
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect')
         registry.registerKeys(keys=['key1', 'key2'], booleanKeys=['enabled1', 'enabled2'])
-        data = urlencode([
+        data = urlencodedData([
                 ('key1', 'value1'),
                 ('enabled1', 'on'),
                 ('redirectPath', '/object?id={}')
@@ -192,7 +192,7 @@ class ObjectRegistryTest(SeecrTestCase):
             raise ValueError('oops')
         registry = ObjectRegistry(self.tempdir, name='name', redirectPath='/redirect', validate=validate)
         registry.registerKeys(keys=['key1', 'key2'], booleanKeys=['enabled1', 'enabled2'])
-        data = urlencode([
+        data = urlencodedData([
                 ('key1', 'value1'),
                 ('enabled1', 'on'),
                 ('redirectPath', '/object?id={}')
@@ -214,7 +214,7 @@ class ObjectRegistryTest(SeecrTestCase):
                 'enabled1': True,
                 'enabled2': False,
             }, registry.listObjects()[object1id])
-        data = urlencode([
+        data = urlencodedData([
                 ('identifier', object1id),
                 ('key1', 'value1'),
                 ('enabled2', 'on'),
@@ -295,3 +295,4 @@ class ObjectRegistryTest(SeecrTestCase):
             ], list(objs.values()))
 
 
+urlencodedData = lambda data: bytes(urlencode(data), encoding='utf-8')
