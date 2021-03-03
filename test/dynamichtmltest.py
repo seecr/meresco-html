@@ -497,7 +497,7 @@ def main(headers={}, *args, **kwargs):
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})
-        self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;&quot;', ''.join(result))
+        self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\n&amp;&lt;&gt;"', ''.join(result))
 
         self.mktmpfl('file1.sf', """
 def main(headers={}, *args, **kwargs):

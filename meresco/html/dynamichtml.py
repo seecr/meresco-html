@@ -33,7 +33,6 @@
 from glob import glob
 from os.path import join, isfile, dirname, basename
 from traceback import format_exc
-from meresco.html.utils import parse_qs
 from itertools import groupby, islice
 from io import StringIO
 from contextlib import contextmanager
@@ -55,7 +54,8 @@ import builtins as exceptions
 from simplejson import dumps, loads
 from urllib.parse import urlsplit, urlunsplit
 
-from ._html import TagFactory, escapeHtml, tag_compose
+from ._html import TagFactory, tag_compose
+from .utils import escapeHtml, parse_qs
 
 CRLF = '\r\n'
 

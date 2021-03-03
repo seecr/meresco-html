@@ -65,8 +65,8 @@ class UserInfoForm(PostActions):
         userinfo = self.call.userInfo(forUsername)
         yield '<div id="userinfoform-change-user-info">'
         yield '<form name="userinfo" method="POST" action="{0}/updateInfoForUser">'.format(self._action)
-        yield '<input type="hidden" name="username" value="{0}"/>\n'.format(escapeHtml(forUsername))
-        yield '<input type="hidden" name="formUrl" value="{0}"/>\n'.format(escapeHtml(formUrl))
-        yield '<dl><dt>Volledige naam</dt><dd><input type="text" name="fullname" value="{0}"/></dd>\n'.format(escapeHtml(userinfo.get('fullname', '')))
+        yield '<input type="hidden" name="username" value="{0}"/>\n'.format(escapeHtml(forUsername), quote=True)
+        yield '<input type="hidden" name="formUrl" value="{0}"/>\n'.format(escapeHtml(formUrl), quote=True)
+        yield '<dl><dt>Volledige naam</dt><dd><input type="text" name="fullname" value="{0}"/></dd>\n'.format(escapeHtml(userinfo.get('fullname', ''), quote=True))
         yield '<dt></dt><dd><input type="submit" value="Aanpassen"/></dd></dl>'
         yield '</form></div>'

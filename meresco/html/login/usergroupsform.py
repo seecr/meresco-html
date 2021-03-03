@@ -86,12 +86,12 @@ class UserGroupsForm(PostActions):
             formUrl += "?" + urlencode(arguments, doseq=True)
         yield '<div id="usergroups-groups-user-form">'
         yield '<form name="groups" method="POST" action="{0}/updateGroupsForUser">'.format(self._action)
-        yield '<input type="hidden" name="username" value="{0}"/>\n'.format(escapeHtml(forUsername))
-        yield '<input type="hidden" name="formUrl" value="{0}"/>\n'.format(escapeHtml(formUrl))
+        yield '<input type="hidden" name="username" value="{0}"/>\n'.format(escapeHtml(forUsername, quote=True))
+        yield '<input type="hidden" name="formUrl" value="{0}"/>\n'.format(escapeHtml(formUrl, quote=True))
         yield '<ul>'
         for groupInfo in groupsInfo:
             yield '<li><label><input type="checkbox" name="groupname" value="{groupname}" {checked} {disabled}/>{groupname}{description}</label></li>'.format(
-                    groupname=escapeHtml(groupInfo['groupname']),
+                    groupname=escapeHtml(groupInfo['groupname'], quote=True),
                     checked='checked="checked"' if groupInfo['checked'] else "",
                     disabled='disabled="disabled"' if groupInfo['disabled'] else "",
                     description=groupInfo['description'],

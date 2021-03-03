@@ -238,7 +238,7 @@ class TagTest(SeecrTestCase):
         '''))
 
     def testEscapeOtherStuff(self):
-        self.assertEqual("<p>[&#x27;&amp;&#x27;, &#x27;noot&#x27;]</p>", self.processTemplate('''
+        self.assertEqual("<p>['&amp;', 'noot']</p>", self.processTemplate('''
             with tag('p'):
                 yield ['&', 'noot']
         '''))

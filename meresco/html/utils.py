@@ -28,9 +28,13 @@
 ## end license ##
 
 from urllib.parse import parse_qs as _parse_qs
+from html import escape
 
 def parse_qs(qs, **kwargs):
     qs = qs if isinstance(qs, str) else str(qs, encoding='utf-8')
     return _parse_qs(qs, **kwargs)
+
+def escapeHtml(s, quote=False):
+    return escape(s, quote=quote)
 
 

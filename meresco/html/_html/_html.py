@@ -33,7 +33,7 @@ from weightless.core import compose
 from io import StringIO
 
 from ._tag import Tag
-from ._utils import escapeHtml
+from meresco.html.utils import escapeHtml
 
 class Html(object):
 
