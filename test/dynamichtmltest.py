@@ -47,7 +47,8 @@ from meresco.html import DynamicHtml, Tag
 class DynamicHtmlTest(SeecrTestCase):
 
     def mktmpfl(self, nm, cntnts):
-        with open(self.tempdir + '/' + nm, 'w') as f: f.write(cntnts)
+        with open(join(self.tempdir,nm), 'w') as f:
+            f.write(cntnts)
 
     def testFileNotFound(self):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
@@ -120,6 +121,19 @@ def main(**kw):
         d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'), prefix='/prefix')
         result = asString(d.handleRequest(scheme='http', netloc='host.nl', path='/prefix/afile', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
         self.assertEqual('HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\r\nJohn is a nut', result)
+
+    def testHandleBytesAndString(self):
+        self.mktmpfl('afile.sf', r"""
+def main(*args, **kwargs):
+    yield b"HTTP/1.0 302 HIER_HEEN\r\n"
+    yield b"Location: /\r\n"
+    yield b"\r\n"
+""")
+        d = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'), prefix='/prefix')
+        result = asString(d.handleRequest(
+            scheme='http', netloc='host.nl', path='/prefix/afile', query='?query=something', fragments='#fragments',
+            arguments={'query': 'something'}))
+        self.assertEqual('HTTP/1.0 302 HIER_HEEN\r\nLocation: /\r\n\r\n', result)
 
     def testSimpleGenerator(self):
         self.mktmpfl('testSimple.sf', """
@@ -289,7 +303,7 @@ def main(Headers={}, *args, **kwargs):
         reactor = Reactor()
 
         d = DynamicHtml([self.tempdir], reactor=reactor)
-        self.mktmpfl('/file1.sf', 'def main(*args, **kwargs): \n  yield "one"')
+        self.mktmpfl('file1.sf', 'def main(*args, **kwargs): \n  yield "one"')
         reactor.step()
 
         result = d.handleRequest(scheme='http', netloc='host.nl', path='/file1', query='?query=something', fragments='#fragments', arguments={'query': 'something'})

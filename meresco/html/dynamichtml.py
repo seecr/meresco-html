@@ -45,6 +45,7 @@ from math import ceil
 from functools import partial, reduce
 
 from meresco.components.json import JsonList, JsonDict
+from meresco.components.http.utils import ensureBytes
 from meresco.core import Observable, decorate
 
 from weightless.core import compose, Yield, NoneOfTheObserversRespond
@@ -274,14 +275,13 @@ class DynamicHtml(Observable):
                 if firstValue is Yield or callable(firstValue):
                     yield firstValue
                     continue
-                firstLine = str(firstValue)
-                if not firstLine.startswith('HTTP/1.'):
+                if not (type(firstValue) in [str, bytes] and ensureBytes(firstValue).startswith(b'HTTP/1.')):
                     contentType = 'text/html'
                     if path.endswith('.xml'):
                         contentType = 'text/xml'
                     yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
                 yield tag.lines()
-                yield tag.escape(firstLine)
+                yield tag.escape(firstValue)
                 break
             except DynamicHtmlException as dhe:
                 s = format_exc() #cannot be inlined

@@ -249,6 +249,12 @@ class TagTest(SeecrTestCase):
                 yield tag.as_is('<i>dit</i>')
         '''))
 
+    def testMixInBytes(self):
+        self.assertEqual('<p>Bytes bite</p>', self.processTemplate('''
+            with tag('p'):
+                yield b"Bytes bite"
+        '''))
+
     def testAttributesConvertedToString(self):
         self.assertEqual('<div value="3">42</div>', self.processTemplate('''
             with tag('div', value=3):

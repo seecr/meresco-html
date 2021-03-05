@@ -133,9 +133,13 @@ class TagFactory(object):
             self.stream.seek(0)
 
     def escape(self, obj):
+        if isinstance(obj, bytes):
+            obj = str(obj, encoding='utf-8')
+        elif not isinstance(obj, str):
+            obj = str(obj)
         if self._count:
-            return escapeHtml(str(obj))
-        return str(obj)
+            return escapeHtml(obj)
+        return obj
 
     def as_is(self, obj):
         return AsIs(obj)
