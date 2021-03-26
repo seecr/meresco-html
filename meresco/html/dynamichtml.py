@@ -302,7 +302,7 @@ class DynamicHtml(Observable):
         try:
             for line in generators:
                 yield tag.lines()
-                yield line if line is Yield or callable(line) else tag.escape(line)
+                yield line if line is Yield or callable(line) or type(line) is bytes else tag.escape(line)
             yield tag.lines()
         except Exception:
             s = format_exc() #cannot be inlined
