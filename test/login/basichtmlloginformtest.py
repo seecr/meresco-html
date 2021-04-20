@@ -714,7 +714,7 @@ function deleteUser(username) {
         self.assertTrue('user' in session, session)
         self.assertEqual("/index", header['Headers']['Location'])
 
-        self.assertEqual("somevalue", header['Headers']['Set-Cookie'])
+        self.assertEqual(["somevalue"], header['Headers']['Set-Cookie'])
 
     def testLoginForWithRememberMe(self):
         form = BasicHtmlLoginForm(
