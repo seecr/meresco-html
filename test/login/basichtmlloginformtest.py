@@ -35,6 +35,7 @@ from weightless.core.utils import asBytes
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.http.utils import CRLF, redirectHttp, parseResponse
 from urllib.parse import urlencode
+from simplejson import loads
 
 from meresco.html.login import BasicHtmlLoginForm, PasswordFile
 from meresco.html.login.securezone import ORIGINAL_PATH
@@ -195,6 +196,31 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEqual(['validateUser', 'hasUser'], [m.name for m in observer.calledMethods])
         self.assertEqual({'username': 'admin', 'password':'secret'}, observer.calledMethods[0].kwargs)
 
+    def testLoginWithPOSTsucceeds_AcceptJSON(self):
+        observer = CallTrace(onlySpecifiedMethods=True, returnValues={'hasUser': True})
+        self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home')
+        self.form.addObserver(observer)
+        observer.returnValues['validateUser'] = True
+        Body = urlencode(dict(username='admin', password='secret'))
+        session = {}
+
+        headers, body = parseResponse(asBytes(self.form.handleRequest(
+            path='/login',
+            Method='POST',
+            Headers={'Accept': 'application/json, text/javascript, */*; q=0.01'},
+            Body=bytes(Body, encoding='utf-8'),
+            session=session)))
+
+        self.assertEqual('admin', session['user'].name)
+        self.assertEqual(True, session['user'].isAdmin())
+
+        self.assertEqual('200', headers['StatusCode'])
+        self.assertEqual('application/json', headers['Headers']['Content-Type'])
+        self.assertEqual({'success': True}, loads(body))
+
+        self.assertEqual(['validateUser', 'hasUser'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'username': 'admin', 'password':'secret'}, observer.calledMethods[0].kwargs)
+
     def testLoginWithPOSTfails(self):
         observer = CallTrace()
         self.form.addObserver(observer)
@@ -209,6 +235,29 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
         self.assertTrue('Location: /login' in header, header)
+
+        self.assertEqual(['validateUser'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'username': 'user', 'password':'wrong'}, observer.calledMethods[0].kwargs)
+
+    def testLoginWithPOSTfails_AcceptJSON(self):
+        observer = CallTrace()
+        self.form.addObserver(observer)
+        observer.returnValues['validateUser'] = False
+        Body = urlencode(dict(username='user', password='wrong'))
+        session = {}
+
+        headers, body = parseResponse(asBytes(self.form.handleRequest(
+            path='/login',
+            Method='POST',
+            Headers={'Accept': 'application/json, text/javascript, */*; q=0.01'},
+            Body=bytes(Body, encoding='utf-8'),
+            session=session)))
+
+        self.assertFalse('user' in session)
+        self.assertEqual({'username':'user', 'errorMessage': 'Invalid username or password'}, session['BasicHtmlLoginForm.formValues'])
+        self.assertEqual('200', headers['StatusCode'])
+        self.assertEqual('application/json', headers['Headers']['Content-Type'])
+        self.assertEqual({'message': 'Invalid username or password', 'success': False}, loads(body))
 
         self.assertEqual(['validateUser'], [m.name for m in observer.calledMethods])
         self.assertEqual({'username': 'user', 'password':'wrong'}, observer.calledMethods[0].kwargs)

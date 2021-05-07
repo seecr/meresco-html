@@ -29,10 +29,11 @@
 #
 ## end license ##
 
-from meresco.components.http.utils import redirectHttp, CRLF, insertHeader, findCookies
+from meresco.components.http.utils import redirectHttp, CRLF, insertHeader, findCookies, okJson
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
 from .securezone import ORIGINAL_PATH
+from simplejson import dumps
 
 from meresco.html import PostActions
 
@@ -58,6 +59,10 @@ class BasicHtmlLoginForm(PostActions):
         self._rememberMeCookie = rememberMeCookie
 
     def handleLogin(self, session=None, Body=None, **kwargs):
+        accept = kwargs.get("Headers", {}).get("Accept", '')
+
+        jsonResponse = 'application/json' in accept
+
         bodyArgs = parse_qs(str(Body, encoding='utf-8'), keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
@@ -72,14 +77,23 @@ class BasicHtmlLoginForm(PostActions):
                 cookieValues = self.call.createCookie(user)
                 status, headers = response.split(CRLF, 1)
                 response = CRLF.join([status, cookieValues['header'], headers])
+            if jsonResponse:
+                yield bytes(okJson, encoding="utf-8")
+                yield dumps(dict(success=True))
+                return
 
-            yield response % url
+            yield bytes(response % url, encoding='utf-8')
         else:
             session['BasicHtmlLoginForm.formValues'] = {
                 'username': username,
                 'errorMessage': getLabel(self._lang, 'loginForm', 'invalid')
             }
-            yield redirectHttp % self._loginPath
+            if jsonResponse:
+                yield bytes(okJson, encoding="utf-8")
+                yield dumps(dict(success=False, message=getLabel(self._lang, 'loginForm', 'invalid')))
+                return
+
+            yield bytes(redirectHttp % self._loginPath, encoding='utf-8')
 
     def getUser(self, username):
         return self._checkAndCreateUser(username)
