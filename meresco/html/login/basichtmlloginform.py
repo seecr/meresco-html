@@ -33,7 +33,7 @@ from meresco.components.http.utils import redirectHttp, CRLF, insertHeader, find
 from xml.sax.saxutils import quoteattr, escape as xmlEscape
 from os.path import join
 from .securezone import ORIGINAL_PATH
-from simplejson import dumps
+from simplejson import dumps, loads
 
 from meresco.html import PostActions
 
@@ -63,7 +63,8 @@ class BasicHtmlLoginForm(PostActions):
 
         jsonResponse = 'application/json' in accept
 
-        bodyArgs = parse_qs(str(Body, encoding='utf-8'), keep_blank_values=True)
+        strBody = str(Body, encoding='utf-8')
+        bodyArgs = {d['name']:[d['value']] for d in loads(strBody)} if jsonResponse else parse_qs(strBody, keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
         rememberMe = bodyArgs.get('rememberMe', [None])[0] != None

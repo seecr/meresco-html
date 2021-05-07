@@ -35,7 +35,7 @@ from weightless.core.utils import asBytes
 from seecr.test import SeecrTestCase, CallTrace
 from meresco.components.http.utils import CRLF, redirectHttp, parseResponse
 from urllib.parse import urlencode
-from simplejson import loads
+from simplejson import loads, dumps
 
 from meresco.html.login import BasicHtmlLoginForm, PasswordFile
 from meresco.html.login.securezone import ORIGINAL_PATH
@@ -201,7 +201,9 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form = BasicHtmlLoginForm(action='/action', loginPath='/login', home='/home')
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
-        Body = urlencode(dict(username='admin', password='secret'))
+        Body = dumps([
+            {"name":"username", "value":"admin"},
+            {"name":"password", "value":"secret"}])
         session = {}
 
         headers, body = parseResponse(asBytes(self.form.handleRequest(
@@ -243,7 +245,9 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         observer = CallTrace()
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = False
-        Body = urlencode(dict(username='user', password='wrong'))
+        Body = dumps([
+            {"name":"username", "value":"user"},
+            {"name":"password", "value":"wrong"}])
         session = {}
 
         headers, body = parseResponse(asBytes(self.form.handleRequest(
