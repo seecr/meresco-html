@@ -37,7 +37,9 @@ class SecureZone(Observable):
         Observable.__init__(self)
         self._loginPath = loginPath
         self._defaultLanguage = defaultLanguage
-        self._excluding = [] if excluding is None else excluding
+        self._excluding = []
+        if not excluding is None:
+            self._excluding = excluding if type(excluding) is list else [excluding]
 
     def handleRequest(self, session, path, query, arguments, **kwargs):
         lang = arguments.get('lang', [self._defaultLanguage])[0]

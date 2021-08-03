@@ -114,3 +114,10 @@ class SecureZoneTest(SeecrTestCase):
         self.assertEqual(['handleRequest'], observer.calledMethodNames())
         self.assertEqual({}, session)
 
+    def testGivenExcludingNotAList(self):
+        secureZone = SecureZone('/login', excluding=['/allowed'])
+        self.assertEqual(['/allowed'], secureZone._excluding)
+        secureZone = SecureZone('/login', excluding='/allowed')
+        self.assertEqual(['/allowed'], secureZone._excluding)
+
+
