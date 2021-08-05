@@ -154,6 +154,24 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.assertEqual(['validateUser', 'hasUser'], [m.name for m in observer.calledMethods])
         self.assertEqual({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
 
+        # JSON
+        session = {ORIGINAL_PATH:'/please/go/here'}
+        Body = bytes(dumps([
+            dict(name="username", value="user"), 
+            dict(name="password", value="secret")]), encoding='utf-8')
+        header, body = parseResponse(asBytes(self.form.handleRequest(
+            path='/login',
+            Client=('127.0.0.1', 3451),
+            Method='POST',
+            Body=Body,
+            Headers={'Accept': 'application/json'},
+            session=session)))
+        self.assertEqual('200', header['StatusCode'])
+        user = session['user']
+        self.assertFalse(user.isAdmin())
+        self.assertEqual(dict(success=True, url="/please/go/here"), loads(body))
+
+
     def testLoginWithPOSTsucceedsRedirectsToOriginalPathOnlyOnce(self):
         observer = CallTrace(onlySpecifiedMethods=True, returnValues={'hasUser': True})
         self.form.addObserver(observer)
@@ -218,7 +236,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
 
         self.assertEqual('200', headers['StatusCode'])
         self.assertEqual('application/json', headers['Headers']['Content-Type'])
-        self.assertEqual({'success': True}, loads(body))
+        self.assertEqual({'success': True, 'url': "/home"}, loads(body))
 
         self.assertEqual(['validateUser', 'hasUser'], [m.name for m in observer.calledMethods])
         self.assertEqual({'username': 'admin', 'password':'secret'}, observer.calledMethods[0].kwargs)

@@ -80,7 +80,7 @@ class BasicHtmlLoginForm(PostActions):
                 response = CRLF.join([status, cookieValues['header'], headers])
             if jsonResponse:
                 yield bytes(okJson, encoding="utf-8")
-                yield dumps(dict(success=True))
+                yield dumps(dict(success=True, url=url))
                 return
 
             yield bytes(response % url, encoding='utf-8')
