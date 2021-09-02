@@ -100,8 +100,45 @@ class BasicHtmlLoginForm(PostActions):
         return self._checkAndCreateUser(username)
     loginAsUser = getUser
 
-    def loginForm(self, session, path, lang=None, **kwargs):
+    def loginFormWithTag(self, session, path, lang=None, **kwargs):
+        tag = kwargs.get('tag')
+        formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
+        with tag("div", id_="login-form"):
+            if "errorMessage" in formValues:
+                with tag("p.error"):
+                    yield formValues['errorMessage']
+            with tag("form", method="POST", name="login", action=self._action):
+                with tag("input", type_="hidden", name="formUrl", value=path): pass
+                with tag("dl"):
+                    with tag("dt"):
+                        yield getLabel(lang, "loginForm", "username")
+                    with tag("dd"):
+                        with tag("input", type_="text", name="username", value=formValues.get("username")): pass
+                    with tag("dt"):
+                        yield getLabel(lang, "loginForm", "password")
+                    with tag("dd"):
+                        with tag("input", type_="password", name="password"): pass
+                    if self._rememberMeCookie:
+                        with tag("dt"):
+                            yield tag.as_is("&nbsp;")
+                        with tag("dd.rememberMe"):
+                            with tag("input", type_="checkbox", name="rememberMe", id_="rememberMe"): pass
+                            with tag("label", for_="rememberMe"):
+                                yield getLabel(lang, 'loginForm', 'rememberMe')
+                    with tag("dd.submit"):
+                        with tag("input", type_="submit", id_="submitLogin", value=getLabel(lang, 'loginForm', "login")):
+                            pass
+                    with tag("script", type_="text/javascript"):
+                        yield tag.as_is("document.getElementById('submitLogin').focus();")
+        session.pop('BasicHtmlLoginForm.formValues', None)
+
+
+    def loginForm(self, session, path, lang=None, withTag=False, **kwargs):
         lang = lang or self._lang
+        if withTag:
+            yield self.loginFormWithTag(session=session, path=path, lang=lang, **kwargs)
+            return
+
         formValues = session.get('BasicHtmlLoginForm.formValues', {}) if session else {}
         yield """<div id="login-form">\n"""
         if 'errorMessage' in formValues:
