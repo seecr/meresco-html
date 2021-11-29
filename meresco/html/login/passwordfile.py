@@ -87,12 +87,11 @@ class PasswordFile(object):
             self._storage.retrieve(self._name)
         except KeyError:
             self._makePersistent()
-            if createAdminUserIfEmpty:
-                password = randomString(10)
-                self._setUser('admin', password)
-                print('Generated password for "admin": "{}"'.format(password))
-        else:
-            self._users.update(self._read())
+        self._users.update(self._read())
+        if createAdminUserIfEmpty and not self.hasUser('admin'):
+            password = randomString(10)
+            self._setUser('admin', password)
+            print('Generated password for "admin": "{}"'.format(password))
 
     def addUser(self, username, password):
         if not self._usernameTest(username):
