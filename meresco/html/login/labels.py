@@ -43,6 +43,7 @@ LABELS = {
         'dontMatch': dict(en="New passwords do not match", nl="Nieuwe wachtwoorden komen niet overeen"),
         'usernamePasswordDontMatch': dict(en="Username and password do not match", nl="Gebruikersnaam en wachtwoord komen niet overeen"),
         'passwordInvalid': dict(en='New password is invalid.', nl='Het nieuwe wachtwoord is ongeldig.'),
+        'passwordChanged': dict(en='Password has been changed.', nl='Het wachtwoord is aangepast.'),
         'loginRequired': dict(en='Login required for "change password".', nl='Inloggen verplicht voor "verander wachtwoord".')
     },
     'newuserForm': {

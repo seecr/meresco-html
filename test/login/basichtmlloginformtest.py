@@ -157,7 +157,7 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         # JSON
         session = {ORIGINAL_PATH:'/please/go/here'}
         Body = bytes(dumps([
-            dict(name="username", value="user"), 
+            dict(name="username", value="user"),
             dict(name="password", value="secret")]), encoding='utf-8')
         header, body = parseResponse(asBytes(self.form.handleRequest(
             path='/login',
@@ -474,12 +474,25 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         self.form.addObserver(observer)
         observer.returnValues['validateUser'] = True
 
-        Body = urlencode(dict( username='user', oldPassword='correct', newPassword="good", retypedPassword="good", formUrl='/show/changepasswordform', returnUrl='/home')).encode()
+        Body = bytes(urlencode(dict(
+            username='user',
+            oldPassword='correct',
+            newPassword="good", retypedPassword="good",
+            formUrl='/show/changepasswordform',
+            returnUrl='/home')), encoding="utf-8")
         session = {'user': BasicHtmlLoginForm.User('user')}
 
-        result = asString(self.form.handleRequest(path='/login/changepassword', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+        result = asString(self.form.handleRequest(
+            path='/login/changepassword',
+            Client=('127.0.0.1', 3451),
+            Method='POST',
+            Body=Body,
+            session=session))
         self.assertEqual(['validateUser', 'setPassword'], [m.name for m in observer.calledMethods])
         self.assertEqual("HTTP/1.0 302 Found\r\nLocation: /home\r\n\r\n", result)
+        self.assertEqual(dict(
+            successMessage='Password has been changed.',
+            username='user'), session['BasicHtmlLoginForm.formValues'])
 
 
     def testDeleteUserNoAdmin(self):

@@ -270,6 +270,9 @@ class BasicHtmlLoginForm(PostActions):
                 try:
                     self.call.setPassword(username, newPassword)
                     targetUrl = returnUrl
+                    session['BasicHtmlLoginForm.formValues']={
+                        'username': username,
+                        'successMessage': getLabel(self._lang, 'changepasswordForm', 'passwordChanged')}
                 except ValueError:
                     session['BasicHtmlLoginForm.formValues']={
                         'username': username,
