@@ -58,6 +58,11 @@ from urllib.parse import urlsplit, urlunsplit
 from ._html import TagFactory, tag_compose
 from .utils import escapeHtml, parse_qs
 
+
+import aionotify
+import asyncio
+
+
 CRLF = '\r\n'
 
 class TemplateModule(object):
@@ -141,7 +146,6 @@ class DynamicHtml(Observable):
         self._additionalGlobals = additionalGlobals or {}
         self._observableProxy = ObservableProxy(self)
         self._errorHandlingHook = errorHandlingHook
-        self._initialize(reactor, watch=watch)
 
     def _loadAllTemplates(self):
         self._templates.clear()
@@ -150,20 +154,33 @@ class DynamicHtml(Observable):
                 templateName = basename(path)[:-len('.sf')]
                 self.loadTemplateModule(templateName)
 
-    def _initialize(self, reactor, watch):
-        self._loadAllTemplates()
-        if reactor is not None and watch:
-            for directory in self._directories:
-                directoryWatcher = DirectoryWatcher(
-                    directory,
-                    self._notifyHandler,
-                    CreateFile=True, ModifyFile=True, MoveInFile=True)
-                reactor.addReader(directoryWatcher, directoryWatcher)
 
-    def _notifyHandler(self, event):
-        if not event.name.endswith('.sf'):
-            return
+    def prepare(self):
         self._loadAllTemplates()
+        self.watcher = aionotify.Watcher()
+        for path in self._directories:
+            self.watcher.watch(path, aionotify.Flags.MODIFY | aionotify.Flags.CREATE | aionotify.Flags.MOVED_TO)
+
+    @asyncio.coroutine
+    def _run(self):
+        yield from self.watcher.setup(self.loop)
+        while True:
+            event = yield from self.watcher.get_event()
+            if event.name.endswith('.sf'):
+                self._loadAllTemplates()
+        self.shutdown()
+
+    def run(self, loop):
+        self.loop = loop
+        self.task = loop.create_task(self._run())
+
+    def shutdown(self):
+        self.watcher.close()
+        if self.task is not None:
+            self.task.cancel()
+        self.loop.stop()
+
+
 
     def _pathForTemplateName(self, name):
         for directory in self._directories:
@@ -275,11 +292,11 @@ class DynamicHtml(Observable):
                 if firstValue is Yield or callable(firstValue):
                     yield firstValue
                     continue
-                if not (type(firstValue) in [str, bytes] and ensureBytes(firstValue).startswith(b'HTTP/1.')):
-                    contentType = 'text/html'
-                    if path.endswith('.xml'):
-                        contentType = 'text/xml'
-                    yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
+                #if not (type(firstValue) in [str, bytes] and ensureBytes(firstValue).startswith(b'HTTP/1.')):
+                #    contentType = 'text/html'
+                #    if path.endswith('.xml'):
+                #        contentType = 'text/xml'
+                #    yield 'HTTP/1.0 200 OK\r\nContent-Type: %s; charset=utf-8\r\n\r\n' % contentType
                 yield tag.lines()
                 yield tag.escape(firstValue)
                 break
