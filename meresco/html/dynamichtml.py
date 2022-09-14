@@ -38,7 +38,7 @@ from io import StringIO
 from contextlib import contextmanager
 
 from xml.sax.saxutils import escape as escapeXml, quoteattr
-from lxml.etree import parse, tostring
+from lxml.etree import parse, tostring, XML
 from time import time
 from urllib.parse import urlencode as _urlencode
 from math import ceil
@@ -61,6 +61,7 @@ from .utils import escapeHtml, parse_qs
 
 import aionotify
 import asyncio
+import aiohttp
 
 
 CRLF = '\r\n'
@@ -88,8 +89,8 @@ class TemplateModule(object):
 
 class DynamicHtmlException(Exception):
     httpCodes = {
-        500: 'Internal Server Error',
-        404: 'Not Found',
+        500: "HTTPInternalServerError",
+        404: 'HTTPNotFound',
     }
     def __init__(self, message, httpCode=500):
         super(DynamicHtmlException, self).__init__(message)
@@ -161,11 +162,11 @@ class DynamicHtml(Observable):
         for path in self._directories:
             self.watcher.watch(path, aionotify.Flags.MODIFY | aionotify.Flags.CREATE | aionotify.Flags.MOVED_TO)
 
-    @asyncio.coroutine
-    def _run(self):
-        yield from self.watcher.setup(self.loop)
+    async def _run(self):
+        #yield from self.watcher.setup(self.loop)
+        await self.watcher.setup(self.loop)
         while True:
-            event = yield from self.watcher.get_event()
+            event = await self.watcher.get_event()
             if event.name.endswith('.sf'):
                 self._loadAllTemplates()
         self.shutdown()
@@ -227,7 +228,7 @@ class DynamicHtml(Observable):
             nextGenerator = _()
 
         if not head in self._templates or not hasattr(self._templates[head], 'main'):
-            raise DynamicHtmlException.notFound(head)
+            raise aiohttp.web.HTTPNotFound(text=head)
         main = self._templates[head].main
 
         def _():
@@ -244,7 +245,7 @@ class DynamicHtml(Observable):
     def _createGenerators(self, path, not_found_originalPath=None, scheme='', **kwargs):
         head, tail = self._splitPath(path)
         if not head in self._templates:
-            raise DynamicHtmlException.notFound(head)
+            raise aiohttp.web.HTTPNotFound(text=head)
         return compose(self._createMainGenerator(
             head, tail,
             path=(not_found_originalPath if not_found_originalPath is not None else path),
@@ -268,14 +269,12 @@ class DynamicHtml(Observable):
             generators = self._createGenerators(path, **kwargs)
         except DynamicHtmlException as e:
             if self._notFoundPage is None:
-                yield e.httpHeader()
-                yield str(e)
+                raise aiohttp.web.HTTPInternalServerError(text=str(e))
                 return
             try:
                 generators = self._createGenerators(self._notFoundPage, not_found_originalPath=path, **kwargs)
             except DynamicHtmlException as innerException:
-                yield innerException.httpHeader()
-                yield str(innerException)
+                raise aiohttp.web.HTTPInternalServerError(text=str(innerException))
                 return
         except Exception as e:
             if self._errorHandlingHook:
@@ -302,8 +301,7 @@ class DynamicHtml(Observable):
                 break
             except DynamicHtmlException as dhe:
                 s = format_exc() #cannot be inlined
-                yield dhe.httpHeader()
-                yield str(s)
+                raise aiohttp.web.HTTPInternalServerError(text=str(s))
                 return
             except Exception:
                 s = format_exc() #cannot be inlined
@@ -312,8 +310,7 @@ class DynamicHtml(Observable):
                     if not response is None:
                         yield response
                         return
-                yield 'HTTP/1.0 500 Internal Server Error\r\n\r\n'
-                yield str(s)
+                raise aiohttp.web.HTTPInternalServerError(text=str(s))
                 return
 
         try:
@@ -328,9 +325,10 @@ class DynamicHtml(Observable):
                 if not response is None:
                     yield response
                     return
-            yield "<pre>"
-            yield escapeHtml(s)
-            yield "</pre>"
+            raise aiohttp.web.HTTPInternalServerError(text=str(s))
+            #yield "<pre>"
+            #yield escapeHtml(s)
+            #yield "</pre>"
 
     def getModule(self, name):
         return self._templates.get(name)
@@ -447,6 +445,7 @@ class DynamicHtml(Observable):
             'basename': basename,
             'parse_qs': parse_qs,
             'parse': parse,
+            'XML': XML,
             'tostring': tostring,
             'http': Http(),
             'dumps': dumps,
