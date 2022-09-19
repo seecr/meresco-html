@@ -1,1 +1,2 @@
-deps.d
+deps.d/
+*.egg-info/
