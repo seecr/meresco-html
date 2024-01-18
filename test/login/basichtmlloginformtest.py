@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2014, 2016-2018, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2012-2014, 2016-2018, 2020-2021, 2024 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2020-2021 Data Archiving and Network Services https://dans.knaw.nl
 # Copyright (C) 2020-2021 SURF https://www.surf.nl
@@ -194,6 +194,25 @@ class BasicHtmlLoginFormTest(SeecrTestCase):
         header, body = result.split(CRLF*2)
         self.assertTrue('302' in header)
         self.assertTrue('Location: /home' in header, header)
+    
+    def testLoginWithPOSTsucceedsRedirectsToRedirectPath(self):
+        observer = CallTrace(onlySpecifiedMethods=True, returnValues={'hasUser': True})
+        self.form.addObserver(observer)
+        observer.returnValues['validateUser'] = True
+        Body = urlencode(dict(username='user', password='secret', redirect="/please/go/here")).encode()
+        session = {}
+
+        result = asString(self.form.handleRequest(path='/login', Client=('127.0.0.1', 3451), Method='POST', Body=Body, session=session))
+
+        self.assertEqual('user', session['user'].name)
+        header, body = result.split(CRLF*2)
+        self.assertTrue('302' in header)
+        self.assertTrue('Location: /please/go/here' in header)
+        self.assertFalse(session['user'].isAdmin())
+
+        self.assertEqual(['validateUser', 'hasUser'], [m.name for m in observer.calledMethods])
+        self.assertEqual({'username': 'user', 'password':'secret'}, observer.calledMethods[0].kwargs)
+
 
     def testLoginWithPOSTsucceeds(self):
         observer = CallTrace(onlySpecifiedMethods=True, returnValues={'hasUser': True})

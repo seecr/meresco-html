@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2012 Meertens Instituut (KNAW) http://meertens.knaw.nl
-# Copyright (C) 2012-2018, 2020-2021 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2012-2018, 2020-2021, 2024 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2014 Stichting Bibliotheek.nl (BNL) http://www.bibliotheek.nl
 # Copyright (C) 2015, 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2020-2021 Data Archiving and Network Services https://dans.knaw.nl
@@ -67,12 +67,14 @@ class BasicHtmlLoginForm(PostActions):
         bodyArgs = {d['name']:[d['value']] for d in loads(strBody)} if jsonResponse else parse_qs(strBody, keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
+        url = bodyArgs.get("redirect", [None])[0]
         rememberMe = bodyArgs.get('rememberMe', [None])[0] != None
 
         if self.call.validateUser(username=username, password=password):
             user = self.loginAsUser(username)
             session[USER] = user
-            url = session.pop(ORIGINAL_PATH, self._home)
+            if url is None:
+                url = session.pop(ORIGINAL_PATH, self._home)
             response = redirectHttp
             if rememberMe and self._rememberMeCookie:
                 cookieValues = self.call.createCookie(user)
