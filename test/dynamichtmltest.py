@@ -218,7 +218,7 @@ def main(*args, **kwargs):
             s = DynamicHtml([self.tempdir], reactor=CallTrace('Reactor'))
             result = ''.join(s.handleRequest(scheme='http', netloc='host.nl', path='/testSimple', query='?query=something', fragments='#fragments', arguments={'query': 'something'}))
 
-            self.assertTrue('x = 1/0\nZeroDivisionError: division by zero' in result)
+            self.assertTrue('x = 1/0\n        ~^~\nZeroDivisionError: division by zero' in result)
         finally:
             sys.stderr = sys.__stderr__
 
