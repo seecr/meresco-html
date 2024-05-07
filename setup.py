@@ -28,6 +28,9 @@ from distutils.core import setup
 
 from os import walk, listdir
 from os.path import join
+
+version = '$Version: 0$'[9:-1].strip()
+
 data_files = []
 for path, dirs, files in walk('doc'):
     data_files.append((path.replace('doc', '/usr/share/doc/meresco-html'), [join(path, f) for f in files if f != 'license.conf']))
@@ -46,7 +49,7 @@ setup(
         'meresco',            #DO_NOT_DISTRIBUTE
     ] + packages,
     data_files=data_files,
-    version='%VERSION%',
+    version=version,
     author='Seecr (Seek You Too B.V.)',
     author_email='info@seecr.nl',
     description='Meresco Html is a template engine based on generators and a sequel to Slowfoot',

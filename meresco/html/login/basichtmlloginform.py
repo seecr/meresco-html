@@ -67,13 +67,13 @@ class BasicHtmlLoginForm(PostActions):
         bodyArgs = {d['name']:[d['value']] for d in loads(strBody)} if jsonResponse else parse_qs(strBody, keep_blank_values=True)
         username = bodyArgs.get('username', [None])[0]
         password = bodyArgs.get('password', [None])[0]
-        url = bodyArgs.get("redirect", [None])[0]
+        url = bodyArgs.get("redirect", [''])[0]
         rememberMe = bodyArgs.get('rememberMe', [None])[0] != None
 
         if self.call.validateUser(username=username, password=password):
             user = self.loginAsUser(username)
             session[USER] = user
-            if url is None:
+            if url == '':
                 url = session.pop(ORIGINAL_PATH, self._home)
             response = redirectHttp
             if rememberMe and self._rememberMeCookie:
