@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2019-2021 SURF https://www.surf.nl
-# Copyright (C) 2019-2021 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2019-2021, 2025 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2020-2021 Data Archiving and Network Services https://dans.knaw.nl
 # Copyright (C) 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2020-2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
@@ -34,12 +34,14 @@ from hashlib import md5
 from seecr.zulutime import ZuluTime
 from pprint import pprint
 from meresco.core import Observable
+
 try:
     from gustos.common.units import COUNT
 except ImportError:
-    COUNT = 'count'
+    COUNT = "count"
 
-TESTMODE = os.environ.get('TESTMODE', '').upper() == 'TRUE'
+TESTMODE = os.environ.get("TESTMODE", "").upper() == "TRUE"
+
 
 class ErrorLog(object):
     def __init__(self, directory, logtofile=not TESTMODE, maxSize=1000, response=None):
@@ -71,18 +73,19 @@ class ErrorLog(object):
         return self._errorHandlingResponse
 
     def _filename(self):
-        return '{}.error.txt'.format(ZuluTime().iso8601basic())
+        return "{}.error.txt".format(ZuluTime().iso8601basic())
 
     def _rotate(self):
         l = listdir(self._directory)
         if len(l) > self._maxSize:
             # do not rotate every time we are on the edge, clean up a bit mor.
-            for f in sorted(l)[:-int(self._maxSize * 4/5)]:
+            for f in sorted(l)[: -int(self._maxSize * 4 / 5)]:
                 remove(join(self._directory, f))
         return len(l)
 
     def getFilesAndErrors(self):
         return self._nrOfFiles, self._nrOfErrors
+
 
 class ErrorLogReport(Observable):
     def __init__(self, name=None):
@@ -90,10 +93,15 @@ class ErrorLogReport(Observable):
 
     def handleReport(self):
         nrOfFiles, nrOfErrors = self.call.getFilesAndErrors()
-        self.do.report(values={self.observable_name():{"Errors":{
-            "files":{COUNT: nrOfFiles},
-            "errors": {COUNT: nrOfErrors},
-            }}})
+        self.call.report(
+            values={
+                self.observable_name(): {
+                    "Errors": {
+                        "files": {COUNT: nrOfFiles},
+                        "errors": {COUNT: nrOfErrors},
+                    }
+                }
+            }
+        )
         return
         yield
-

@@ -4,7 +4,7 @@
 # It is also known as "DynamicHtml" or "Seecr Html".
 #
 # Copyright (C) 2019-2021 SURF https://www.surf.nl
-# Copyright (C) 2019-2021 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2019-2021, 2025 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2020-2021 Data Archiving and Network Services https://dans.knaw.nl
 # Copyright (C) 2020-2021 Stichting Kennisnet https://www.kennisnet.nl
 # Copyright (C) 2020-2021 The Netherlands Institute for Sound and Vision https://beeldengeluid.nl
@@ -27,10 +27,12 @@
 #
 ## end license ##
 
-from seecr.test import SeecrTestCase
-from meresco.html.errorlog import ErrorLog
+from seecr.test import SeecrTestCase, CallTrace
+from meresco.html.errorlog import ErrorLog, ErrorLogReport
+from weightless.core import consume
 from os import listdir
 from os.path import join
+
 
 class ErrorLogTest(SeecrTestCase):
     def setUp(self):
@@ -39,10 +41,39 @@ class ErrorLogTest(SeecrTestCase):
 
     def testRotate(self):
         for i in range(100):
-            with open(join(self.tempdir, '{:03d}.error.txt'.format(i)), 'w') as f:
-                f.write('')
+            with open(join(self.tempdir, "{:03d}.error.txt".format(i)), "w") as f:
+                f.write("")
         self.assertEqual(100, len(listdir(self.tempdir)))
-        self.log.logError('Traceback', 'arg1', 'arg2', kwarg1='kwarg1', kwarg2='kwarg2')
+        self.log.logError("Traceback", "arg1", "arg2", kwarg1="kwarg1", kwarg2="kwarg2")
         self.assertEqual(8, len(listdir(self.tempdir)))
-        self.assertTrue('099.error.txt' in listdir(self.tempdir), listdir(self.tempdir))
+        self.assertTrue("099.error.txt" in listdir(self.tempdir), listdir(self.tempdir))
 
+    def testHandleReport(self):
+        self.log.logError("Traceback", "arg1", "arg2", kwarg1="kwarg1", kwarg2="kwarg2")
+        self.assertEqual((1, 1), self.log.getFilesAndErrors())
+        report = ErrorLogReport("Test")
+
+        called = []
+
+        class GustosClient:
+            def report(self, values):
+                called.append(values)
+                return "packet"
+
+        report.addObserver(self.log)
+        report.addObserver(GustosClient())
+        consume(report.handleReport())
+
+        self.assertEqual(
+            [
+                {
+                    "Test": {
+                        "Errors": {
+                            "errors": {"count": 1},
+                            "files": {"count": 1},
+                        }
+                    }
+                }
+            ],
+            called,
+        )
